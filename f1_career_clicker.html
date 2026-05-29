@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>F1 Career Clicker</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0e0e1a;color:#fff;display:flex;flex-direction:column;max-width:480px;margin:0 auto;height:100vh;position:relative}
+
+/* ONBOARD */
+#screen-onboard{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.ob-title{font-size:22px;font-weight:600;text-align:center;margin-top:8px}
+.ob-sub{font-size:12px;color:rgba(255,255,255,0.5);text-align:center}
+.ob-label{font-size:12px;color:rgba(255,255,255,0.6);font-weight:500}
+.ob-input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;font-size:15px;outline:none}
+.ob-input:focus{border-color:rgba(255,255,255,0.35)}
+.teams-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.team-card{border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px;cursor:pointer;background:rgba(255,255,255,0.04);transition:all .15s;position:relative;overflow:hidden}
+.team-card.sel{border-width:2px}
+.tc-bar{height:3px;border-radius:2px;margin-bottom:7px}
+.tc-name{font-size:12px;font-weight:600}
+.tc-bonus{font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px;line-height:1.4}
+.academy-badge{font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(250,200,50,0.15);color:#FAC832;display:inline-block;margin-top:3px}
+.start-btn{padding:14px;font-size:15px;border:none;border-radius:12px;cursor:pointer;font-weight:600;width:100%;margin-top:4px}
+
+/* GAME */
+#screen-game{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:0}
+.game-inner{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;padding-bottom:60px}
+
+.header{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px}
+.header canvas{flex-shrink:0;border-radius:8px}
+.hinfo{flex:1;min-width:0}
+.career-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:3px}
+.career-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.career-sub{font-size:10px;color:rgba(255,255,255,0.5)}
+
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.stat-card{background:rgba(255,255,255,0.06);border-radius:10px;padding:8px;text-align:center}
+.stat-val{font-size:17px;font-weight:700}
+.stat-lbl{font-size:10px;color:rgba(255,255,255,0.4);margin-top:1px}
+
+.clicker-wrap{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;text-align:center}
+.car-btn{width:100%;height:130px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:8px;transition:transform .08s;user-select:none;-webkit-user-select:none;position:relative;overflow:hidden}
+.car-btn:active{transform:scale(0.96)}
+.click-hint{font-size:11px;color:rgba(255,255,255,0.4)}
+.xp-bar-wrap{margin-top:8px}
+.xp-labels{display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:3px}
+.xp-bar{height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden}
+.xp-fill{height:100%;border-radius:3px;transition:width .3s}
+
+.offer-banner{border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;border:1px solid}
+.offer-text{flex:1}
+.offer-title{font-size:12px;font-weight:600}
+.offer-sub{font-size:10px;color:rgba(255,255,255,0.5);margin-top:1px}
+.offer-btn{padding:6px 14px;font-size:11px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+
+.tabs{display:flex;gap:5px;position:sticky;top:0;z-index:10;background:#0e0e1a;padding:2px 0}
+.tab{flex:1;padding:8px 4px;font-size:11px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);cursor:pointer;color:rgba(255,255,255,0.5);text-align:center;transition:all .15s}
+.tab.active{background:rgba(255,255,255,0.14);color:#fff;border-color:rgba(255,255,255,0.2)}
+
+.panel{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px}
+.panel-title{font-size:11px;font-weight:600;color:rgba(255,255,255,0.4);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+
+.upg-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+.upg-item:last-child{border-bottom:none}
+.upg-icon{font-size:20px;width:28px;text-align:center}
+.upg-info{flex:1}
+.upg-name{font-size:12px;font-weight:600}
+.upg-desc{font-size:10px;color:rgba(255,255,255,0.4)}
+.buy-btn{padding:5px 10px;font-size:10px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);cursor:pointer;color:#fff;white-space:nowrap;transition:all .15s}
+.buy-btn:disabled{opacity:0.3;cursor:not-allowed}
+.buy-btn.afford{background:rgba(100,180,255,0.15);border-color:rgba(100,180,255,0.3);color:#90c8ff}
+
+.tourn-item{padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+.tourn-item:last-child{border-bottom:none}
+.t-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.t-name{font-size:12px;font-weight:600}
+.t-fee{font-size:10px;color:rgba(255,255,255,0.4)}
+.t-info{font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:5px}
+.enter-btn{padding:5px 12px;font-size:10px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);cursor:pointer;color:#fff}
+.enter-btn:disabled{opacity:0.3;cursor:not-allowed}
+.enter-btn.ready{background:rgba(100,220,120,0.15);border-color:rgba(100,220,120,0.3);color:#90e8a0}
+
+.ach-item{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+.ach-item:last-child{border-bottom:none}
+.ach-icon{font-size:18px;width:24px}
+.ach-name{font-size:11px;font-weight:600}
+.ach-desc{font-size:10px;color:rgba(255,255,255,0.4)}
+.ach-item.locked{opacity:0.4}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(20,20,35,0.95);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:8px 18px;border-radius:20px;font-size:12px;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;z-index:200;backdrop-filter:blur(10px)}
+.toast.show{opacity:1}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:300;opacity:0;pointer-events:none;transition:opacity .2s;padding:20px}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal-box{background:#181828;border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:24px;width:100%;max-width:320px;text-align:center}
+.modal-emoji{font-size:44px;margin-bottom:10px}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:6px}
+.modal-text{font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:16px;line-height:1.6}
+.modal-btn{padding:10px 28px;font-size:13px;border-radius:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);cursor:pointer;color:#fff;font-weight:600}
+
+.float-num{position:fixed;font-size:14px;font-weight:700;pointer-events:none;animation:floatUp .7s forwards;z-index:400;text-shadow:0 1px 4px rgba(0,0,0,0.5)}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-50px)}}
+
+.disclaimer{font-size:9px;color:rgba(255,255,255,0.2);text-align:center;padding:4px 8px}
+
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- ОНБОРДИНГ -->
+<div id="screen-onboard">
+  <div class="ob-title">🏁 F1 Career</div>
+  <div class="ob-sub">Путь от картинга до Формулы 1 · Сезон 2026</div>
+  <div class="ob-label">Имя гонщика</div>
+  <input class="ob-input" id="pname" type="text" placeholder="Введи имя..." maxlength="20">
+  <div class="ob-label">Выбери команду</div>
+  <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:-6px">Команды с академией дают оффер и бонусы раньше</div>
+  <div class="teams-grid" id="teams-grid"></div>
+  <button class="start-btn" id="start-btn" onclick="startGame()">Начать карьеру →</button>
+  <div class="disclaimer">Fan game · Not affiliated with Formula One Group or any F1 team · 2026</div>
+</div>
+
+<!-- ИГРА -->
+<div id="screen-game" class="hidden">
+  <div class="game-inner" id="game-inner">
+    <div id="offer-container"></div>
+
+    <div class="header">
+      <canvas id="hcar" width="90" height="50"></canvas>
+      <div class="hinfo">
+        <div class="career-badge" id="cbadge">Картинг</div>
+        <div class="career-name" id="cname">—</div>
+        <div class="career-sub" id="csub">—</div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val" id="sv-coins">0</div><div class="stat-lbl">Монеты</div></div>
+      <div class="stat-card"><div class="stat-val" id="sv-cps">0</div><div class="stat-lbl">м/сек</div></div>
+      <div class="stat-card"><div class="stat-val" id="sv-wins">0</div><div class="stat-lbl">Побед</div></div>
+    </div>
+
+    <div class="clicker-wrap">
+      <div class="car-btn" id="car-btn" onclick="doClick(event)">
+        <canvas id="car-main" width="440" height="120"></canvas>
+      </div>
+      <div class="click-hint" id="chint">+1 монета за клик</div>
+      <div class="xp-bar-wrap">
+        <div class="xp-labels"><span>XP</span><span id="xpnum">0/300</span></div>
+        <div class="xp-bar"><div class="xp-fill" id="xpfill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('upgrades')">Апгрейды</div>
+      <div class="tab" onclick="switchTab('tournaments')">Турниры</div>
+      <div class="tab" onclick="switchTab('achievements')">Достижения</div>
+    </div>
+
+    <div class="panel" id="panel-upgrades"><div class="panel-title">Запчасти</div><div id="upg-list"></div></div>
+    <div class="panel hidden" id="panel-tournaments"><div class="panel-title">Турниры</div><div id="tourn-list"></div></div>
+    <div class="panel hidden" id="panel-achievements"><div class="panel-title">Достижения</div><div id="ach-list"></div></div>
+
+    <div class="disclaimer">Fan game · Not affiliated with Formula One Group</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-emoji" id="memoji">🏆</div>
+    <div class="modal-title" id="mtitle"></div>
+    <div class="modal-text" id="mtext"></div>
+    <button class="modal-btn" onclick="closeModal()">Продолжить</button>
+  </div>
+</div>
+
+<script>
+// ── ДАННЫЕ ───────────────────────────────────────────────────────────────────
+const TEAMS=[
+  {id:'redbull',    n:'Red Bull',     c1:'#1B3A6B',c2:'#FFD700',num:'3',  dr:'VERSTAPPEN',academy:true, aname:'Red Bull Junior',        bonus:'Оффер раньше · +20% монет/клик'},
+  {id:'ferrari',    n:'Ferrari',      c1:'#CC0000',c2:'#FFD700',num:'16', dr:'LECLERC',   academy:true, aname:'Ferrari Driver Academy', bonus:'Оффер раньше · +15% XP'},
+  {id:'mercedes',   n:'Mercedes',     c1:'#00A19C',c2:'#C0C0C0',num:'63', dr:'RUSSELL',   academy:true, aname:'Mercedes Junior',        bonus:'Оффер раньше · +10% пассив'},
+  {id:'mclaren',    n:'McLaren',      c1:'#FF6B00',c2:'#0C1C40',num:'1',  dr:'NORRIS',    academy:false,aname:'',                       bonus:'+10% к наградам турниров'},
+  {id:'alpine',     n:'Alpine',       c1:'#0052CC',c2:'#E91E8C',num:'10', dr:'GASLY',     academy:false,aname:'',                       bonus:'Старт +500 монет'},
+  {id:'aston',      n:'Aston Martin', c1:'#005A4E',c2:'#C9A84C',num:'14', dr:'ALONSO',    academy:false,aname:'',                       bonus:'+8% пассивный доход'},
+  {id:'williams',   n:'Williams',     c1:'#003E7A',c2:'#E0E8FF',num:'55', dr:'SAINZ',     academy:false,aname:'',                       bonus:'Хардкор: -20% монет +20% XP'},
+  {id:'haas',       n:'Haas',         c1:'#B22222',c2:'#E8E8E8',num:'87', dr:'BEARMAN',   academy:false,aname:'',                       bonus:'+5% шанс победы'},
+  {id:'rbulls',     n:'Racing Bulls', c1:'#1C3BA0',c2:'#66B0FF',num:'30', dr:'LAWSON',    academy:false,aname:'',                       bonus:'+5% XP'},
+  {id:'audi',       n:'Audi F1',      c1:'#333333',c2:'#CC0000',num:'5',  dr:'BORTOLETO', academy:false,aname:'',                       bonus:'Апгрейды -6% дешевле'},
+  {id:'cadillac',   n:'Cadillac',     c1:'#1A1A2E',c2:'#B8860B',num:'77', dr:'BOTTAS',    academy:false,aname:'',                       bonus:'+8% шанс победы'},
+];
+
+const CAREERS=[
+  {id:'karting',name:'Картинг',   xp:300,    cm:1,  ct:0},
+  {id:'f4',     name:'Формула 4', xp:900,    cm:3,  ct:1},
+  {id:'f3',     name:'Формула 3', xp:2200,   cm:7,  ct:2},
+  {id:'f2',     name:'Формула 2', xp:5500,   cm:16, ct:3},
+  {id:'f1',     name:'Формула 1', xp:Infinity,cm:38,ct:4},
+];
+
+const UPGRADES=[
+  {id:'tires',  name:'Шины',           emoji:'⚫',desc:'Сцепление с трассой',  bp:60,    ca:0.5,ka:1, ml:10},
+  {id:'engine', name:'Двигатель',      emoji:'🔧',desc:'Мощность и момент',    bp:250,   ca:2,  ka:2, ml:10},
+  {id:'aero',   name:'Аэродинамика',   emoji:'💨',desc:'Прижимная сила',       bp:600,   ca:6,  ka:3, ml:8},
+  {id:'susp',   name:'Подвеска',       emoji:'🛞',desc:'Устойчивость',         bp:1500,  ca:15, ka:5, ml:8},
+  {id:'gearbox',name:'Коробка передач',emoji:'⚙️',desc:'Скорость переключений',bp:4000,  ca:40, ka:10,ml:6},
+  {id:'fuel',   name:'Топливо',        emoji:'⛽',desc:'Оптимальный расход',   bp:10000, ca:100,ka:20,ml:6},
+  {id:'team',   name:'Инженеры',       emoji:'👷',desc:'Пит-стоп 2 сек',       bp:25000, ca:250,ka:50,ml:5},
+  {id:'sim',    name:'Симулятор',      emoji:'🕹️',desc:'Виртуальные тренировки',bp:70000,ca:700,ka:100,ml:5},
+];
+
+const TOURNAMENTS=[
+  {id:'loc',name:'Местные гонки',        fee:40,    xpr:50,   cr:100,   mc:0,wb:0.55},
+  {id:'reg',name:'Региональный чемп.',   fee:180,   xpr:140,  cr:380,   mc:0,wb:0.45},
+  {id:'nat',name:'Национальная серия',   fee:600,   xpr:350,  cr:1100,  mc:1,wb:0.42},
+  {id:'con',name:'Континентальный кубок',fee:2500,  xpr:900,  cr:4200,  mc:2,wb:0.38},
+  {id:'f2c',name:'Чемпионат Ф2',         fee:10000, xpr:2500, cr:15000, mc:3,wb:0.35},
+  {id:'f1r',name:'Этап Формулы 1',       fee:40000, xpr:6000, cr:65000, mc:4,wb:0.30},
+];
+
+const ACHIEVEMENTS=[
+  {id:'c1',  name:'Первый клик',  desc:'Нажми на машину',     emoji:'👆',chk:s=>s.tc>=1},
+  {id:'c100',name:'100 кликов',   desc:'Не останавливайся',   emoji:'💪',chk:s=>s.tc>=100},
+  {id:'u1',  name:'Механик',      desc:'Купи первый апгрейд', emoji:'🔧',chk:s=>Object.values(s.ul).some(v=>v>0)},
+  {id:'w1',  name:'Первая победа',desc:'Выиграй турнир',       emoji:'🥇',chk:s=>s.tw>=1},
+  {id:'w10', name:'10 побед',     desc:'Настоящий гонщик',     emoji:'🏆',chk:s=>s.tw>=10},
+  {id:'f1',  name:'Формула 1!',   desc:'Достигни вершины',     emoji:'🏎️',chk:s=>s.cl>=4},
+  {id:'10k', name:'Богач трассы', desc:'Накопи 10 000 монет',  emoji:'💰',chk:s=>s.tce>=10000},
+  {id:'all', name:'Полный болид', desc:'Все апгрейды куплены', emoji:'🌟',chk:s=>UPGRADES.every(u=>(s.ul[u.id]||0)>0)},
+];
+
+// ── УТИЛИТЫ ──────────────────────────────────────────────────────────────────
+const lc=(h,a)=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`rgb(${Math.min(255,r+a)},${Math.min(255,g+a)},${Math.min(255,b+a)})`;};
+const dc=(h,a)=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`rgb(${Math.max(0,r-a)},${Math.max(0,g-a)},${Math.max(0,b-a)})`;};
+function fmt(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return Math.floor(n).toString();}
+
+// ── СОСТОЯНИЕ ─────────────────────────────────────────────────────────────────
+let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:null};
+let selTeam='redbull';
+
+function load(){try{const d=localStorage.getItem('f1_v4');if(d)S={...S,...JSON.parse(d)};}catch(e){}}
+function save(){try{localStorage.setItem('f1_v4',JSON.stringify(S));}catch(e){}}
+
+function T(){return TEAMS.find(x=>x.id===S.tid)||TEAMS[0];}
+function C(){return CAREERS[S.cl];}
+
+function clickVal(){
+  const t=T();let v=C().cm;
+  UPGRADES.forEach(u=>v+=u.ka*(S.ul[u.id]||0));
+  if(t.id==='redbull')v=Math.floor(v*1.2);
+  if(t.id==='williams')v=Math.floor(v*0.8);
+  return Math.max(1,v);
+}
+function getCPS(){
+  let v=0;UPGRADES.forEach(u=>v+=u.ca*(S.ul[u.id]||0));
+  const t=T();
+  if(t.id==='mercedes')v*=1.1;
+  if(t.id==='aston')v*=1.08;
+  return v;
+}
+function upgPrice(u){
+  let p=Math.floor(u.bp*Math.pow(1.7,S.ul[u.id]||0));
+  if(T().id==='audi')p=Math.floor(p*0.94);
+  return p;
+}
+function winChance(t){
+  let b=t.wb+Object.values(S.ul).reduce((a,x)=>a+x,0)*0.015;
+  const tm=T();
+  if(tm.id==='haas'||tm.id==='cadillac')b+=0.06;
+  return Math.min(b,0.88);
+}
+function addXP(a){
+  const t=T();
+  if(t.id==='ferrari')a*=1.15;
+  if(t.id==='rbulls')a*=1.05;
+  if(t.id==='williams')a*=1.2;
+  S.xp+=a;
+  if(S.xp>=C().xp&&S.cl<4){S.xp=0;promote();}
+}
+function promote(){
+  S.cl++;
+  const c=C(),t=T();
+  if(c.id==='f1')showModal('🏆','Добро пожаловать в Формулу 1!',`${S.pn}, команда ${t.n} подписала контракт! Ты прошёл путь от картинга до вершины!`);
+  else showModal('🎉',`Повышение: ${c.name}!`,`${S.pn}, новые турниры и апгрейды открыты!`);
+  checkOffer();checkAch();
+}
+function checkOffer(){
+  const t=T();if(!t.academy||S.offer)return;
+  if(S.xp/C().xp>=0.5&&S.cl<4)S.offer={tn:t.n,an:t.aname,toLvl:S.cl+1};
+}
+function acceptOffer(){
+  if(!S.offer)return;
+  addXP(C().xp*0.3);
+  toast(`🎓 ${S.offer.an} дала +30% XP!`);
+  S.offer=null;
+  document.getElementById('offer-container').innerHTML='';
+  save();render();
+}
+function doClick(e){
+  const v=clickVal();
+  let coins=v;
+  if(T().id==='williams')coins=Math.floor(coins*0.8);
+  S.coins+=coins;S.tce+=coins;S.tc++;
+  addXP(1);checkOffer();floatNum('+'+coins,e.clientX,e.clientY);checkAch();save();render();
+}
+function enterTournament(id){
+  const t=TOURNAMENTS.find(x=>x.id===id);if(!t||S.coins<t.fee)return;
+  S.coins-=t.fee;
+  let reward=t.cr;
+  if(T().id==='mclaren')reward=Math.floor(reward*1.1);
+  const won=Math.random()<winChance(t);
+  if(won){S.coins+=reward;S.tce+=reward;S.tw++;addXP(t.xpr);showModal('🏆',`Победа!`,`+${t.xpr} XP, +${fmt(reward)} монет!`);}
+  else{const c=Math.floor(reward*0.15);S.coins+=c;S.tce+=c;addXP(Math.floor(t.xpr*0.3));showModal('😤','Не повезло...',`+${fmt(c)} монет утешения. Прокачай болид!`);}
+  checkOffer();checkAch();save();render();
+}
+function buyUpg(id){
+  const u=UPGRADES.find(x=>x.id===id);if(!u)return;
+  const lvl=S.ul[id]||0;if(lvl>=u.ml)return;
+  const price=upgPrice(u);if(S.coins<price)return;
+  S.coins-=price;S.ul[id]=lvl+1;
+  toast(`${u.emoji} ${u.name} → уровень ${lvl+1}`);
+  checkAch();save();render();
+}
+function checkAch(){
+  ACHIEVEMENTS.forEach(a=>{if(!S.ua.includes(a.id)&&a.chk(S)){S.ua.push(a.id);toast(`🎖️ ${a.name}`);}});
+}
+
+// ── РИСОВАНИЕ БОЛИДОВ ─────────────────────────────────────────────────────────
+function wheel(ctx,x,y,ro,ri,c2,sp=5){
+  ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x,y,ro,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#2a2a2a';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,ro-3,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='#303030';ctx.beginPath();ctx.arc(x,y,ri,0,Math.PI*2);ctx.fill();
+  for(let i=0;i<sp;i++){
+    const a=i*Math.PI*2/sp-Math.PI/2;
+    ctx.save();ctx.translate(x,y);ctx.rotate(a);
+    ctx.fillStyle='#484848';ctx.beginPath();ctx.moveTo(-2,0);ctx.lineTo(2,0);ctx.lineTo(1.5,-(ri-4));ctx.lineTo(-1.5,-(ri-4));ctx.closePath();ctx.fill();
+    ctx.restore();
+  }
+  ctx.fillStyle=c2;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();
+}
+
+function drawHelmet(ctx,cx,cy,s,c1,c2){
+  ctx.save();ctx.translate(cx,cy);ctx.scale(s,s);
+  ctx.fillStyle='#e8e8e8';ctx.beginPath();ctx.moveTo(-42,20);ctx.bezierCurveTo(-46,-12,-30,-50,2,-52);ctx.bezierCurveTo(30,-52,50,-26,50,4);ctx.bezierCurveTo(50,20,36,32,18,32);ctx.bezierCurveTo(0,36,-28,30,-42,20);ctx.closePath();ctx.fill();
+  ctx.fillStyle=c1;ctx.beginPath();ctx.moveTo(-42,4);ctx.bezierCurveTo(-46,-12,-30,-50,2,-52);ctx.bezierCurveTo(30,-52,50,-26,50,4);ctx.lineTo(18,4);ctx.bezierCurveTo(22,-20,-20,-36,-28,4);ctx.closePath();ctx.fill();
+  ctx.save();ctx.beginPath();ctx.moveTo(-42,20);ctx.bezierCurveTo(-46,-12,-30,-50,2,-52);ctx.bezierCurveTo(30,-52,50,-26,50,4);ctx.bezierCurveTo(50,20,36,32,18,32);ctx.bezierCurveTo(0,36,-28,30,-42,20);ctx.closePath();ctx.clip();
+  ctx.fillStyle=c2;ctx.fillRect(-46,6,98,8);ctx.restore();
+  ctx.fillStyle='#cecece';ctx.beginPath();ctx.moveTo(-4,28);ctx.bezierCurveTo(4,38,20,38,30,28);ctx.bezierCurveTo(40,18,44,8,42,2);ctx.lineTo(18,32);ctx.bezierCurveTo(4,36,-4,34,-4,28);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#888';for(let i=0;i<3;i++){ctx.beginPath();ctx.roundRect(10+i*9,20,6,9,2);ctx.fill();}
+  ctx.fillStyle='#111';ctx.beginPath();ctx.moveTo(6,-2);ctx.bezierCurveTo(6,-20,24,-28,44,-14);ctx.bezierCurveTo(50,-8,50,6,42,12);ctx.bezierCurveTo(34,20,14,18,6,10);ctx.bezierCurveTo(3,6,4,2,6,-2);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(8,28,60,0.92)';ctx.beginPath();ctx.moveTo(9,-1);ctx.bezierCurveTo(9,-17,25,-25,42,-13);ctx.bezierCurveTo(47,-8,47,5,40,11);ctx.bezierCurveTo(32,17,14,15,8,8);ctx.bezierCurveTo(5,4,7,2,9,-1);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.28)';ctx.beginPath();ctx.moveTo(14,-12);ctx.bezierCurveTo(20,-20,36,-20,42,-10);ctx.bezierCurveTo(30,-9,18,-8,14,-12);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.5)';ctx.beginPath();ctx.ellipse(19,-12,5,3,-0.3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,0.22)';for(let i=0;i<3;i++){ctx.save();ctx.translate(-12+i*12,-42);ctx.rotate(0.08);ctx.beginPath();ctx.roundRect(-3,0,6,10,2);ctx.fill();ctx.restore();}
+  ctx.fillStyle='#444';ctx.beginPath();ctx.roundRect(-48,-2,10,16,3);ctx.fill();
+  ctx.fillStyle='#1a1a1a';ctx.beginPath();ctx.roundRect(-46,0,6,12,2);ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-42,20);ctx.bezierCurveTo(-46,-12,-30,-50,2,-52);ctx.bezierCurveTo(30,-52,50,-26,50,4);ctx.bezierCurveTo(50,20,36,32,18,32);ctx.bezierCurveTo(0,36,-28,30,-42,20);ctx.closePath();ctx.stroke();
+  ctx.restore();
+}
+
+function numPlate(ctx,cx,cy,num,dr,c1,c2){
+  const pw=58,ph=26,px=cx-pw/2,py=cy-ph/2;
+  ctx.fillStyle='rgba(0,0,0,0.2)';ctx.beginPath();ctx.roundRect(px+2,py+2,pw,ph,4);ctx.fill();
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(px,py,pw,ph,4);ctx.fill();
+  ctx.fillStyle=c1;ctx.save();ctx.beginPath();ctx.roundRect(px,py,8,ph,4);ctx.clip();ctx.fillRect(px,py,8,ph);ctx.restore();
+  ctx.fillStyle='rgba(0,0,0,0.07)';ctx.fillRect(px+8,py,1,ph);
+  ctx.fillStyle='rgba(0,0,0,0.38)';ctx.font='bold 5px sans-serif';ctx.textAlign='left';
+  ctx.fillText(dr.length>10?dr.slice(0,10):dr,px+11,py+8);
+  ctx.fillStyle='#111';ctx.font='bold 17px sans-serif';ctx.textAlign='left';ctx.fillText(num,px+11,py+ph-5);
+  ctx.fillStyle=c2;ctx.beginPath();ctx.arc(px+pw-8,py+ph-7,2.5,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(px+pw-14,py+ph-7,2.5,0,Math.PI*2);ctx.fill();
+}
+
+function cockpitRim(ctx,cL,cR,cT,c1){
+  ctx.fillStyle=lc(c1,15);ctx.beginPath();ctx.moveTo(cL-2,cT);ctx.lineTo(cR+4,cT+6);ctx.lineTo(cR+4,cT+11);ctx.lineTo(cL-2,cT+5);ctx.closePath();ctx.fill();
+}
+function headrest(ctx,x,y,w,h,c1){
+  ctx.fillStyle=dc(c1,8);ctx.beginPath();ctx.roundRect(x,y,w,h,3);ctx.fill();
+  ctx.fillStyle=lc(c1,12);ctx.fillRect(x,y,w,3);
+}
+function drawNose(ctx,bx2,top,bot,len,c1,c2){
+  ctx.fillStyle=dc(c1,16);ctx.beginPath();
+  ctx.moveTo(bx2-2,top+2);ctx.bezierCurveTo(bx2+len*0.35,top,bx2+len*0.75,top-1,bx2+len,top);
+  ctx.lineTo(bx2+len,top+7);ctx.bezierCurveTo(bx2+len*0.75,top+8,bx2+len*0.35,top+9,bx2-2,bot-2);
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle=c2;ctx.beginPath();ctx.ellipse(bx2+len,top+3,3,3,0,0,Math.PI*2);ctx.fill();
+}
+function frontWing(ctx,nx,ny,wl,c1,c2){
+  const fy=ny+3;
+  ctx.fillStyle=dc(c1,6);ctx.beginPath();ctx.moveTo(nx-4,fy+3);ctx.lineTo(nx+wl,fy+1);ctx.lineTo(nx+wl,fy+7);ctx.lineTo(nx-4,fy+9);ctx.closePath();ctx.fill();
+  ctx.fillStyle=dc(c1,12);ctx.beginPath();ctx.moveTo(nx-2,fy+8);ctx.lineTo(nx+wl+4,fy+6);ctx.lineTo(nx+wl+4,fy+12);ctx.lineTo(nx-2,fy+14);ctx.closePath();ctx.fill();
+  ctx.fillStyle=c2;ctx.fillRect(nx+wl-2,fy-3,5,14);
+}
+function rearWing(ctx,rx,gnd,pt,wt,ww,c1,c2){
+  ctx.fillStyle=dc(c1,8);ctx.fillRect(rx+3,pt,5,gnd-pt-18);
+  ctx.fillStyle=dc(c1,14);ctx.beginPath();ctx.moveTo(rx-ww*0.4,wt+14);ctx.lineTo(rx+10,wt+14);ctx.lineTo(rx+10,wt+18);ctx.lineTo(rx-ww*0.4,wt+18);ctx.closePath();ctx.fill();
+  ctx.fillStyle=c1;ctx.beginPath();ctx.moveTo(rx-ww,wt);ctx.lineTo(rx+10,wt);ctx.lineTo(rx+10,wt+8);ctx.lineTo(rx-ww,wt+8);ctx.closePath();ctx.fill();
+  ctx.fillStyle=c2;ctx.fillRect(rx-ww,wt,ww+10,4);
+  ctx.fillStyle=dc(c1,8);ctx.fillRect(rx-ww,wt+4,ww+10,3);
+}
+function drawHalo(ctx,cx,cT,c1){
+  const hw=50,ht=18;
+  ctx.fillStyle=dc(c1,6);ctx.beginPath();ctx.moveTo(cx-3,cT);ctx.lineTo(cx+3,cT);ctx.lineTo(cx+2,cT-ht);ctx.lineTo(cx-2,cT-ht);ctx.closePath();ctx.fill();
+  ctx.strokeStyle=dc(c1,4);ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(cx-hw,cT+2);ctx.bezierCurveTo(cx-hw+10,cT-ht+4,cx+hw-10,cT-ht+4,cx+hw,cT+2);ctx.stroke();
+  ctx.strokeStyle=lc(c1,16);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-hw+4,cT+1);ctx.bezierCurveTo(cx-hw+14,cT-ht+6,cx+hw-14,cT-ht+6,cx+hw-4,cT+1);ctx.stroke();
+}
+
+function drawCar(ctx,W,H,c1,c2,num,dr,carType){
+  ctx.clearRect(0,0,W,H);
+  if(carType===0)drawKart(ctx,W,H,c1,c2,num,dr);
+  else if(carType===1)drawF4(ctx,W,H,c1,c2,num,dr);
+  else if(carType===2)drawF3(ctx,W,H,c1,c2,num,dr);
+  else if(carType===3)drawF2(ctx,W,H,c1,c2,num,dr);
+  else drawF1(ctx,W,H,c1,c2,num,dr);
+}
+
+function drawBgSmall(ctx,W,H,gnd){
+  ctx.fillStyle='#12121f';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#1c1c2e';ctx.fillRect(0,gnd-2,W,H-(gnd-2));
+  ctx.fillStyle='#22223a';ctx.fillRect(0,gnd-2,W,2);
+}
+
+function drawKart(ctx,W,H,c1,c2,num,dr){
+  const sc=W/500,gnd=Math.floor(H*0.78);
+  ctx.save();ctx.scale(sc,sc);
+  const W2=500,gnd2=gnd/sc;
+  drawBgSmall(ctx,W2,H/sc,gnd2);
+  const RR=28,RI=16,FR=22,rWx=100,rWy=gnd2-RR,fWx=360,fWy=gnd2-FR;
+  const bx1=rWx+14,bx2=fWx-8;
+  ctx.fillStyle=dc(c1,25);ctx.beginPath();ctx.moveTo(rWx+8,gnd2-8);ctx.lineTo(rWx+8,gnd2-24);ctx.lineTo(fWx-8,gnd2-24);ctx.lineTo(fWx-8,gnd2-8);ctx.closePath();ctx.fill();
+  ctx.fillStyle=c1;ctx.beginPath();ctx.moveTo(bx1,gnd2-24);ctx.lineTo(rWx+18,gnd2-54);ctx.lineTo(rWx+54,gnd2-58);ctx.quadraticCurveTo(rWx+100,gnd2-70,rWx+114,gnd2-68);ctx.lineTo(fWx-64,gnd2-50);ctx.quadraticCurveTo(fWx-22,gnd2-36,bx2,gnd2-24);ctx.closePath();ctx.fill();
+  ctx.fillStyle=lc(c1,28);ctx.beginPath();ctx.moveTo(rWx+22,gnd2-52);ctx.lineTo(rWx+58,gnd2-62);ctx.quadraticCurveTo(rWx+102,gnd2-69,rWx+118,gnd2-67);ctx.lineTo(fWx-62,gnd2-49);ctx.lineTo(rWx+22,gnd2-42);ctx.closePath();ctx.fill();
+  ctx.fillStyle=dc(c1,12);ctx.beginPath();ctx.moveTo(bx2,gnd2-24);ctx.quadraticCurveTo(fWx+20,gnd2-22,fWx+42,gnd2-19);ctx.lineTo(fWx+42,gnd2-15);ctx.quadraticCurveTo(fWx+20,gnd2-17,fWx-7,gnd2-20);ctx.closePath();ctx.fill();
+  ctx.fillStyle=c2;ctx.beginPath();ctx.arc(fWx+42,gnd2-17,3.5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=dc(c1,8);ctx.beginPath();ctx.moveTo(fWx+18,gnd2-13);ctx.lineTo(fWx+54,gnd2-11);ctx.lineTo(fWx+54,gnd2-8);ctx.lineTo(fWx+18,gnd2-10);ctx.closePath();ctx.fill();
+  ctx.fillStyle=c2;ctx.fillRect(fWx+52,gnd2-14,3,7);
+  ctx.fillStyle=c2;ctx.fillRect(rWx-22,gnd2-22,7,18);
+  ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(rWx-22,gnd2-10);ctx.lineTo(rWx+13,gnd2-10);ctx.lineTo(rWx+13,gnd2-6);ctx.lineTo(rWx-22,gnd2-6);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#1a1a1a';ctx.fillRect(rWx+17,gnd2-52,14,22);
+  ctx.strokeStyle='#3a3a3a';ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(rWx+13,gnd2-38);ctx.lineTo(rWx-9,gnd2-30);ctx.stroke();
+  const cL=rWx+28,cR=fWx-58,cT=gnd2-68;
+  cockpitRim(ctx,cL,cR,cT,c1);
+  ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-14,gnd2-46,9,6,0.5,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-23,gnd2-46);ctx.lineTo(cR-5,gnd2-46);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-14,gnd2-53);ctx.lineTo(cR-14,gnd2-39);ctx.stroke();
+  const hs=0.44,hx=cL+42,hy=cT+3-32*hs;
+  drawHelmet(ctx,hx,hy,hs,c1,c2);
+  numPlate(ctx,(bx1+bx2)/2,gnd2-46,num,dr,c1,c2);
+  wheel(ctx,rWx,rWy,RR,RI,c2);wheel(ctx,fWx,fWy,FR,FI,c2);
+  ctx.restore();
+}
+
+function drawF4(ctx,W,H,c1,c2,num,dr){
+  const sc=W/500,gnd2=Math.floor(H*0.78/sc);
+  ctx.save();ctx.scale(sc,sc);
+  drawBgSmall(ctx,500,H/sc,gnd2);
+  const RR=26,RI=14,FR=20,rWx=85,fWx=390,bx1=rWx+18,bx2=fWx-18;
+  ctx.fillStyle=dc(c1,18);ctx.beginPath();ctx.moveTo(rWx+20,gnd2-20);ctx.lineTo(rWx+20,gnd2-44);ctx.lineTo(rWx+80,gnd2-50);ctx.lineTo(rWx+80,gnd2-20);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(fWx-80,gnd2-20);ctx.lineTo(fWx-80,gnd2-44);ctx.lineTo(fWx-30,gnd2-38);ctx.lineTo(fWx-30,gnd2-20);ctx.closePath();ctx.fill();
+  ctx.fillStyle=c1;ctx.beginPath();ctx.moveTo(bx1,gnd2-20);ctx.lineTo(rWx+22,gnd2-50);ctx.bezierCurveTo(rWx+50,gnd2-62,rWx+90,gnd2-64,rWx+130,gnd2-62);ctx.lineTo(fWx-100,gnd2-58);ctx.bezierCurveTo(fWx-70,gnd2-56,fWx-40,gnd2-50,bx2,gnd2-20);ctx.closePath();ctx.fill();
+  ctx.fillStyle=lc(c1,25);ctx.beginPath();ctx.moveTo(rWx+26,gnd2-48);ctx.bezierCurveTo(rWx+54,gnd2-60,rWx+92,gnd2-62,rWx+132,gnd2-60);ctx.lineTo(fWx-98,gnd2-56);ctx.lineTo(rWx+26,gnd2-38);ctx.closePath();ctx.fill();
+  ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(rWx+22,gnd2-28);ctx.lineTo(fWx-20,gnd2-26);ctx.lineTo(fWx-21,gnd2-22);ctx.lineTo(rWx+22,gnd2-24);ctx.closePath();ctx.fill();
+  rearWing(ctx,rWx,gnd2,gnd2-50,gnd2-60,22,c1,c2);
+  drawNose(ctx,bx2,gnd2-28,gnd2-16,56,c1,c2);
+  frontWing(ctx,bx2+56,gnd2-28,12,c1,c2);
+  const cL=rWx+80,cR=fWx-100,cT=gnd2-72;
+  cockpitRim(ctx,cL,cR,cT,c1);headrest(ctx,cL-2,cT-14,18,14,c1);
+  ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-12,gnd2-40,9,6,0.5,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-21,gnd2-40);ctx.lineTo(cR-3,gnd2-40);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-12,gnd2-47);ctx.lineTo(cR-12,gnd2-33);ctx.stroke();
+  const hs=0.44,hx=cL+38,hy=cT+4-32*hs;
+  drawHelmet(ctx,hx,hy,hs,c1,c2);
+  numPlate(ctx,(bx1+bx2)/2,gnd2-36,num,dr,c1,c2);
+  wheel(ctx,rWx,gnd2-RR,RR,RI,c2,5);wheel(ctx,fWx,gnd2-FR,FR,RI-3,c2,5);
+  ctx.restore();
+}
+
+function drawF3(ctx,W,H,c1,c2,num,dr){
+  const sc=W/500,gnd2=Math.floor(H*0.78/sc);
+  ctx.save();ctx.scale(sc,sc);
+  drawBgSmall(ctx,500,H/sc,gnd2);
+  const RR=27,RI=15,FR=21,rWx=82,fWx=400,bx1=rWx+20,bx2=fWx-20;
+  ctx.fillStyle=dc(c1,15);ctx.beginPath();ctx.moveTo(rWx+22,gnd2-18);ctx.lineTo(rWx+24,gnd2-48);ctx.lineTo(rWx+86,gnd2-56);ctx.lineTo(rWx+88,gnd2-18);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(fWx-86,gnd2-18);ctx.lineTo(fWx-84,gnd2-50);ctx.lineTo(fWx-32,gnd2-42);ctx.lineTo(fWx-30,gnd2-18);ctx.closePath();ctx.fill();
+  ctx.fillStyle=c1;ctx.beginPath();ctx.moveTo(bx1,gnd2-18);ctx.lineTo(rWx+26,gnd2-54);ctx.bezierCurveTo(rWx+60,gnd2-68,rWx+110,gnd2-70,rWx+150,gnd2-68);ctx.lineTo(fWx-110,gnd2-62);ctx.bezierCurveTo(fWx-70,gnd2-58,fWx-40,gnd2-48,bx2,gnd2-18);ctx.closePath();ctx.fill();
+  ctx.fillStyle=lc(c1,25);ctx.beginPath();ctx.moveTo(rWx+30,gnd2-52);ctx.bezierCurveTo(rWx+64,gnd2-66,rWx+112,gnd2-68,rWx+152,gnd2-66);ctx.lineTo(fWx-108,gnd2-60);ctx.lineTo(rWx+30,gnd2-40);ctx.closePath();ctx.fill();
+  ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(rWx+24,gnd2-26);ctx.lineTo(fWx-22,gnd2-24);ctx.lineTo(fWx-23,gnd2-20);ctx.lineTo(rWx+24,gnd2-22);ctx.closePath();ctx.fill();
+  rearWing(ctx,rWx,gnd2,gnd2-56,gnd2-74,26,c1,c2);
+  drawNose(ctx,bx2,gnd2-32,gnd2-18,62,c1,c2);
+  frontWing(ctx,bx2+62,gnd2-32,14,c1,c2);
+  const cL=rWx+86,cR=fWx-110,cT=gnd2-76;
+  cockpitRim(ctx,cL,cR,cT,c1);headrest(ctx,cL-2,cT-16,20,16,c1);
+  ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-12,gnd2-38,9,6,0.5,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-21,gnd2-38);ctx.lineTo(cR-3,gnd2-38);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-12,gnd2-45);ctx.lineTo(cR-12,gnd2-31);ctx.stroke();
+  const hs=0.44,hx=cL+36,hy=cT+4-32*hs;
+  drawHelmet(ctx,hx,hy,hs,c1,c2);
+  numPlate(ctx,(bx1+bx2)/2,gnd2-34,num,dr,c1,c2);
+  wheel(ctx,rWx,gnd2-RR,RR,RI,c2,6);wheel(ctx,fWx,gnd2-FR,FR,RI-3,c2,6);
+  ctx.restore();
+}
+
+function drawF2(ctx,W,H,c1,c2,num,dr){
+  const sc=W/500,gnd2=Math.floor(H*0.8/sc);
+  ctx.save();ctx.scale(sc,sc);
+  drawBgSmall(ctx,500,H/sc,gnd2);
+  const RR=28,RI=16,FR=22,rWx=76,fWx=408,bx1=rWx+22,bx2=fWx-22;
+  ctx.fillStyle=dc(c1,12);ctx.beginPath();ctx.moveTo(rWx+24,gnd2-18);ctx.lineTo(rWx+26,gnd2-52);ctx.lineTo(rWx+96,gnd2-62);ctx.lineTo(rWx+98,gnd2-18);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(fWx-96,gnd2-18);ctx.lineTo(fWx-94,gnd2-56);ctx.lineTo(fWx-28,gnd2-44);ctx.lineTo(fWx-26,gnd2-18);ctx.closePath();ctx.fill();
+  ctx.fillStyle=dc(c1,35);ctx.beginPath();ctx.roundRect(rWx+32,gnd2-50,14,10,2);ctx.fill();ctx.beginPath();ctx.roundRect(fWx-80,gnd2-50,14,10,2);ctx.fill();
+  ctx.fillStyle=c1;ctx.beginPath();ctx.moveTo(bx1,gnd2-18);ctx.lineTo(rWx+28,gnd2-58);ctx.bezierCurveTo(rWx+70,gnd2-74,rWx+130,gnd2-76,rWx+180,gnd2-74);ctx.lineTo(fWx-130,gnd2-66);ctx.bezierCurveTo(fWx-80,gnd2-60,fWx-44,gnd2-50,bx2,gnd2-18);ctx.closePath();ctx.fill();
+  ctx.fillStyle=lc(c1,22);ctx.beginPath();ctx.moveTo(rWx+32,gnd2-56);ctx.bezierCurveTo(rWx+72,gnd2-72,rWx+132,gnd2-74,rWx+182,gnd2-72);ctx.lineTo(fWx-128,gnd2-64);ctx.lineTo(rWx+32,gnd2-44);ctx.closePath();ctx.fill();
+  ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(rWx+26,gnd2-28);ctx.lineTo(fWx-24,gnd2-26);ctx.lineTo(fWx-25,gnd2-22);ctx.lineTo(rWx+26,gnd2-24);ctx.closePath();ctx.fill();
+  ctx.fillStyle=dc(c1,20);ctx.beginPath();ctx.moveTo(rWx-2,gnd2-18);ctx.lineTo(rWx+26,gnd2-18);ctx.lineTo(rWx+22,gnd2-6);ctx.lineTo(rWx-6,gnd2-6);ctx.closePath();ctx.fill();
+  rearWing(ctx,rWx,gnd2,gnd2-62,gnd2-86,30,c1,c2);
+  drawNose(ctx,bx2,gnd2-36,gnd2-22,68,c1,c2);
+  frontWing(ctx,bx2+68,gnd2-36,16,c1,c2);
+  const cL=rWx+96,cR=fWx-128,cT=gnd2-80;
+  cockpitRim(ctx,cL,cR,cT,c1);headrest(ctx,cL-2,cT-18,22,18,c1);
+  ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-12,gnd2-36,9,6,0.5,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-21,gnd2-36);ctx.lineTo(cR-3,gnd2-36);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-12,gnd2-43);ctx.lineTo(cR-12,gnd2-29);ctx.stroke();
+  const hs=0.44,hx=cL+34,hy=cT+4-32*hs;
+  drawHelmet(ctx,hx,hy,hs,c1,c2);
+  numPlate(ctx,(bx1+bx2)/2,gnd2-34,num,dr,c1,c2);
+  wheel(ctx,rWx,gnd2-RR,RR,RI,c2,6);wheel(ctx,fWx,gnd2-FR,FR,RI-4,c2,6);
+  ctx.restore();
+}
+
+function drawF1(ctx,W,H,c1,c2,num,dr){
+  const sc=W/500,gnd2=Math.floor(H*0.82/sc);
+  ctx.save();ctx.scale(sc,sc);
+  drawBgSmall(ctx,500,H/sc,gnd2);
+  const RR=30,RI=17,FR=23,rWx=70,fWx=418,bx1=rWx+24,bx2=fWx-22;
+  ctx.fillStyle=dc(c1,10);ctx.beginPath();ctx.moveTo(rWx+26,gnd2-18);ctx.lineTo(rWx+28,gnd2-58);ctx.bezierCurveTo(rWx+60,gnd2-68,rWx+100,gnd2-70,rWx+110,gnd2-68);ctx.lineTo(rWx+110,gnd2-18);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(fWx-108,gnd2-18);ctx.lineTo(fWx-108,gnd2-62);ctx.bezierCurveTo(fWx-90,gnd2-64,fWx-50,gnd2-58,fWx-26,gnd2-46);ctx.lineTo(fWx-24,gnd2-18);ctx.closePath();ctx.fill();
+  ctx.strokeStyle=dc(c1,28);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(rWx+40,gnd2-56);ctx.lineTo(rWx+40,gnd2-20);ctx.stroke();ctx.beginPath();ctx.moveTo(fWx-88,gnd2-56);ctx.lineTo(fWx-88,gnd2-20);ctx.stroke();
+  ctx.fillStyle=c1;ctx.beginPath();ctx.moveTo(bx1,gnd2-18);ctx.lineTo(rWx+30,gnd2-62);ctx.bezierCurveTo(rWx+80,gnd2-80,rWx+150,gnd2-82,rWx+210,gnd2-80);ctx.lineTo(fWx-150,gnd2-72);ctx.bezierCurveTo(fWx-90,gnd2-64,fWx-46,gnd2-52,bx2,gnd2-18);ctx.closePath();ctx.fill();
+  ctx.fillStyle=lc(c1,20);ctx.beginPath();ctx.moveTo(rWx+34,gnd2-60);ctx.bezierCurveTo(rWx+82,gnd2-78,rWx+152,gnd2-80,rWx+212,gnd2-78);ctx.lineTo(fWx-148,gnd2-70);ctx.lineTo(rWx+34,gnd2-46);ctx.closePath();ctx.fill();
+  ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(rWx+28,gnd2-28);ctx.lineTo(fWx-26,gnd2-26);ctx.lineTo(fWx-27,gnd2-22);ctx.lineTo(rWx+28,gnd2-24);ctx.closePath();ctx.fill();
+  ctx.fillStyle=dc(c1,22);ctx.beginPath();ctx.moveTo(rWx-4,gnd2-20);ctx.lineTo(rWx+26,gnd2-20);ctx.lineTo(rWx+22,gnd2-6);ctx.lineTo(rWx-8,gnd2-6);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#555';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(rWx+4,gnd2-36);ctx.lineTo(rWx-12,gnd2-28);ctx.stroke();
+  ctx.strokeStyle='#333';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(rWx+4,gnd2-36);ctx.lineTo(rWx-12,gnd2-28);ctx.stroke();
+  rearWing(ctx,rWx,gnd2,gnd2-68,gnd2-96,34,c1,c2);
+  drawNose(ctx,bx2,gnd2-40,gnd2-26,76,c1,c2);
+  frontWing(ctx,bx2+76,gnd2-40,18,c1,c2);
+  const cL=rWx+110,cR=fWx-150,cT=gnd2-86;
+  cockpitRim(ctx,cL,cR,cT,c1);headrest(ctx,cL-2,cT-20,24,20,c1);
+  drawHalo(ctx,cL+(cR-cL)*0.38,cT,c1);
+  ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-12,gnd2-34,9,6,0.5,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-21,gnd2-34);ctx.lineTo(cR-3,gnd2-34);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-12,gnd2-41);ctx.lineTo(cR-12,gnd2-27);ctx.stroke();
+  const hs=0.44,hx=cL+34,hy=cT+4-32*hs;
+  drawHelmet(ctx,hx,hy,hs,c1,c2);
+  numPlate(ctx,(bx1+bx2)/2,gnd2-36,num,dr,c1,c2);
+  wheel(ctx,rWx,gnd2-RR,RR,RI,c2,7);wheel(ctx,fWx,gnd2-FR,FR,RI-4,c2,7);
+  ctx.restore();
+}
+
+// ── UI ───────────────────────────────────────────────────────────────────────
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['upgrades','tournaments','achievements'][i]===name));
+  ['upgrades','tournaments','achievements'].forEach(n=>{document.getElementById('panel-'+n).classList.toggle('hidden',n!==name);});
+}
+function showModal(em,ti,tx){
+  document.getElementById('memoji').textContent=em;
+  document.getElementById('mtitle').textContent=ti;
+  document.getElementById('mtext').textContent=tx;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+function toast(msg){
+  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2400);
+}
+function floatNum(txt,x,y){
+  const t=T();const el=document.createElement('div');
+  el.className='float-num';el.style.color=t.c2;el.textContent=txt;
+  el.style.left=x+'px';el.style.top=(y-20)+'px';
+  document.body.appendChild(el);setTimeout(()=>el.remove(),700);
+}
+
+function renderOfferBanner(){
+  if(!S.offer)return;
+  const t=T();
+  document.getElementById('offer-container').innerHTML=`
+    <div class="offer-banner" style="background:${t.c1}22;border-color:${t.c1}55;margin-bottom:0">
+      <div class="offer-text">
+        <div class="offer-title" style="color:${t.c2}">🎓 Оффер: ${S.offer.an}</div>
+        <div class="offer-sub">+30% XP к повышению в ${CAREERS[S.offer.toLvl].name}</div>
+      </div>
+      <button class="offer-btn" style="background:${t.c1};color:${t.c2}" onclick="acceptOffer()">Принять</button>
+    </div>`;
+}
+
+function render(){
+  const c=C(),t=T();
+  // header car
+  const hcar=document.getElementById('hcar');
+  drawCar(hcar.getContext('2d'),hcar.width,hcar.height,t.c1,t.c2,t.num,t.dr,c.ct);
+  // main car
+  const main=document.getElementById('car-main');
+  drawCar(main.getContext('2d'),main.width,main.height,t.c1,t.c2,t.num,t.dr,c.ct);
+  // badge
+  const badge=document.getElementById('cbadge');
+  badge.textContent=c.name;badge.style.background=t.c1+'33';badge.style.color=t.c2;
+  document.getElementById('cname').textContent=`${S.pn} · ${t.n}`;
+  document.getElementById('csub').textContent=c.xp===Infinity?'🏆 Вершина достигнута!':`До ${CAREERS[Math.min(S.cl+1,4)].name}: ${Math.floor(S.xp)}/${c.xp} XP`;
+  // stats
+  document.getElementById('sv-coins').textContent=fmt(S.coins);
+  document.getElementById('sv-cps').textContent=fmt(getCPS());
+  document.getElementById('sv-wins').textContent=S.tw;
+  // xp
+  const xpPct=c.xp===Infinity?100:Math.min(100,Math.floor(S.xp/c.xp*100));
+  document.getElementById('xpfill').style.width=xpPct+'%';
+  document.getElementById('xpfill').style.background=t.c1;
+  document.getElementById('xpnum').textContent=c.xp===Infinity?'MAX':`${Math.floor(S.xp)}/${c.xp}`;
+  document.getElementById('chint').textContent=`+${clickVal()} монет за клик`;
+  // upgrades
+  const ul=document.getElementById('upg-list');ul.innerHTML='';
+  UPGRADES.forEach(u=>{
+    const lvl=S.ul[u.id]||0,price=upgPrice(u),maxed=lvl>=u.ml,can=S.coins>=price&&!maxed;
+    ul.innerHTML+=`<div class="upg-item">
+      <div class="upg-icon">${u.emoji}</div>
+      <div class="upg-info"><div class="upg-name">${u.name} <span style="font-size:9px;opacity:.5">ур.${lvl}/${u.ml}</span></div>
+      <div class="upg-desc">${u.desc} · +${u.ca}/с +${u.ka}/клик</div></div>
+      <button class="buy-btn ${can?'afford':''}" onclick="buyUpg('${u.id}')" ${maxed||!can?'disabled':''}>${maxed?'MAX':fmt(price)+'💰'}</button>
+    </div>`;
+  });
+  // tournaments
+  const tl=document.getElementById('tourn-list');tl.innerHTML='';
+  TOURNAMENTS.forEach(t2=>{
+    const unl=S.cl>=t2.mc,can=S.coins>=t2.fee&&unl;
+    tl.innerHTML+=`<div class="tourn-item">
+      <div class="t-row"><div class="t-name">${unl?t2.name:'🔒 '+t2.name}</div><div class="t-fee">${fmt(t2.fee)}💰</div></div>
+      <div class="t-info">Приз: ${fmt(t2.cr)}💰 · +${t2.xpr} XP · Шанс: ~${Math.round(winChance(t2)*100)}%</div>
+      <button class="enter-btn ${can?'ready':''}" onclick="enterTournament('${t2.id}')" ${!can?'disabled':''}>${!unl?'Откр.: '+CAREERS[t2.mc].name:can?'Участвовать':'Мало монет'}</button>
+    </div>`;
+  });
+  // achievements
+  const al=document.getElementById('ach-list');al.innerHTML='';
+  ACHIEVEMENTS.forEach(a=>{
+    const done=S.ua.includes(a.id);
+    al.innerHTML+=`<div class="ach-item ${done?'':'locked'}">
+      <div class="ach-icon">${a.emoji}</div>
+      <div><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div></div>
+      ${done?'<span style="font-size:13px;margin-left:auto">✅</span>':''}
+    </div>`;
+  });
+  if(S.offer)renderOfferBanner();
+}
+
+// ── ONBOARDING ───────────────────────────────────────────────────────────────
+function buildOnboard(){
+  const g=document.getElementById('teams-grid');g.innerHTML='';
+  TEAMS.forEach(t=>{
+    g.innerHTML+=`<div class="team-card" id="tc-${t.id}" onclick="selTeamFn('${t.id}')">
+      <div class="tc-bar" style="background:linear-gradient(90deg,${t.c1} 60%,${t.c2})"></div>
+      <div class="tc-name">${t.n}</div>
+      <div class="tc-bonus">${t.bonus}</div>
+      ${t.academy?`<div class="academy-badge">🎓 ${t.aname}</div>`:''}
+    </div>`;
+  });
+  selTeamFn('redbull');
+}
+function selTeamFn(id){
+  selTeam=id;
+  document.querySelectorAll('.team-card').forEach(el=>el.classList.remove('sel'));
+  const t=TEAMS.find(x=>x.id===id);
+  const card=document.getElementById('tc-'+id);
+  if(card){card.classList.add('sel');card.style.borderColor=t.c1;}
+  const btn=document.getElementById('start-btn');
+  btn.style.background=t.c1;btn.style.color=t.c2;
+}
+function startGame(){
+  const n=document.getElementById('pname').value.trim()||'Гонщик';
+  const t=TEAMS.find(x=>x.id===selTeam);
+  S.pn=n;S.tid=selTeam;
+  if(t.id==='alpine')S.coins=500;
+  document.getElementById('screen-onboard').classList.add('hidden');
+  document.getElementById('screen-game').classList.remove('hidden');
+  checkOffer();save();render();
+}
+
+// ── PASSIVE INCOME ───────────────────────────────────────────────────────────
+setInterval(()=>{
+  const cps=getCPS();
+  if(cps>0){
+    S.coins+=cps/20;S.tce+=cps/20;
+    addXP(0.04);checkOffer();checkAch();render();
+  }
+},50);
+setInterval(save,4000);
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+load();
+if(typeof Telegram!=='undefined'&&Telegram.WebApp){
+  Telegram.WebApp.ready();
+  Telegram.WebApp.expand();
+}
+if(S.pn){
+  document.getElementById('screen-onboard').classList.add('hidden');
+  document.getElementById('screen-game').classList.remove('hidden');
+  if(S.offer)renderOfferBanner();
+  render();
+} else {
+  buildOnboard();
+}
+</script>
+</body>
+</html>
