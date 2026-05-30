@@ -2777,8 +2777,9 @@ let _carSpeed=0;      // 0..1 текущая скорость
 let _wheelRot=0;      // угол вращения колёс
 let _roadOffset=0;    // смещение дорожной разметки
 let _lastClickTs=0;
-let _animLast=performance.now();
+let _animLast=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
 function carAnimLoop(now){
+  if(now===undefined)now=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
   const dt=Math.min(0.05,(now-_animLast)/1000);_animLast=now;
   // затухание скорости, если давно не кликали
   const sinceClick=Date.now()-_lastClickTs;
@@ -2799,9 +2800,9 @@ function carAnimLoop(now){
       }
     }catch(e){}
   }
-  requestAnimationFrame(carAnimLoop);
+  if(typeof requestAnimationFrame!=='undefined')requestAnimationFrame(carAnimLoop);
 }
-requestAnimationFrame(carAnimLoop);
+try{if(typeof requestAnimationFrame!=='undefined')requestAnimationFrame(carAnimLoop);}catch(e){}
 
 
 // тикер бустов: каждую секунду обновляем таймеры и ловим истечение
@@ -2825,45 +2826,56 @@ setInterval(()=>{
 // ── INIT ─────────────────────────────────────────────────────────────────────
 let _pendingReferrer=null;
 async function init(){
-  // Получаем Telegram User ID
-  if(typeof Telegram!=='undefined'&&Telegram.WebApp){
-    Telegram.WebApp.ready();
-    Telegram.WebApp.expand();
-    const user=Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user;
-    if(user&&user.id){
-      S.userId=user.id;
-      // Если есть имя в Telegram — предзаполняем
-      if(!S.pn&&user.first_name)document.getElementById('pname').value=user.first_name;
+  // Получаем Telegram User ID (в обёртке — на некоторых клиентах API может отличаться)
+  try{
+    if(typeof Telegram!=='undefined'&&Telegram.WebApp){
+      Telegram.WebApp.ready();
+      Telegram.WebApp.expand();
+      const user=Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user;
+      if(user&&user.id){
+        S.userId=user.id;
+        if(!S.pn&&user.first_name){const pn=document.getElementById('pname');if(pn)pn.value=user.first_name;}
+      }
+      const sp=Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.start_param;
+      if(sp&&/^\d+$/.test(sp))_pendingReferrer=parseInt(sp,10);
     }
-    // реферальный параметр из ссылки t.me/Bot/App?startapp=<referrerId>
-    const sp=Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.start_param;
-    if(sp&&/^\d+$/.test(sp))_pendingReferrer=parseInt(sp,10);
-  }
+  }catch(e){}
 
-  // Загружаем локально сначала (быстро)
-  load();
+  // Загружаем локально сначала (быстро) — это никогда не должно падать
+  try{load();}catch(e){}
 
-  // Затем грузим из облака если есть userId
+  // Затем грузим из облака если есть userId — с таймаутом, чтобы не зависнуть на белом экране
   if(S.userId){
-    const loaded=await cloudLoad(S.userId);
-    if(loaded){
-      // Прогресс загружен из облака
-    }
+    try{
+      const timeout=new Promise(res=>setTimeout(()=>res(false),5000));
+      await Promise.race([cloudLoad(S.userId).catch(()=>false),timeout]);
+    }catch(e){}
   }
 
-  if(S.pn){
-    document.getElementById('screen-onboard').classList.add('hidden');
-    document.getElementById('screen-game').classList.remove('hidden');
-    claimOffline(); // начисляем доход за время отсутствия
-    if(_pendingReferrer)setTimeout(tryClaimReferral,1000); // если зашёл по реф-ссылке
-    if(S.offer)renderOfferBanner();
-    render();
-  } else {
-    buildOnboard();
+  // Гарантированно показываем экран — даже если что-то выше упало
+  try{
+    if(S.pn){
+      document.getElementById('screen-onboard').classList.add('hidden');
+      document.getElementById('screen-game').classList.remove('hidden');
+      try{claimOffline();}catch(e){}
+      if(_pendingReferrer)setTimeout(()=>{try{tryClaimReferral();}catch(e){}},1000);
+      if(S.offer){try{renderOfferBanner();}catch(e){}}
+      render();
+    } else {
+      buildOnboard();
+    }
+  }catch(e){
+    // Последний резерв: если даже отрисовка упала — показываем онбординг
+    try{buildOnboard();}catch(e2){}
   }
 }
 
-init();
+// Запускаем после полной загрузки DOM (на iOS скрипт может выполниться до готовности элементов)
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',init);
+}else{
+  init();
+}
 </script>
 </body>
 </html>
