@@ -12,8 +12,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* ONBOARD */
 #screen-onboard{padding:16px;display:flex;flex-direction:column;gap:12px}
-.ob-title{font-size:22px;font-weight:600;text-align:center;margin-top:8px}
-.ob-sub{font-size:12px;color:rgba(255,255,255,0.5);text-align:center}
+.ob-hero{text-align:center;padding:18px 14px 16px;border-radius:18px;background:linear-gradient(160deg,rgba(255,107,0,0.15),rgba(100,40,180,0.12),rgba(20,20,40,0.3));border:1px solid rgba(255,255,255,0.08);margin-bottom:2px}
+.ob-hero-emoji{font-size:48px;line-height:1;animation:heroBob 2.4s ease-in-out infinite}
+@keyframes heroBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(3deg)}}
+.ob-title{font-size:26px;font-weight:800;text-align:center;margin-top:6px;letter-spacing:.5px;background:linear-gradient(90deg,#ff6b00,#ffd54a);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.ob-sub{font-size:12px;color:rgba(255,255,255,0.55);text-align:center;margin-top:2px}
+.ob-features{display:flex;justify-content:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.ob-feat{font-size:10px;color:rgba(255,255,255,0.75);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:5px 10px;display:flex;align-items:center;gap:4px}
+.ob-feat span{font-size:13px}
 .ob-label{font-size:12px;color:rgba(255,255,255,0.6);font-weight:500}
 .ob-input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;font-size:15px;outline:none}
 .ob-input:focus{border-color:rgba(255,255,255,0.35)}
@@ -191,8 +197,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <!-- ОНБОРДИНГ -->
 <div id="screen-onboard">
-  <div class="ob-title">🏁 F1 Career</div>
-  <div class="ob-sub">Путь от картинга до Формулы 1 · Сезон 2026</div>
+  <div class="ob-hero">
+    <div class="ob-hero-emoji">🏎️</div>
+    <div class="ob-title">F1 Career</div>
+    <div class="ob-sub">Путь от картинга до Формулы 1 · Сезон 2026</div>
+    <div class="ob-features">
+      <div class="ob-feat"><span>👆</span> Кликай и зарабатывай</div>
+      <div class="ob-feat"><span>🔧</span> Прокачивай болид</div>
+      <div class="ob-feat"><span>🏆</span> Стань чемпионом</div>
+    </div>
+  </div>
   <div class="ob-label">Имя гонщика</div>
   <input class="ob-input" id="pname" type="text" placeholder="Введи имя..." maxlength="20">
   <div class="ob-label">Выбери команду</div>
@@ -225,6 +239,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div style="font-size:17px;font-weight:700;margin-bottom:14px;text-align:center">⚙️ Настройки</div>
         <div id="settings-body"></div>
         <button class="modal-btn" style="width:100%;margin-top:14px" onclick="closeSettings()">Закрыть</button>
+      </div>
+    </div>
+
+    <!-- ТУТОРИАЛ (оверлей) -->
+    <div id="tutorial-overlay" class="modal-overlay">
+      <div class="modal-box" style="max-width:330px">
+        <div id="tut-emoji" style="font-size:44px;margin-bottom:10px"></div>
+        <div id="tut-title" style="font-size:18px;font-weight:700;margin-bottom:6px"></div>
+        <div id="tut-text" style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.6;margin-bottom:16px"></div>
+        <div id="tut-dots" style="display:flex;gap:5px;justify-content:center;margin-bottom:14px"></div>
+        <div style="display:flex;gap:8px">
+          <button onclick="tutSkip()" style="flex:1;padding:10px;border-radius:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer">Пропустить</button>
+          <button id="tut-next" onclick="tutNext()" style="flex:2;padding:10px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer">Далее →</button>
+        </div>
       </div>
     </div>
 
@@ -327,9 +355,9 @@ const TEAMS=[
 
 const CAREERS=[
   {id:'karting',name:'Картинг',   xp:4000,    cm:1,  ct:0},
-  {id:'f4',     name:'Формула 4', xp:15000,   cm:3,  ct:1},
-  {id:'f3',     name:'Формула 3', xp:60000,   cm:7,  ct:2},
-  {id:'f2',     name:'Формула 2', xp:200000,  cm:16, ct:3},
+  {id:'f4',     name:'Формула 4', xp:12000,   cm:3,  ct:1},
+  {id:'f3',     name:'Формула 3', xp:30000,   cm:7,  ct:2},
+  {id:'f2',     name:'Формула 2', xp:65000,   cm:16, ct:3},
   {id:'f1',     name:'Формула 1', xp:Infinity,cm:38, ct:4},
 ];
 
@@ -624,7 +652,7 @@ async function loadLeaderboard(){
 let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:null,tw_ids:[],userId:null,
   daily:{last:0,streak:0},quests:[],shop:[],equipped:null,lastSeen:0,boosts:{},
   referredBy:null,refCount:0,bestStreak:0,refClaimed:false,season:null,seasonTitles:0,
-  sound:true,vibro:true,legacyPoints:0,prestigeCount:0};
+  sound:true,vibro:true,legacyPoints:0,prestigeCount:0,tutDone:false};
 let selTeam='redbull';
 
 function load(){
@@ -640,6 +668,7 @@ function load(){
   if(typeof S.vibro!=='boolean')S.vibro=true;
   if(typeof S.legacyPoints!=='number')S.legacyPoints=0;
   if(typeof S.prestigeCount!=='number')S.prestigeCount=0;
+  if(typeof S.tutDone!=='boolean')S.tutDone=false;
   if(S.season&&S.season.lvl!==S.cl)S.season=null; // сезон чужого уровня — сброс
   if(S.quests.length===0)initQuests();
 }
@@ -820,7 +849,7 @@ function doClick(e){
   let coins=v;
   if(T().id==='williams')coins=Math.floor(coins*0.8);
   S.coins+=coins;S.tce+=coins;S.tc++;
-  addXP(1);checkOffer();floatNum('+'+coins,e.clientX,e.clientY);
+  addXP(1+S.cl);checkOffer();floatNum('+'+coins,e.clientX,e.clientY);
   playSound('click');haptic('light');spawnExhaust(e);
   checkAch();save();render();
 }
@@ -1535,6 +1564,10 @@ function openSettings(){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${teamGrid}</div>
       <div style="font-size:10px;color:rgba(255,255,255,0.4)">Меняет цвет болида и бонусы команды</div>
     </div>
+    <div class="set-row" style="flex-direction:column;align-items:stretch;gap:6px">
+      <span>📖 Обучение</span>
+      <button onclick="closeSettings();startTutorial()" style="padding:10px;border-radius:9px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:12px;cursor:pointer;font-weight:600">Показать туториал</button>
+    </div>
     <div class="set-row" style="flex-direction:column;align-items:stretch;gap:6px;border-bottom:none">
       <span style="color:#ff7a6b">⚠️ Опасная зона</span>
       <button onclick="resetProgress()" style="padding:10px;border-radius:9px;background:rgba(255,60,50,0.15);border:1px solid rgba(255,60,50,0.4);color:#ff7a6b;font-weight:600;font-size:12px;cursor:pointer">Сбросить весь прогресс</button>
@@ -1542,6 +1575,46 @@ function openSettings(){
   document.getElementById('settings-overlay').classList.add('show');
 }
 function closeSettings(){document.getElementById('settings-overlay').classList.remove('show');}
+
+// ── ТУТОРИАЛ ──────────────────────────────────────────────────────────────────
+const TUT_STEPS=[
+  {e:'🏎️',t:'Добро пожаловать!',x:'Ты начинающий гонщик. Цель — пройти путь от картинга до Формулы 1. Поехали!'},
+  {e:'👆',t:'Кликай по болиду',x:'Каждый тап по болиду приносит монеты и опыт (XP). Это основа всего — жми почаще!'},
+  {e:'🔧',t:'Прокачивай болид',x:'На монеты покупай апгрейды во вкладке «Апгрейды». Они дают монеты за клик и пассивный доход (м/сек).'},
+  {e:'🏁',t:'Турниры и Сезон',x:'Участвуй в турнирах за монеты и XP, а в «Сезоне» борись за титул чемпиона. Шанс победы зависит от прокачки болида!'},
+  {e:'⬆️',t:'Переход на новый уровень',x:'Чтобы перейти в Формулу 4, набери XP, прокачай болид на 70% и выиграй все турниры уровня. Условия видны под кликером.'},
+  {e:'🎁',t:'Заходи каждый день',x:'Ежедневный бонус, контракты, гараж с бустами и оффлайн-доход помогут расти быстрее. Удачи на трассе!'},
+];
+let _tutStep=0;
+function startTutorial(){
+  _tutStep=0;
+  renderTutStep();
+  document.getElementById('tutorial-overlay').classList.add('show');
+}
+function renderTutStep(){
+  const s=TUT_STEPS[_tutStep];if(!s)return;
+  const t=T();
+  document.getElementById('tut-emoji').textContent=s.e;
+  document.getElementById('tut-title').textContent=s.t;
+  document.getElementById('tut-text').textContent=s.x;
+  // точки прогресса
+  document.getElementById('tut-dots').innerHTML=TUT_STEPS.map((_,i)=>
+    `<span style="width:7px;height:7px;border-radius:50%;background:${i===_tutStep?t.c2:'rgba(255,255,255,0.2)'}"></span>`).join('');
+  const btn=document.getElementById('tut-next');
+  btn.style.background=t.c1;btn.style.color=t.c2;
+  btn.textContent=_tutStep>=TUT_STEPS.length-1?'Начать! 🏁':'Далее →';
+}
+function tutNext(){
+  haptic('light');
+  _tutStep++;
+  if(_tutStep>=TUT_STEPS.length){tutFinish();return;}
+  renderTutStep();
+}
+function tutSkip(){tutFinish();}
+function tutFinish(){
+  document.getElementById('tutorial-overlay').classList.remove('show');
+  S.tutDone=true;save();
+}
 function toggleSetting(key){
   S[key]=!S[key];
   if(key==='sound'&&S.sound)playSound('click'); // подтверждение
@@ -2011,6 +2084,8 @@ function startGame(){
   checkOffer();save();render();
   // новый игрок пришёл по реф-ссылке — начисляем бонус (после создания записи в БД)
   if(_pendingReferrer)setTimeout(tryClaimReferral,1200);
+  // показываем туториал новичку
+  if(!S.tutDone)setTimeout(startTutorial,400);
 }
 
 // ── PASSIVE INCOME ───────────────────────────────────────────────────────────
