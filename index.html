@@ -241,16 +241,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="tabs">
       <div class="tab active" onclick="switchTab('upgrades')">Апгрейды</div>
       <div class="tab" onclick="switchTab('tournaments')">Турниры</div>
-      <div class="tab" onclick="switchTab('contracts')">📋 Контракты<span class="tab-dot" id="contracts-dot"></span></div>
+      <div class="tab" onclick="switchTab('season')">🏆 Сезон</div>
+      <div class="tab" onclick="switchTab('contracts')">📋<span class="tab-dot" id="contracts-dot"></span></div>
     </div>
     <div class="tabs row2">
       <div class="tab" onclick="switchTab('garage')">🔧 Гараж</div>
       <div class="tab" onclick="switchTab('achievements')">Достижения</div>
-      <div class="tab" onclick="switchTab('leaderboard')">🏆 Топ</div>
+      <div class="tab" onclick="switchTab('leaderboard')">📊 Топ</div>
     </div>
 
     <div class="panel" id="panel-upgrades"><div class="panel-title">Запчасти</div><div id="upg-list"></div></div>
     <div class="panel hidden" id="panel-tournaments"><div class="panel-title">Турниры</div><div id="tourn-list"></div></div>
+    <div class="panel hidden" id="panel-season"><div class="panel-title">Чемпионат сезона</div><div id="season-body"></div></div>
     <div class="panel hidden" id="panel-contracts"><div class="panel-title">Спонсорские контракты</div><div id="quest-list"></div></div>
     <div class="panel hidden" id="panel-garage"><div class="panel-title">Гараж</div><div id="garage-list"></div></div>
     <div class="panel hidden" id="panel-achievements"><div class="panel-title">Достижения</div><div id="ach-list"></div></div>
@@ -352,6 +354,33 @@ function getTournaments(){return TOURNAMENTS_BY_LEVEL[S.cl]||[];}
 // Совместимость — для winChance и enterTournament
 const TOURNAMENTS=TOURNAMENTS_BY_LEVEL.flat();
 
+// ── СЕЗОН-ЧЕМПИОНАТ ──────────────────────────────────────────────────────────
+const SEASON_RACES=10;
+// Очки за позицию (система F1: топ-10)
+const F1_POINTS=[25,18,15,12,10,8,6,4,2,1];
+// ИИ-соперники по уровням карьеры. str — «сила» (0..1), влияет на их средний результат.
+const SEASON_RIVALS=[
+  // Картинг
+  [{n:'Кузнецов',str:0.55},{n:'Орлов',str:0.50},{n:'Беляев',str:0.45},{n:'Громов',str:0.40},{n:'Зайцев',str:0.35}],
+  // Ф4
+  [{n:'M. Vinter',str:0.60},{n:'L. Brandt',str:0.55},{n:'R. Sato',str:0.50},{n:'D. Costa',str:0.45},{n:'A. Petrov',str:0.40}],
+  // Ф3
+  [{n:'T. Hoffmann',str:0.66},{n:'C. Moreau',str:0.60},{n:'V. Rossi',str:0.55},{n:'K. Andersson',str:0.50},{n:'J. Park',str:0.45}],
+  // Ф2
+  [{n:'E. Marchetti',str:0.72},{n:'S. Müller',str:0.66},{n:'N. Dubois',str:0.60},{n:'H. Yamada',str:0.55},{n:'O. Larsen',str:0.50}],
+  // Ф1
+  [{n:'Verstappen',str:0.80},{n:'Leclerc',str:0.74},{n:'Norris',str:0.70},{n:'Russell',str:0.66},{n:'Hamilton',str:0.62}],
+];
+// Награды за чемпионство по уровням (монеты, XP)
+const SEASON_REWARD=[
+  {coins:3000,    xp:150},
+  {coins:25000,   xp:600},
+  {coins:120000,  xp:1800},
+  {coins:600000,  xp:5000},
+  {coins:3000000, xp:12000},
+];
+function seasonRivals(){return SEASON_RIVALS[S.cl]||SEASON_RIVALS[0];}
+
 const ACHIEVEMENTS=[
   {id:'c1',  name:'Первый клик',  desc:'Нажми на машину',     emoji:'👆',chk:s=>s.tc>=1},
   {id:'c100',name:'100 кликов',   desc:'Не останавливайся',   emoji:'💪',chk:s=>s.tc>=100},
@@ -365,6 +394,7 @@ const ACHIEVEMENTS=[
   {id:'streak7',name:'Железная воля',desc:'Стрик входа 7 дней',    emoji:'🔥',chk:s=>s.daily&&s.daily.streak>=7},
   {id:'shop1', name:'Тюнинг',       desc:'Купи предмет в гараже',  emoji:'🛍️',chk:s=>s.shop&&s.shop.length>=1},
   {id:'boost1',name:'Форсаж',       desc:'Активируй буст',         emoji:'🚀',chk:s=>s.boosts&&Object.keys(s.boosts).length>=1},
+  {id:'champ1',name:'Чемпион',      desc:'Выиграй чемпионат сезона',emoji:'🏆',chk:s=>(s.seasonTitles||0)>=1},
 ];
 
 // ── ГАРАЖ: косметика и буст-предметы ─────────────────────────────────────────
@@ -521,7 +551,7 @@ async function loadLeaderboard(){
 // tw_ids — турниры в которых побеждали хотя бы раз (для условия перехода)
 let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:null,tw_ids:[],userId:null,
   daily:{last:0,streak:0},quests:[],shop:[],equipped:null,lastSeen:0,boosts:{},
-  referredBy:null,refCount:0,bestStreak:0,refClaimed:false};
+  referredBy:null,refCount:0,bestStreak:0,refClaimed:false,season:null,seasonTitles:0};
 let selTeam='redbull';
 
 function load(){
@@ -533,6 +563,7 @@ function load(){
   if(typeof S.equipped==='undefined')S.equipped=null;
   if(typeof S.lastSeen!=='number')S.lastSeen=0;
   if(!S.boosts||typeof S.boosts!=='object')S.boosts={};
+  if(S.season&&S.season.lvl!==S.cl)S.season=null; // сезон чужого уровня — сброс
   if(S.quests.length===0)initQuests();
 }
 function save(){
@@ -635,6 +666,7 @@ function promote(){
   S.cl++;
   S.offer=null;
   S.tw_ids=[]; // сбрасываем победы турниров для нового уровня
+  S.season=null; // сезон привязан к уровню — сбрасываем
 
   // Сбрасываем апгрейды — но монеты и опыт остаются
   S.ul={};
@@ -699,6 +731,82 @@ function enterTournament(id){
     showModal('😤','Не повезло...',`+${fmt(c)} монет утешения. Прокачай болид и попробуй снова!`);
   }
   checkOffer();checkAch();save();render();
+}
+
+// ── СЕЗОН-ЧЕМПИОНАТ ──────────────────────────────────────────────────────────
+function startSeason(){
+  const rivals=seasonRivals();
+  S.season={
+    lvl:S.cl,
+    race:0,                       // сыграно этапов
+    mePts:0,
+    rivalPts:rivals.map(()=>0),
+    lastResults:null,             // результаты последнего этапа [{name,pos,pts,isMe}]
+    done:false
+  };
+  save();render();
+}
+// сила игрока в гонке: прокачка болида + бонусы + опыт
+function playerRaceStrength(){
+  const t=T();
+  let s=0.25+upgradeProgress()*0.6;     // 0.25..0.85 от прокачки
+  if(t.id==='haas'||t.id==='cadillac')s+=0.05;
+  if(t.id==='redbull')s+=0.03;
+  s+=Math.min(S.tw,30)*0.002;           // опыт, до +0.06
+  s+=luckBoostAdd();                    // «Дождь удачи» помогает и тут
+  return Math.min(0.95,s);
+}
+function raceStep(){
+  if(!S.season||S.season.done)return;
+  const rivals=seasonRivals();
+  // ролл результата = база ± рандом
+  const roll=str=>str*0.55+Math.random()*0.8; // база по силе + весомый рандом (драма)
+  const grid=[];
+  grid.push({name:S.pn||'Ты',isMe:true,roll:roll(playerRaceStrength())});
+  rivals.forEach((r,i)=>grid.push({name:r.n,isMe:false,idx:i,roll:roll(r.str)}));
+  // сортируем по убыванию ролла → позиции
+  grid.sort((a,b)=>b.roll-a.roll);
+  const results=grid.map((g,pos)=>{
+    const pts=F1_POINTS[pos]||0;
+    if(g.isMe)S.season.mePts+=pts;
+    else S.season.rivalPts[g.idx]+=pts;
+    return {name:g.name,pos:pos+1,pts,isMe:g.isMe};
+  });
+  S.season.lastResults=results;
+  S.season.race++;
+  // небольшой приз за участие в этапе
+  const myPos=results.find(r=>r.isMe).pos;
+  const stageCoins=Math.floor((SEASON_REWARD[S.cl]?.coins||3000)*0.03*(7-Math.min(myPos,6)));
+  if(stageCoins>0){S.coins+=stageCoins;S.tce+=stageCoins;}
+  addXP(Math.floor((SEASON_REWARD[S.cl]?.xp||150)*0.05));
+  if(S.season.race>=SEASON_RACES)finishSeason();
+  checkAch();save();render();
+}
+function seasonStandings(){
+  if(!S.season)return [];
+  const rivals=seasonRivals();
+  const rows=[{name:S.pn||'Ты',pts:S.season.mePts,isMe:true}];
+  rivals.forEach((r,i)=>rows.push({name:r.n,pts:S.season.rivalPts[i],isMe:false}));
+  rows.sort((a,b)=>b.pts-a.pts);
+  return rows;
+}
+function finishSeason(){
+  S.season.done=true;
+  const standings=seasonStandings();
+  const myPos=standings.findIndex(r=>r.isMe)+1;
+  const rew=SEASON_REWARD[S.cl]||SEASON_REWARD[0];
+  if(myPos===1){
+    S.coins+=rew.coins;S.tce+=rew.coins;addXP(rew.xp);
+    S.seasonTitles=(S.seasonTitles||0)+1;
+    showModal('🏆','ЧЕМПИОН СЕЗОНА!',`${S.pn}, ты выиграл чемпионат ${C().name}! Награда: +${fmt(rew.coins)} монет, +${rew.xp} XP. Титулов: ${S.seasonTitles}.`);
+  } else if(myPos<=3){
+    const c=Math.floor(rew.coins*0.4);S.coins+=c;S.tce+=c;addXP(Math.floor(rew.xp*0.4));
+    showModal('🥈',`${myPos}-е место в чемпионате`,`Призовое место! +${fmt(c)} монет, +${Math.floor(rew.xp*0.4)} XP. В следующий раз — за титулом!`);
+  } else {
+    const c=Math.floor(rew.coins*0.15);S.coins+=c;S.tce+=c;
+    showModal('🏁',`Сезон завершён: ${myPos}-е место`,`+${fmt(c)} монет. Прокачай болид и побори за титул в новом сезоне!`);
+  }
+  checkAch();save();render();
 }
 function buyUpg(id){
   const u=UPGRADES.find(x=>x.id===id);if(!u)return;
@@ -1117,7 +1225,7 @@ function drawF1(ctx,W,H,c1,c2,num,dr){
 }
 
 // ── UI ───────────────────────────────────────────────────────────────────────
-const ALL_TABS=['upgrades','tournaments','contracts','garage','achievements','leaderboard'];
+const ALL_TABS=['upgrades','tournaments','season','contracts','garage','achievements','leaderboard'];
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>{
     const tn=(t.getAttribute('onclick').match(/'([^']+)'/)||[])[1];
@@ -1125,6 +1233,59 @@ function switchTab(name){
   });
   ALL_TABS.forEach(n=>{document.getElementById('panel-'+n).classList.toggle('hidden',n!==name);});
   if(name==='leaderboard')renderLeaderboard();
+  if(name==='season')renderSeason();
+}
+
+function renderSeason(){
+  const el=document.getElementById('season-body');
+  if(!el)return;
+  const t=T();
+  const rew=SEASON_REWARD[S.cl]||SEASON_REWARD[0];
+  // нет активного сезона — экран старта
+  if(!S.season){
+    el.innerHTML=`<div style="text-align:center;padding:6px 0">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px">Чемпионат ${C().name}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.6);line-height:1.6;margin-bottom:12px">
+        ${SEASON_RACES} Гран-при против 5 соперников. Результат зависит от прокачки болида.<br>
+        Стань чемпионом → <b style="color:${t.c2}">+${fmt(rew.coins)}💰 +${rew.xp} XP</b> и титул в профиль.
+      </div>
+      <button onclick="startSeason()" style="width:100%;padding:11px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:${t.c1};color:${t.c2}">🏁 Начать сезон</button>
+      ${S.seasonTitles?`<div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:8px">Титулов чемпиона: ${S.seasonTitles}</div>`:''}
+    </div>`;
+    return;
+  }
+  const standings=seasonStandings();
+  const myPos=standings.findIndex(r=>r.isMe)+1;
+  // таблица чемпионата
+  let table=`<div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:5px">
+    <span>Этап ${Math.min(S.season.race,SEASON_RACES)} / ${SEASON_RACES}</span><span>Очки</span></div>`;
+  table+=standings.map((r,i)=>{
+    const medal=['🥇','🥈','🥉'][i]||`${i+1}.`;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;margin-bottom:2px;${r.isMe?`background:${t.c1}22;border:1px solid ${t.c1}44`:''}">
+      <span style="width:22px;font-size:12px">${medal}</span>
+      <span style="flex:1;font-size:12px;font-weight:${r.isMe?'700':'500'};color:${r.isMe?t.c2:'#fff'}">${r.name}${r.isMe?' (ты)':''}</span>
+      <span style="font-size:13px;font-weight:700">${r.pts}</span>
+    </div>`;
+  }).join('');
+  // результаты последнего этапа
+  let last='';
+  if(S.season.lastResults){
+    const me=S.season.lastResults.find(r=>r.isMe);
+    last=`<div style="margin-top:10px;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:11px">
+      <span style="color:rgba(255,255,255,0.5)">Последний этап:</span> ты финишировал <b style="color:${t.c2}">${me.pos}-м</b> (+${me.pts} очк.)
+    </div>`;
+  }
+  // управление
+  let ctrl;
+  if(S.season.done){
+    ctrl=`<div style="margin-top:12px;padding:10px;background:${myPos===1?'rgba(255,215,0,0.12)':'rgba(255,255,255,0.05)'};border-radius:10px;text-align:center">
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px">${myPos===1?'🏆 Ты — чемпион!':`Итог: ${myPos}-е место`}</div>
+        <button onclick="startSeason()" style="width:100%;padding:10px;border:none;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;background:${t.c1};color:${t.c2}">Новый сезон</button>
+      </div>`;
+  } else {
+    ctrl=`<button onclick="raceStep()" style="width:100%;margin-top:12px;padding:11px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:${t.c1};color:${t.c2}">▶ Следующий этап (${S.season.race+1}/${SEASON_RACES})</button>`;
+  }
+  el.innerHTML=table+last+ctrl;
 }
 
 async function renderLeaderboard(){
@@ -1177,6 +1338,7 @@ function playerTitles(){
   if(S.tw>=10)titles.push('🥇 Серийный победитель');
   if((S.bestStreak||0)>=7)titles.push('🔥 Железная воля');
   if((S.refCount||0)>=1)titles.push('👥 Амбассадор');
+  if((S.seasonTitles||0)>=1)titles.push(`🏆 Чемпион ×${S.seasonTitles}`);
   if(SHOP_ITEMS.filter(i=>i.type==='cosmetic').every(i=>S.shop.includes(i.id)))titles.push('💎 Коллекционер');
   return titles;
 }
@@ -1331,6 +1493,7 @@ function render(){
   renderDailyBanner();
   updateContractsBadge();
   renderActiveBoosts();
+  try{if(!document.getElementById('panel-season').classList.contains('hidden'))renderSeason();}catch(e){}
   if(S.offer)renderOfferBanner();
   }catch(e){console.log('render err',e);}
 }
