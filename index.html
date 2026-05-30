@@ -320,14 +320,14 @@ body.modal-open{overflow:hidden}
     </div>
 
     <div class="tabs">
-      <div class="tab active" onclick="switchTab('upgrades')">Апгрейды</div>
-      <div class="tab" onclick="switchTab('tournaments')">Турниры</div>
+      <div class="tab active" onclick="switchTab('upgrades')">⚙️ Апгрейды</div>
+      <div class="tab" onclick="switchTab('tournaments')">🏎️ Турниры</div>
       <div class="tab" onclick="switchTab('season')">🏆 Сезон</div>
       <div class="tab" onclick="switchTab('contracts')">📋 Контр.<span class="tab-dot" id="contracts-dot"></span></div>
     </div>
     <div class="tabs row2">
       <div class="tab" onclick="switchTab('garage')">🔧 Гараж</div>
-      <div class="tab" onclick="switchTab('achievements')">Достижения</div>
+      <div class="tab" onclick="switchTab('achievements')">🎖️ Достижения</div>
       <div class="tab" onclick="switchTab('leaderboard')">📊 Топ</div>
     </div>
     <div class="tabs row2">
@@ -1970,31 +1970,91 @@ function drawF2(ctx,W,H,c1,c2,num,dr,drv){
 }
 
 function drawF1(ctx,W,H,c1,c2,num,dr,drv){
-  const sc=W/500,gnd2=Math.floor(H*0.82/sc);
+  const sc=W/500,gnd2=Math.floor(H*0.80/sc);
   ctx.save();ctx.scale(sc,sc);
   drawBgSmall(ctx,500,H/sc,gnd2);
-  const RR=30,RI=17,FR=23,rWx=70,fWx=418,bx1=rWx+24,bx2=fWx-22;
-  ctx.fillStyle=dc(c1,10);ctx.beginPath();ctx.moveTo(rWx+26,gnd2-18);ctx.lineTo(rWx+28,gnd2-58);ctx.bezierCurveTo(rWx+60,gnd2-68,rWx+100,gnd2-70,rWx+110,gnd2-68);ctx.lineTo(rWx+110,gnd2-18);ctx.closePath();ctx.fill();
-  ctx.beginPath();ctx.moveTo(fWx-108,gnd2-18);ctx.lineTo(fWx-108,gnd2-62);ctx.bezierCurveTo(fWx-90,gnd2-64,fWx-50,gnd2-58,fWx-26,gnd2-46);ctx.lineTo(fWx-24,gnd2-18);ctx.closePath();ctx.fill();
-  ctx.strokeStyle=dc(c1,28);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(rWx+40,gnd2-56);ctx.lineTo(rWx+40,gnd2-20);ctx.stroke();ctx.beginPath();ctx.moveTo(fWx-88,gnd2-56);ctx.lineTo(fWx-88,gnd2-20);ctx.stroke();
-  ctx.fillStyle=c1;ctx.beginPath();ctx.moveTo(bx1,gnd2-18);ctx.lineTo(rWx+30,gnd2-62);ctx.bezierCurveTo(rWx+80,gnd2-80,rWx+150,gnd2-82,rWx+210,gnd2-80);ctx.lineTo(fWx-150,gnd2-72);ctx.bezierCurveTo(fWx-90,gnd2-64,fWx-46,gnd2-52,bx2,gnd2-18);ctx.closePath();ctx.fill();
-  ctx.fillStyle=lc(c1,20);ctx.beginPath();ctx.moveTo(rWx+34,gnd2-60);ctx.bezierCurveTo(rWx+82,gnd2-78,rWx+152,gnd2-80,rWx+212,gnd2-78);ctx.lineTo(fWx-148,gnd2-70);ctx.lineTo(rWx+34,gnd2-46);ctx.closePath();ctx.fill();
-  ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(rWx+28,gnd2-28);ctx.lineTo(fWx-26,gnd2-26);ctx.lineTo(fWx-27,gnd2-22);ctx.lineTo(rWx+28,gnd2-24);ctx.closePath();ctx.fill();
-  ctx.fillStyle=dc(c1,22);ctx.beginPath();ctx.moveTo(rWx-4,gnd2-20);ctx.lineTo(rWx+26,gnd2-20);ctx.lineTo(rWx+22,gnd2-6);ctx.lineTo(rWx-8,gnd2-6);ctx.closePath();ctx.fill();
-  ctx.strokeStyle='#555';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(rWx+4,gnd2-36);ctx.lineTo(rWx-12,gnd2-28);ctx.stroke();
-  ctx.strokeStyle='#333';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(rWx+4,gnd2-36);ctx.lineTo(rWx-12,gnd2-28);ctx.stroke();
-  rearWing(ctx,rWx,gnd2,gnd2-68,gnd2-96,34,c1,c2);
-  drawNose(ctx,bx2,gnd2-40,gnd2-26,76,c1,c2);
-  frontWing(ctx,bx2+76,gnd2-40,18,c1,c2);
-  const cL=rWx+110,cR=fWx-150,cT=gnd2-86;
-  cockpitRim(ctx,cL,cR,cT,c1);headrest(ctx,cL-2,cT-20,24,20,c1);
-  drawHalo(ctx,cL+(cR-cL)*0.38,cT,c1);
-  ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-12,gnd2-34,9,6,0.5,0,Math.PI*2);ctx.stroke();
-  ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-21,gnd2-34);ctx.lineTo(cR-3,gnd2-34);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-12,gnd2-41);ctx.lineTo(cR-12,gnd2-27);ctx.stroke();
-  const hs=0.44,hx=cL+34,hy=cT+4-32*hs;
+  // Колёса сведены ближе и болид ниже — компактный силуэт сбоку
+  const RR=27,RI=15,FR=22,rWx=95,fWx=395;
+  const G=gnd2;            // уровень земли (низ колёс)
+  const floorY=G-14;       // днище болида
+  const bodyTop=G-44;      // верх корпуса (капот)
+  const noseTip=fWx+40;    // кончик носа
+  const tailX=rWx-44;      // хвост за задним колесом
+
+  // ── ЗАДНЕЕ КРЫЛО на центральном пилоне (позади заднего колеса, не над ним) ──
+  ctx.fillStyle=dc(c1,12);
+  ctx.fillRect(tailX+2,G-74,4,56);              // вертикальный пилон
+  ctx.fillStyle=c2;
+  ctx.beginPath();ctx.moveTo(tailX-10,G-82);ctx.lineTo(tailX+16,G-82);ctx.lineTo(tailX+14,G-70);ctx.lineTo(tailX-10,G-70);ctx.closePath();ctx.fill(); // верхняя плоскость крыла
+  ctx.fillStyle=dc(c1,18);ctx.fillRect(tailX-10,G-68,24,4); // нижний элемент крыла
+
+  // ── ЦЕЛЬНЫЙ КОРПУС: хвост → понтон → нос, одним контуром ──
+  ctx.fillStyle=c1;
+  ctx.beginPath();
+  ctx.moveTo(tailX+10,G-60);                                  // у основания заднего крыла
+  ctx.lineTo(rWx-6,G-58);                                     // моторный отсек
+  ctx.quadraticCurveTo(rWx+14,G-60,rWx+30,G-40);              // спад к понтону
+  ctx.lineTo(rWx+150,G-40);                                   // верх понтона (ровная линия — сиденье/борт)
+  ctx.quadraticCurveTo(rWx+200,G-40,rWx+230,G-44);            // подъём к носовому обтекателю
+  ctx.quadraticCurveTo(fWx-40,G-46,fWx-6,G-40);               // длинный нос
+  ctx.quadraticCurveTo(noseTip-10,G-38,noseTip,G-34);         // кончик носа
+  ctx.lineTo(noseTip,G-24);                                   // низ кончика носа
+  ctx.quadraticCurveTo(fWx-20,G-22,rWx+40,floorY);            // днище вперёд
+  ctx.lineTo(rWx-10,floorY);                                  // плоское днище
+  ctx.lineTo(tailX+10,floorY);                                // к хвосту
+  ctx.closePath();ctx.fill();
+
+  // верхняя подсветка корпуса (объём)
+  ctx.fillStyle=lc(c1,18);
+  ctx.beginPath();
+  ctx.moveTo(rWx+30,G-40);
+  ctx.lineTo(rWx+150,G-40);
+  ctx.quadraticCurveTo(rWx+200,G-40,rWx+230,G-44);
+  ctx.quadraticCurveTo(fWx-40,G-46,fWx-6,G-41);
+  ctx.lineTo(fWx-6,G-37);
+  ctx.lineTo(rWx+30,G-36);
+  ctx.closePath();ctx.fill();
+
+  // боковой понтон-воздухозаборник (характерная деталь F1)
+  ctx.fillStyle=dc(c1,16);
+  ctx.beginPath();
+  ctx.moveTo(rWx+34,G-38);ctx.lineTo(rWx+120,G-38);ctx.lineTo(rWx+120,floorY-1);ctx.lineTo(rWx+44,floorY-1);ctx.closePath();ctx.fill();
+  ctx.fillStyle=dc(c1,30);ctx.beginPath();ctx.moveTo(rWx+34,G-38);ctx.lineTo(rWx+50,G-38);ctx.lineTo(rWx+44,G-24);ctx.lineTo(rWx+30,G-24);ctx.closePath();ctx.fill(); // тёмный вход воздухозаборника
+
+  // акцентная полоса c2 по борту
+  ctx.fillStyle=c2;
+  ctx.beginPath();ctx.moveTo(rWx+40,G-30);ctx.lineTo(fWx-4,G-28);ctx.lineTo(fWx-4,G-25);ctx.lineTo(rWx+40,G-27);ctx.closePath();ctx.fill();
+
+  // ── ПЕРЕДНЕЕ КРЫЛО, слитно с носом ──
+  ctx.fillStyle=c2;
+  ctx.beginPath();ctx.moveTo(noseTip-6,G-24);ctx.lineTo(noseTip+14,G-22);ctx.lineTo(noseTip+14,G-16);ctx.lineTo(noseTip-6,G-17);ctx.closePath();ctx.fill(); // верхний элемент
+  ctx.fillStyle=dc(c1,10);
+  ctx.beginPath();ctx.moveTo(noseTip-8,G-15);ctx.lineTo(noseTip+16,G-15);ctx.lineTo(noseTip+16,G-11);ctx.lineTo(noseTip-8,G-11);ctx.closePath();ctx.fill(); // нижний элемент
+  ctx.fillStyle=dc(c1,4);ctx.fillRect(noseTip+12,G-22,3,11); // законцовка
+
+  // ── ВОЗДУХОЗАБОРНИК НАД ГОЛОВОЙ (airbox) ──
+  const cL=rWx+50,cR=rWx+150,cT=G-58;
+  ctx.fillStyle=dc(c1,8);
+  ctx.beginPath();ctx.moveTo(cL+6,G-44);ctx.lineTo(cL+14,cT);ctx.lineTo(cL+30,cT);ctx.lineTo(cL+34,G-44);ctx.closePath();ctx.fill();
+
+  // кокпит-вырез
+  ctx.fillStyle=dc(c1,26);
+  ctx.beginPath();ctx.ellipse(cL+48,G-42,16,7,0,0,Math.PI*2);ctx.fill();
+
+  // halo (дуга безопасности)
+  try{drawHalo(ctx,cL+48,G-50,c1);}catch(e){}
+
+  // шлем пилота в кокпите
+  const hs=0.42,hx=cL+40,hy=G-50-32*hs+4;
   drawHelmet(ctx,hx,hy,hs,c1,c2,drv);
-  numPlate(ctx,(bx1+bx2)/2,gnd2-36,num,dr,c1,c2);
-  wheel(ctx,rWx,gnd2-RR,RR,RI,c2,7);wheel(ctx,fWx,gnd2-FR,FR,RI-4,c2,7);
+
+  // номер на борту
+  numPlate(ctx,(rWx+fWx)/2-6,G-34,num,dr,c1,c2);
+
+  // колёса (широкие слики F1)
+  wheel(ctx,rWx,G-RR,RR,RI,c2,7);
+  wheel(ctx,fWx,G-FR,FR,RI-4,c2,7);
+
   ctx.restore();
 }
 
