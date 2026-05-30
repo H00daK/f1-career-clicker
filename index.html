@@ -1719,7 +1719,7 @@ function drawF3(ctx,W,H,c1,c2,num,dr,drv){
 }
 
 function drawF2(ctx,W,H,c1,c2,num,dr,drv){
-  const sc=W/500,gnd2=Math.floor(H*0.8/sc);
+  const sc=W/500,gnd2=Math.floor(H*0.78/sc);
   ctx.save();ctx.scale(sc,sc);
   drawBgSmall(ctx,500,H/sc,gnd2);
   const RR=28,RI=16,FR=22,rWx=76,fWx=408,bx1=rWx+22,bx2=fWx-22;
@@ -2157,6 +2157,10 @@ function openSettings(){
         <button onclick="adminAddLP(5)" style="padding:9px;border-radius:8px;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:11px;cursor:pointer">⭐ +5 LP</button>
         <button onclick="adminAddXP()" style="padding:9px;border-radius:8px;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:11px;cursor:pointer">📈 +XP уровня</button>
       </div>
+      <div style="font-size:10px;color:#c9a8ff;font-weight:600;margin-top:2px">Выбрать уровень болида:</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${['Картинг','Ф4','Ф3','Ф2','Ф1'].map((nm,i)=>`<button onclick="adminSetLevel(${i})" style="flex:1;min-width:48px;padding:8px 4px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:${S.cl===i?'#7c5aff':'rgba(255,255,255,0.1)'};color:#fff">${nm}</button>`).join('')}
+      </div>
       <div style="font-size:9px;color:rgba(255,255,255,0.4)">Видно только администраторам. Твой ID: ${S.userId||'—'}</div>
     </div>`:''}
     <div class="set-row" style="flex-direction:column;align-items:stretch;gap:6px;border-bottom:none">
@@ -2178,6 +2182,7 @@ function closeSettings(){document.getElementById('settings-overlay').classList.r
 // ── АДМИН-ДЕЙСТВИЯ (только для ADMIN_IDS) ──
 function adminGive(n){if(!isAdmin())return;S.coins+=n;S.tce+=n;toast(`+${fmt(n)}💰`);haptic('success');save();render();openSettings();}
 function adminLevelUp(){if(!isAdmin())return;if(S.cl<4){S.cl++;S.ul={};S.baseClick=0;S.baseCps=0;toast(`Уровень: ${C().name}`);}else toast('Уже Ф1');haptic('success');save();render();openSettings();}
+function adminSetLevel(n){if(!isAdmin())return;n=Math.max(0,Math.min(4,n|0));S.cl=n;S.ul={};S.baseClick=0;S.baseCps=0;S.season=null;S.tw_ids=[];toast(`Уровень: ${C().name}`);haptic('success');save();render();openSettings();}
 function adminMaxUpg(){if(!isAdmin())return;UPGRADES.forEach(u=>S.ul[u.id]=u.ml);toast('Болид прокачан 100%');haptic('success');save();render();openSettings();}
 function adminAddLP(n){if(!isAdmin())return;S.legacyPoints=(S.legacyPoints||0)+n;toast(`+${n} Очков наследия`);haptic('success');save();render();openSettings();}
 function adminAddXP(){if(!isAdmin())return;S.xp+=C().xp;toast('+XP уровня');haptic('success');save();render();openSettings();}
