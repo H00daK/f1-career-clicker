@@ -385,10 +385,10 @@ const TEAMS=[
 ];
 
 const CAREERS=[
-  {id:'karting',name:'Картинг',   xp:4000,    cm:1,  ct:0},
-  {id:'f4',     name:'Формула 4', xp:12000,   cm:3,  ct:1},
-  {id:'f3',     name:'Формула 3', xp:30000,   cm:7,  ct:2},
-  {id:'f2',     name:'Формула 2', xp:65000,   cm:16, ct:3},
+  {id:'karting',name:'Картинг',   xp:11000,   cm:1,  ct:0},
+  {id:'f4',     name:'Формула 4', xp:16500,   cm:3,  ct:1},
+  {id:'f3',     name:'Формула 3', xp:23000,   cm:7,  ct:2},
+  {id:'f2',     name:'Формула 2', xp:29000,   cm:16, ct:3},
   {id:'f1',     name:'Формула 1', xp:Infinity,cm:38, ct:4},
 ];
 
@@ -823,7 +823,9 @@ function getCPS(){
 // фактический пассив с учётом временных бустов (для живого начисления)
 function getEffectiveCPS(){return getCPS()*cpsBoostMult();}
 function upgPrice(u){
-  let p=Math.floor(u.bp*Math.pow(1.7,S.ul[u.id]||0)*lvlMult());
+  // картинг — без наценки (онбординг); с Ф4 и выше базовая цена +15% для усложнения
+  const surge=S.cl===0?1.0:1.15;
+  let p=Math.floor(u.bp*surge*Math.pow(1.7,S.ul[u.id]||0)*lvlMult());
   if(T().id==='audi')p=Math.floor(p*0.94);
   return p;
 }
@@ -872,10 +874,10 @@ function promote(){
   S.tw_ids=[]; // сбрасываем победы турниров для нового уровня
   S.season=null; // сезон привязан к уровню — сбрасываем
 
-  // Сбрасываем апгрейды — но переносим 40% наработанного дохода как стартовую фору
+  // Сбрасываем апгрейды — переносим 30% дохода как стартовую фору
   S.ul={};
-  S.baseClick=Math.floor(rawClick*0.40);
-  S.baseCps=Math.floor(rawCps*0.40*10)/10; // одна десятая точность
+  S.baseClick=Math.floor(rawClick*0.30);
+  S.baseCps=Math.floor(rawCps*0.30*10)/10; // одна десятая точность
 
   const c=C(),t=T();
   const msg=c.id==='f1'
@@ -1579,7 +1581,7 @@ function drawLivery(ctx,W,H,carType){
   // У каждого болида своя нижняя кромка борта — подбираем высоту и ширину полосы под форму.
   // [x1, x2, y(от земли вверх)]
   const cfg=[
-    [130,338,40], // картинг — кузов узкий и выше
+    [128,332,30], // картинг — узкий кузов, полоса по нижнему борту под табличкой
     [120,352,28], // Ф4
     [118,356,28], // Ф3
     [116,360,28], // Ф2
