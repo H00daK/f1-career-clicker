@@ -62,6 +62,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tabs{display:flex;gap:5px;padding:2px 0;margin-bottom:2px}
 .tab{flex:1;padding:8px 4px;font-size:11px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);cursor:pointer;color:rgba(255,255,255,0.5);text-align:center;transition:all .15s}
 .tab.active{background:rgba(255,255,255,0.14);color:#fff;border-color:rgba(255,255,255,0.2)}
+.tab{position:relative}
+.tab-dot{position:absolute;top:5px;right:7px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#ff3b30;color:#fff;font-size:9px;font-weight:800;display:none;align-items:center;justify-content:center;box-shadow:0 0 0 2px #0e0e1a;line-height:1}
+.tab-dot.show{display:flex;animation:dotPop .25s ease}
+@keyframes dotPop{0%{transform:scale(0)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
 
 .panel{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px}
 .panel-title{font-size:11px;font-weight:600;color:rgba(255,255,255,0.4);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
@@ -104,10 +108,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .modal-text{font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:16px;line-height:1.6}
 .modal-btn{padding:10px 28px;font-size:13px;border-radius:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);cursor:pointer;color:#fff;font-weight:600}
 
-.float-num{position:fixed;font-size:14px;font-weight:700;pointer-events:none;animation:floatUp .7s forwards;z-index:400;text-shadow:0 1px 4px rgba(0,0,0,0.5)}
+.float-num{position:fixed;font-size:15px;font-weight:800;pointer-events:none;animation:floatUp .7s forwards;z-index:400;text-shadow:0 0 3px rgba(0,0,0,0.9),0 1px 4px rgba(0,0,0,0.9),0 0 1px rgba(0,0,0,1)}
 @keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-50px)}}
 
 .disclaimer{font-size:9px;color:rgba(255,255,255,0.2);text-align:center;padding:4px 8px}
+
+/* LEADERBOARD METRIC TABS */
+.lb-tabs{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
+.lb-tab{flex:1;min-width:64px;padding:6px 4px;font-size:10px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);cursor:pointer;color:rgba(255,255,255,0.5);text-align:center;transition:all .12s}
+.lb-tab.active{background:rgba(255,215,0,0.15);color:#FFD700;border-color:rgba(255,215,0,0.3)}
+
+/* ACTIVE BOOSTS BAR */
+#active-boosts{display:flex}
+.boost-chip{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;background:linear-gradient(120deg,rgba(255,140,0,0.2),rgba(255,60,60,0.15));border:1px solid rgba(255,150,50,0.4);font-size:11px;font-weight:600}
+.boost-chip .bc-emoji{font-size:14px}
+.boost-chip .bc-time{color:#ffce6b;font-variant-numeric:tabular-nums}
 
 /* DAILY BONUS */
 .daily-banner{border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;border:1px solid;background:linear-gradient(120deg,rgba(255,200,50,0.12),rgba(255,140,0,0.08));border-color:rgba(255,200,50,0.3)}
@@ -186,6 +201,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="career-name" id="cname">—</div>
         <div class="career-sub" id="csub">—</div>
       </div>
+      <button id="profile-btn" onclick="openProfile()" style="flex-shrink:0;width:38px;height:38px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#fff;font-size:18px;cursor:pointer">👤</button>
+    </div>
+
+    <!-- ПРОФИЛЬ (оверлей) -->
+    <div id="profile-overlay" class="modal-overlay">
+      <div class="modal-box" style="max-width:340px;text-align:left">
+        <div id="profile-body"></div>
+        <button class="modal-btn" style="width:100%;margin-top:14px" onclick="closeProfile()">Закрыть</button>
+      </div>
     </div>
 
     <div class="stats-row">
@@ -194,6 +218,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="stat-card"><div class="stat-val" id="sv-wins">0</div><div class="stat-lbl">Побед</div></div>
     </div>
 
+    <div id="active-boosts" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:2px"></div>
     <div class="clicker-wrap">
       <div class="car-btn" id="car-btn" onclick="doClick(event)">
         <canvas id="car-main" width="440" height="120"></canvas>
@@ -216,7 +241,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="tabs">
       <div class="tab active" onclick="switchTab('upgrades')">Апгрейды</div>
       <div class="tab" onclick="switchTab('tournaments')">Турниры</div>
-      <div class="tab" onclick="switchTab('contracts')">📋 Контракты</div>
+      <div class="tab" onclick="switchTab('contracts')">📋 Контракты<span class="tab-dot" id="contracts-dot"></span></div>
     </div>
     <div class="tabs row2">
       <div class="tab" onclick="switchTab('garage')">🔧 Гараж</div>
@@ -229,7 +254,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="panel hidden" id="panel-contracts"><div class="panel-title">Спонсорские контракты</div><div id="quest-list"></div></div>
     <div class="panel hidden" id="panel-garage"><div class="panel-title">Гараж</div><div id="garage-list"></div></div>
     <div class="panel hidden" id="panel-achievements"><div class="panel-title">Достижения</div><div id="ach-list"></div></div>
-    <div class="panel hidden" id="panel-leaderboard"><div class="panel-title">Топ гонщиков</div><div id="lb-list"><div style="font-size:12px;color:rgba(255,255,255,0.4);padding:8px 0">Загрузка...</div></div></div>
+    <div class="panel hidden" id="panel-leaderboard"><div class="panel-title">Топ гонщиков</div>
+      <div class="lb-tabs" id="lb-tabs">
+        <div class="lb-tab active" onclick="setLbMetric('wins')">🏆 Побед</div>
+        <div class="lb-tab" onclick="setLbMetric('level')">📈 Уровень</div>
+        <div class="lb-tab" onclick="setLbMetric('rich')">💰 Богатство</div>
+        <div class="lb-tab" onclick="setLbMetric('refs')">👥 Рефералы</div>
+      </div>
+      <div id="lb-list"><div style="font-size:12px;color:rgba(255,255,255,0.4);padding:8px 0">Загрузка...</div></div>
+    </div>
 
     <div class="disclaimer">Fan game · Not affiliated with Formula One Group</div>
   </div>
@@ -331,6 +364,7 @@ const ACHIEVEMENTS=[
   {id:'streak3',name:'Постоянство', desc:'Стрик входа 3 дня',     emoji:'📅',chk:s=>s.daily&&s.daily.streak>=3},
   {id:'streak7',name:'Железная воля',desc:'Стрик входа 7 дней',    emoji:'🔥',chk:s=>s.daily&&s.daily.streak>=7},
   {id:'shop1', name:'Тюнинг',       desc:'Купи предмет в гараже',  emoji:'🛍️',chk:s=>s.shop&&s.shop.length>=1},
+  {id:'boost1',name:'Форсаж',       desc:'Активируй буст',         emoji:'🚀',chk:s=>s.boosts&&Object.keys(s.boosts).length>=1},
 ];
 
 // ── ГАРАЖ: косметика и буст-предметы ─────────────────────────────────────────
@@ -347,6 +381,17 @@ const SHOP_ITEMS=[
   {id:'star_deco',    name:'Звёздный декор',   emoji:'✨', price:40000,   type:'cosmetic', desc:'Сверкающий болид'},
   {id:'crown',        name:'Корона чемпиона',  emoji:'👑', price:300000,  type:'cosmetic', desc:'Для настоящих королей трассы'},
   {id:'diamond',      name:'Алмазная ливрея',  emoji:'💎', price:2000000, type:'cosmetic', desc:'Роскошь высшего класса'},
+];
+
+// ── БУСТЫ-РАСХОДНИКИ ─────────────────────────────────────────────────────────
+// effect: 'click' (xN к клику), 'cps' (xN к пассиву), 'all' (xN к обоим), 'luck' (+шанс турниров)
+// dur — длительность в секундах. Цена масштабируется от текущего уровня в boostPrice().
+const BOOSTS=[
+  {id:'turbo',   name:'Турбо x2',     emoji:'🚀', effect:'click', mult:2,    dur:30,  baseP:2000,  desc:'x2 монет за клик · 30 сек'},
+  {id:'nitro',   name:'Нитро x3',     emoji:'💥', effect:'click', mult:3,    dur:20,  baseP:6000,  desc:'x3 монет за клик · 20 сек'},
+  {id:'drs',     name:'DRS открыт',   emoji:'🪟', effect:'cps',   mult:2,    dur:60,  baseP:5000,  desc:'x2 пассивный доход · 60 сек'},
+  {id:'overdrive',name:'Овердрайв x2', emoji:'⚡', effect:'all',   mult:2,    dur:45,  baseP:12000, desc:'x2 клик и пассив · 45 сек'},
+  {id:'luck',    name:'Дождь удачи',  emoji:'🍀', effect:'luck',  mult:0.15, dur:120, baseP:8000,  desc:'+15% шанс турниров · 2 мин'},
 ];
 
 // ── СПОНСОРСКИЕ КОНТРАКТЫ (квесты) ───────────────────────────────────────────
@@ -402,7 +447,11 @@ async function cloudLoad(userId){
     S.tw=p.total_wins||0;
     S.ul=p.upgrades||{};
     S.tw_ids=p.won_tournaments||[];
-    S.tce=p.coins||0;
+    S.tce=p.coins_earned||p.coins||0; // всего заработано (отдельно от баланса)
+    if(typeof p.referred_by==='number')S.referredBy=p.referred_by;
+    S.refCount=p.referrals_count||0;
+    if(typeof p.best_streak==='number'&&S.daily)S.daily.streak=Math.max(S.daily.streak||0,0);
+    if(p.best_streak)S.bestStreak=p.best_streak;
     return true;
   }
   return false;
@@ -415,6 +464,8 @@ async function cloudSave(){
     coins:Math.floor(S.coins),xp:Math.floor(S.xp),
     career_level:S.cl,total_wins:S.tw,
     upgrades:S.ul,won_tournaments:S.tw_ids,
+    coins_earned:Math.floor(S.tce),
+    best_streak:Math.max(S.bestStreak||0,(S.daily&&S.daily.streak)||0),
     updated_at:new Date().toISOString()
   };
   await sbFetch('/rest/v1/players','POST',payload);
@@ -422,15 +473,55 @@ async function cloudSave(){
   await sbFetch(`/rest/v1/players?id=eq.${S.userId}`,'PATCH',payload);
 }
 
+// Реферальный бонус: вызывается один раз для нового игрока, пришедшего по ссылке
+const REFERRAL_BONUS=2000;
+async function tryClaimReferral(){
+  if(S.refClaimed)return;            // уже начисляли локально
+  if(!S.userId)return;
+  if(!_pendingReferrer)return;       // не было реф-ссылки
+  if(_pendingReferrer===S.userId)return; // нельзя пригласить себя
+  if(S.referredBy)return;            // уже был приглашён ранее
+  // атомарное начисление через серверную функцию (защита от дабл-клейма в БД)
+  await sbFetch('/rest/v1/rpc/claim_referral','POST',{
+    new_user:S.userId, referrer:_pendingReferrer, bonus:REFERRAL_BONUS
+  });
+  S.refClaimed=true;
+  S.referredBy=_pendingReferrer;
+  // перечитываем своё состояние из облака, чтобы подтянуть начисленный бонус
+  await cloudLoad(S.userId);
+  toast(`🎁 Бонус за приглашение: +${fmt(REFERRAL_BONUS)} монет!`);
+  save();render();
+}
+
+let lbMetric='wins';
+// конфиг метрик: поле сортировки PostgREST, заголовок, как достать значение, подпись
+const LB_METRICS={
+  wins: {order:'total_wins.desc,career_level.desc', val:r=>r.total_wins||0,                  lbl:'побед',    fmt:v=>v},
+  level:{order:'career_level.desc,xp.desc',          val:r=>r.career_level||0,                 lbl:'уровень',  fmt:v=>['Картинг','Ф4','Ф3','Ф2','Ф1'][v]||'Картинг'},
+  rich: {order:'coins_earned.desc',                  val:r=>r.coins_earned||0,                 lbl:'заработано',fmt:v=>fmt(v)+'💰'},
+  refs: {order:'referrals_count.desc',               val:r=>r.referrals_count||0,              lbl:'друзей',   fmt:v=>v},
+};
+function setLbMetric(m){
+  lbMetric=m;
+  document.querySelectorAll('.lb-tab').forEach(t=>{
+    const tm=(t.getAttribute('onclick').match(/'([^']+)'/)||[])[1];
+    t.classList.toggle('active',tm===m);
+  });
+  renderLeaderboard();
+}
 async function loadLeaderboard(){
-  const data=await sbFetch('/rest/v1/leaderboard?select=*&limit=20');
+  const mc=LB_METRICS[lbMetric]||LB_METRICS.wins;
+  // сортируем прямо на таблице players через PostgREST order=
+  const sel='id,name,team_id,career_level,total_wins,coins_earned,referrals_count,best_streak,xp';
+  const data=await sbFetch(`/rest/v1/players?select=${sel}&order=${mc.order}&limit=20`);
   return data||[];
 }
 
 // ── СОСТОЯНИЕ ─────────────────────────────────────────────────────────────────
 // tw_ids — турниры в которых побеждали хотя бы раз (для условия перехода)
 let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:null,tw_ids:[],userId:null,
-  daily:{last:0,streak:0},quests:[],shop:[],equipped:null};
+  daily:{last:0,streak:0},quests:[],shop:[],equipped:null,lastSeen:0,boosts:{},
+  referredBy:null,refCount:0,bestStreak:0,refClaimed:false};
 let selTeam='redbull';
 
 function load(){
@@ -440,9 +531,12 @@ function load(){
   if(!Array.isArray(S.quests))S.quests=[];
   if(!Array.isArray(S.shop))S.shop=[];
   if(typeof S.equipped==='undefined')S.equipped=null;
+  if(typeof S.lastSeen!=='number')S.lastSeen=0;
+  if(!S.boosts||typeof S.boosts!=='object')S.boosts={};
   if(S.quests.length===0)initQuests();
 }
 function save(){
+  S.lastSeen=Date.now();
   try{localStorage.setItem('f1_v6',JSON.stringify(S));}catch(e){}
   // облачное сохранение если есть userId
   if(S.userId)cloudSave();
@@ -483,6 +577,7 @@ function clickVal(){
   if(t.id==='redbull')v=Math.floor(v*1.2);
   if(t.id==='williams')v=Math.floor(v*0.8);
   v=Math.floor(v*(1+shopBoost('click')));
+  v=Math.floor(v*clickBoostMult());
   return Math.max(1,v);
 }
 function getCPS(){
@@ -493,6 +588,8 @@ function getCPS(){
   v*=(1+shopBoost('cps'));
   return v;
 }
+// фактический пассив с учётом временных бустов (для живого начисления)
+function getEffectiveCPS(){return getCPS()*cpsBoostMult();}
 function upgPrice(u){
   let p=Math.floor(u.bp*Math.pow(1.7,S.ul[u.id]||0));
   if(T().id==='audi')p=Math.floor(p*0.94);
@@ -508,6 +605,7 @@ function winChance(t){
   let b=floor+(ceil-floor)*prog; // линейно растёт с прокачкой болида
   // небольшой бонус за «переинвестирование» — победы тоже чуть помогают (опыт пилота)
   b+=Math.min(S.tw,20)*0.003;  // максимум +6% за 20 побед
+  b+=luckBoostAdd();           // бонус от активного «Дождя удачи»
   const tm=T();
   if(tm.id==='haas'||tm.id==='cadillac')b+=0.06;
   return Math.max(0.05,Math.min(b,0.92));
@@ -614,6 +712,25 @@ function checkAch(){
   ACHIEVEMENTS.forEach(a=>{if(!S.ua.includes(a.id)&&a.chk(S)){S.ua.push(a.id);toast(`🎖️ ${a.name}`);}});
 }
 
+// ── ОФФЛАЙН-ДОХОД ────────────────────────────────────────────────────────────
+const OFFLINE_CAP_SEC=4*3600;  // потолок 4 часа
+const OFFLINE_RATE=0.5;        // 50% от CPS
+function claimOffline(){
+  if(!S.lastSeen||S.lastSeen<=0)return; // первый запуск — нечего начислять
+  const elapsed=(Date.now()-S.lastSeen)/1000;
+  if(elapsed<60)return; // меньше минуты — игнор
+  const cps=getCPS();
+  if(cps<=0)return; // нет пассивного дохода — нечего копить
+  const capped=Math.min(elapsed,OFFLINE_CAP_SEC);
+  const earned=Math.floor(cps*OFFLINE_RATE*capped);
+  if(earned<1)return;
+  S.coins+=earned;S.tce+=earned;
+  const h=Math.floor(capped/3600),m=Math.floor((capped%3600)/60);
+  const timeStr=h>0?`${h} ч ${m} мин`:`${m} мин`;
+  const capNote=elapsed>OFFLINE_CAP_SEC?' (достигнут максимум 4 ч)':'';
+  showModal('💤','С возвращением!',`Пока тебя не было (${timeStr}${capNote}), болид заработал +${fmt(earned)} монет (50% от м/сек).`);
+}
+
 // ── ЕЖЕДНЕВНЫЙ БОНУС ──────────────────────────────────────────────────────────
 function dayStamp(d=new Date()){return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();}
 function dailyAvailable(){return S.daily.last!==dayStamp();}
@@ -641,6 +758,7 @@ function claimDaily(){
   if(S.daily.last===yest)S.daily.streak=Math.min(S.daily.streak+1,7);
   else S.daily.streak=1;
   S.daily.last=today;
+  S.bestStreak=Math.max(S.bestStreak||0,S.daily.streak);
   const r=dailyReward();
   S.coins+=r;S.tce+=r;
   showModal('🎁',`День ${S.daily.streak} стрика!`,`Ежедневный бонус: +${fmt(r)} монет!${S.daily.streak<7?' Заходи завтра — бонус вырастет.':' Максимальный стрик!'}`);
@@ -678,6 +796,18 @@ function questProgress(q){
   const cur=questMetricValue(q.metric)-q.start;
   return {cur:Math.max(0,cur),done:cur>=q.target};
 }
+// сколько контрактов готовы к забору награды
+function claimableQuests(){
+  if(!S.quests)return 0;
+  return S.quests.filter(q=>!q.claimed&&questProgress(q).done).length;
+}
+function updateContractsBadge(){
+  const dot=document.getElementById('contracts-dot');
+  if(!dot)return;
+  const n=claimableQuests();
+  if(n>0){dot.textContent=n;dot.classList.add('show');}
+  else dot.classList.remove('show');
+}
 function claimQuest(id){
   const q=S.quests.find(x=>x.id===id);if(!q)return;
   const p=questProgress(q);if(!p.done||q.claimed)return;
@@ -705,6 +835,57 @@ function buyShopItem(id){
   if(it.type==='cosmetic')S.equipped=id;
   toast(`${it.emoji} ${it.name} куплено!`);
   checkAch();save();render();
+}
+
+// ── БУСТЫ-РАСХОДНИКИ ─────────────────────────────────────────────────────────
+function boostPrice(b){
+  // дороже на высоких уровнях, чтобы оставались актуальными
+  return Math.floor(b.baseP*Math.pow(4,S.cl));
+}
+function boostActive(id){
+  const end=S.boosts[id];
+  return end&&end>Date.now();
+}
+function boostRemaining(id){
+  const end=S.boosts[id];
+  if(!end)return 0;
+  return Math.max(0,Math.ceil((end-Date.now())/1000));
+}
+// суммарный множитель к клику от активных бустов
+function clickBoostMult(){
+  let m=1;
+  BOOSTS.forEach(b=>{if((b.effect==='click'||b.effect==='all')&&boostActive(b.id))m*=b.mult;});
+  return m;
+}
+// суммарный множитель к пассиву от активных бустов
+function cpsBoostMult(){
+  let m=1;
+  BOOSTS.forEach(b=>{if((b.effect==='cps'||b.effect==='all')&&boostActive(b.id))m*=b.mult;});
+  return m;
+}
+// прибавка к шансу турнира от активных бустов
+function luckBoostAdd(){
+  let a=0;
+  BOOSTS.forEach(b=>{if(b.effect==='luck'&&boostActive(b.id))a+=b.mult;});
+  return a;
+}
+function buyBoost(id){
+  const b=BOOSTS.find(x=>x.id===id);if(!b)return;
+  if(boostActive(id)){toast(`${b.emoji} ${b.name} уже активен`);return;}
+  const price=boostPrice(b);
+  if(S.coins<price)return;
+  S.coins-=price;
+  S.boosts[id]=Date.now()+b.dur*1000;
+  toast(`${b.emoji} ${b.name} активирован!`);
+  checkAch();save();render();
+}
+function renderActiveBoosts(){
+  const bar=document.getElementById('active-boosts');
+  if(!bar)return;
+  const active=BOOSTS.filter(b=>boostActive(b.id));
+  if(active.length===0){bar.style.display='none';bar.innerHTML='';return;}
+  bar.style.display='flex';
+  bar.innerHTML=active.map(b=>`<div class="boost-chip"><span class="bc-emoji">${b.emoji}</span>${b.name.split(' ')[0]} <span class="bc-time">${boostRemaining(b.id)}с</span></div>`).join('');
 }
 
 // ── РИСОВАНИЕ БОЛИДОВ ─────────────────────────────────────────────────────────
@@ -953,19 +1134,21 @@ async function renderLeaderboard(){
   if(!rows||rows.length===0){el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.4);padding:8px 0">Пока никого нет — стань первым!</div>';return;}
   const CAREER_NAMES=['Картинг','Ф4','Ф3','Ф2','Ф1'];
   const medals=['🥇','🥈','🥉'];
+  const mc=LB_METRICS[lbMetric]||LB_METRICS.wins;
   el.innerHTML=rows.map((r,i)=>{
     const t=TEAMS.find(x=>x.id===r.team_id)||TEAMS[0];
     const isMe=r.id===S.userId;
+    const v=mc.val(r);
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);${isMe?'background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;':''}">
       <div style="font-size:16px;width:24px;text-align:center">${medals[i]||i+1}</div>
       <div style="width:8px;height:8px;border-radius:50%;background:${t.c1};flex-shrink:0"></div>
-      <div style="flex:1">
-        <div style="font-size:12px;font-weight:600">${r.name}${isMe?' (ты)':''}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.name}${isMe?' (ты)':''}</div>
         <div style="font-size:10px;color:rgba(255,255,255,0.4)">${CAREER_NAMES[r.career_level]||'Картинг'} · ${t.n}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:13px;font-weight:700;color:#FFD700">${r.total_wins}</div>
-        <div style="font-size:9px;color:rgba(255,255,255,0.4)">побед</div>
+        <div style="font-size:13px;font-weight:700;color:#FFD700">${mc.fmt(v)}</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.4)">${mc.lbl}</div>
       </div>
     </div>`;
   }).join('');
@@ -977,15 +1160,90 @@ function showModal(em,ti,tx){
   document.getElementById('modal').classList.add('show');
 }
 function closeModal(){document.getElementById('modal').classList.remove('show');}
+
+// ── ПРОФИЛЬ ───────────────────────────────────────────────────────────────────
+const BOT_USERNAME='F1CareerBot';
+const APP_SHORTNAME='Formula';
+function refLink(){
+  if(!S.userId)return `https://t.me/${BOT_USERNAME}/${APP_SHORTNAME}`;
+  return `https://t.me/${BOT_USERNAME}/${APP_SHORTNAME}?startapp=${S.userId}`;
+}
+function playerTitles(){
+  // титулы из достигнутого уровня и ключевых достижений
+  const titles=[];
+  const lvlTitles=['Картингист','Пилот Ф4','Пилот Ф3','Пилот Ф2','Пилот Формулы 1'];
+  titles.push(lvlTitles[S.cl]||'Новичок');
+  if(S.cl>=4)titles.push('🏆 Член элиты Ф1');
+  if(S.tw>=10)titles.push('🥇 Серийный победитель');
+  if((S.bestStreak||0)>=7)titles.push('🔥 Железная воля');
+  if((S.refCount||0)>=1)titles.push('👥 Амбассадор');
+  if(SHOP_ITEMS.filter(i=>i.type==='cosmetic').every(i=>S.shop.includes(i.id)))titles.push('💎 Коллекционер');
+  return titles;
+}
+function openProfile(){
+  const t=T(),c=C();
+  const body=document.getElementById('profile-body');
+  const titles=playerTitles();
+  const eq=S.equipped?SHOP_ITEMS.find(i=>i.id===S.equipped):null;
+  body.innerHTML=`
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:40px">${eq?eq.emoji:'🏎️'}</div>
+      <div style="font-size:18px;font-weight:700;margin-top:4px">${S.pn||'Гонщик'}</div>
+      <div style="font-size:12px;color:${t.c2}">${t.n} · ${c.name}</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:14px">
+      ${titles.map(ti=>`<span style="font-size:10px;padding:3px 8px;border-radius:10px;background:${t.c1}33;color:${t.c2};border:1px solid ${t.c1}55">${ti}</span>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+      <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px"><div style="color:rgba(255,255,255,0.5);font-size:10px">Побед</div><div style="font-weight:700">${S.tw}</div></div>
+      <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px"><div style="color:rgba(255,255,255,0.5);font-size:10px">Всего заработано</div><div style="font-weight:700">${fmt(S.tce)}💰</div></div>
+      <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px"><div style="color:rgba(255,255,255,0.5);font-size:10px">Лучший стрик</div><div style="font-weight:700">${S.bestStreak||0} дн.</div></div>
+      <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px"><div style="color:rgba(255,255,255,0.5);font-size:10px">Приглашено друзей</div><div style="font-weight:700">${S.refCount||0}</div></div>
+    </div>
+    <div style="margin-top:14px;padding:10px;background:linear-gradient(120deg,rgba(80,180,120,0.15),rgba(60,160,255,0.1));border:1px solid rgba(120,200,160,0.3);border-radius:10px">
+      <div style="font-size:12px;font-weight:600;margin-bottom:3px">👥 Пригласи друга</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:8px">Вы оба получите +${fmt(REFERRAL_BONUS)} монет!</div>
+      <button onclick="inviteFriend()" style="width:100%;padding:9px;border:none;border-radius:9px;background:#3aa86b;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Поделиться ссылкой</button>
+    </div>`;
+  document.getElementById('profile-overlay').classList.add('show');
+}
+function closeProfile(){document.getElementById('profile-overlay').classList.remove('show');}
+function inviteFriend(){
+  const link=refLink();
+  const text='🏎️ Погнали в F1 Career! Строй карьеру от картинга до Формулы 1. Заходи по моей ссылке — оба получим бонус!';
+  if(typeof Telegram!=='undefined'&&Telegram.WebApp&&Telegram.WebApp.openTelegramLink){
+    // нативный шаринг Telegram
+    const shareUrl=`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+    Telegram.WebApp.openTelegramLink(shareUrl);
+  } else {
+    // фолбэк — копируем в буфер
+    try{navigator.clipboard.writeText(link);toast('🔗 Ссылка скопирована!');}
+    catch(e){toast('Ссылка: '+link);}
+  }
+}
 function toast(msg){
   const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
   setTimeout(()=>el.classList.remove('show'),2400);
 }
 function floatNum(txt,x,y){
   const t=T();const el=document.createElement('div');
-  el.className='float-num';el.style.color=t.c2;el.textContent=txt;
+  el.className='float-num';
+  // выбираем читаемый цвет: если вторичный цвет тёмный — берём первичный, если и он тёмный — белый
+  el.style.color=pickFloatColor(t);
+  el.textContent=txt;
   el.style.left=x+'px';el.style.top=(y-20)+'px';
   document.body.appendChild(el);setTimeout(()=>el.remove(),700);
+}
+// яркость по hex (0..255); >130 считаем светлым
+function hexLum(h){
+  if(!h||h[0]!=='#'||h.length<7)return 255;
+  const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);
+  return 0.299*r+0.587*g+0.114*b;
+}
+function pickFloatColor(t){
+  if(hexLum(t.c2)>120)return t.c2;   // вторичный достаточно светлый
+  if(hexLum(t.c1)>120)return t.c1;   // иначе первичный, если светлый
+  return '#ffffff';                  // фолбэк — белый
 }
 
 function renderDailyBanner(){
@@ -1051,7 +1309,7 @@ function render(){
   document.getElementById('cname').textContent=`${S.pn} · ${t.n}`;
   document.getElementById('csub').textContent=c.xp===Infinity?'🏆 Вершина достигнута!':`До ${CAREERS[Math.min(S.cl+1,4)].name}: ${Math.floor(S.xp)}/${c.xp} XP`;
   document.getElementById('sv-coins').textContent=fmtCoins(S.coins);
-  document.getElementById('sv-cps').textContent=fmtCps(getCPS());
+  document.getElementById('sv-cps').textContent=fmtCps(getEffectiveCPS());
   document.getElementById('sv-wins').textContent=S.tw;
   const xpPct=c.xp===Infinity?100:Math.min(100,Math.floor(S.xp/c.xp*100));
   document.getElementById('xpfill').style.width=xpPct+'%';
@@ -1071,6 +1329,8 @@ function render(){
   renderPromoteBlock();
   renderLists();
   renderDailyBanner();
+  updateContractsBadge();
+  renderActiveBoosts();
   if(S.offer)renderOfferBanner();
   }catch(e){console.log('render err',e);}
 }
@@ -1222,7 +1482,22 @@ function renderLists(){
         ${btn}
       </div>`;
     };
-    gl.innerHTML=`<div class="shop-sect">⚡ Буст-предметы (навсегда)</div><div class="shop-grid">${boosts.map(renderCard).join('')}</div>
+    const renderBoostCard=(b)=>{
+      const active=boostActive(b.id);
+      const price=boostPrice(b);
+      const can=S.coins>=price;
+      let btn;
+      if(active)btn=`<button class="shop-btn equipped" disabled>⏱ ${boostRemaining(b.id)}с</button>`;
+      else btn=`<button class="shop-btn ${can?'afford':''}" onclick="buyBoost('${b.id}')" ${can?'':'disabled'}>${fmt(price)}💰</button>`;
+      return `<div class="shop-card ${active?'owned':''}">
+        <div class="shop-emoji">${b.emoji}</div>
+        <div class="shop-name">${b.name}</div>
+        <div class="shop-bonus">${b.desc}</div>
+        ${btn}
+      </div>`;
+    };
+    gl.innerHTML=`<div class="shop-sect">🔥 Бусты (временные)</div><div class="shop-grid">${BOOSTS.map(renderBoostCard).join('')}</div>
+      <div class="shop-sect">⚡ Постоянные улучшения</div><div class="shop-grid">${boosts.map(renderCard).join('')}</div>
       <div class="shop-sect">🎨 Косметика</div><div class="shop-grid">${cosm.map(renderCard).join('')}</div>`;
   }
   }catch(e){console.log('list err',e);}
@@ -1278,23 +1553,45 @@ function startGame(){
   document.getElementById('screen-onboard').classList.add('hidden');
   document.getElementById('screen-game').classList.remove('hidden');
   checkOffer();save();render();
+  // новый игрок пришёл по реф-ссылке — начисляем бонус (после создания записи в БД)
+  if(_pendingReferrer)setTimeout(tryClaimReferral,1200);
 }
 
 // ── PASSIVE INCOME ───────────────────────────────────────────────────────────
 let _lastFullRender=0;
 setInterval(()=>{
-  const cps=getCPS();
+  const cps=getEffectiveCPS();
   if(cps>0){S.coins+=cps/20;S.tce+=cps/20;}
   try{
     document.getElementById('sv-coins').textContent=fmtCoins(S.coins);
-    document.getElementById('sv-cps').textContent=fmtCps(getCPS());
+    document.getElementById('sv-cps').textContent=fmtCps(getEffectiveCPS());
+    updateContractsBadge();
   }catch(e){}
   const now=Date.now();
   if(now-_lastFullRender>2000){_lastFullRender=now;render();}
 },50);
 setInterval(save,4000);
 
+// тикер бустов: каждую секунду обновляем таймеры и ловим истечение
+let _boostSnapshot='';
+setInterval(()=>{
+  if(!S.pn)return;
+  const activeNow=BOOSTS.filter(b=>boostActive(b.id)).map(b=>b.id).join(',');
+  // обновляем чипы каждую секунду
+  try{renderActiveBoosts();}catch(e){}
+  // если состав активных бустов изменился (что-то истекло) — полный render + уведомление
+  if(activeNow!==_boostSnapshot){
+    const expired=_boostSnapshot.split(',').filter(id=>id&&!activeNow.split(',').includes(id));
+    expired.forEach(id=>{const b=BOOSTS.find(x=>x.id===id);if(b)toast(`${b.emoji} ${b.name} закончился`);});
+    _boostSnapshot=activeNow;
+    try{render();}catch(e){}
+  }
+  // обновляем таймер в открытом гараже
+  try{if(!document.getElementById('panel-garage').classList.contains('hidden'))renderLists();}catch(e){}
+},1000);
+
 // ── INIT ─────────────────────────────────────────────────────────────────────
+let _pendingReferrer=null;
 async function init(){
   // Получаем Telegram User ID
   if(typeof Telegram!=='undefined'&&Telegram.WebApp){
@@ -1306,6 +1603,9 @@ async function init(){
       // Если есть имя в Telegram — предзаполняем
       if(!S.pn&&user.first_name)document.getElementById('pname').value=user.first_name;
     }
+    // реферальный параметр из ссылки t.me/Bot/App?startapp=<referrerId>
+    const sp=Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.start_param;
+    if(sp&&/^\d+$/.test(sp))_pendingReferrer=parseInt(sp,10);
   }
 
   // Загружаем локально сначала (быстро)
@@ -1322,6 +1622,8 @@ async function init(){
   if(S.pn){
     document.getElementById('screen-onboard').classList.add('hidden');
     document.getElementById('screen-game').classList.remove('hidden');
+    claimOffline(); // начисляем доход за время отсутствия
+    if(_pendingReferrer)setTimeout(tryClaimReferral,1000); // если зашёл по реф-ссылке
     if(S.offer)renderOfferBanner();
     render();
   } else {
