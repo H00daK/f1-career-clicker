@@ -2210,16 +2210,13 @@ function closeSettings(){document.getElementById('settings-overlay').classList.r
 // Диагностика подключения Telegram — показывает, на каком шаге теряется user ID
 function tgDiag(){
   try{
-    if(typeof Telegram==='undefined')return 'Telegram объект отсутствует (скрипт не загрузился)';
-    if(!Telegram.WebApp)return 'Telegram.WebApp отсутствует';
-    const wa=Telegram.WebApp;
-    const ver=wa.version||'?';
-    const idu=wa.initDataUnsafe||{};
-    const hasInitData=wa.initData&&wa.initData.length>0;
-    const hasUser=idu.user&&idu.user.id;
-    if(hasUser)return 'user.id есть: '+idu.user.id+' (v'+ver+')';
-    if(hasInitData)return 'initData есть, но user пустой (v'+ver+'). Платформа: '+(wa.platform||'?');
-    return 'initData ПУСТОЙ (v'+ver+', платформа '+(wa.platform||'?')+'). Mini App открыт не как Web App — нужна настройка бота.';
+    const url=getTgUserFromURL();
+    const urlInfo=url&&url.user?(' | URL даёт ID: '+url.user.id):' | в URL тоже нет данных';
+    if(typeof Telegram==='undefined')return 'Telegram скрипт не загрузился'+urlInfo;
+    if(!Telegram.WebApp)return 'Telegram.WebApp нет'+urlInfo;
+    const wa=Telegram.WebApp;const idu=wa.initDataUnsafe||{};
+    if(idu.user&&idu.user.id)return 'user.id есть: '+idu.user.id+' (v'+(wa.version||'?')+')';
+    return 'скрипт есть, но initData пустой (v'+(wa.version||'?')+', платформа '+(wa.platform||'?')+')'+urlInfo;
   }catch(e){return 'ошибка: '+e.message;}
 }
 // Ручная облачная синхронизация — с явным фидбеком на кнопке (без confirm, он глючит в Telegram)
@@ -2900,33 +2897,65 @@ setInterval(()=>{
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 let _pendingReferrer=null;
-// Ждём, пока подгрузится telegram-web-app.js (он даёт user ID). До 3 сек.
-function waitForTelegram(maxMs=3000){
+// Ждём, пока подгрузится telegram-web-app.js (он даёт user ID). Короткое ожидание.
+function waitForTelegram(maxMs=1500){
   return new Promise(resolve=>{
     const start=Date.now();
     (function check(){
       if(typeof Telegram!=='undefined'&&Telegram.WebApp){resolve(true);return;}
       if(Date.now()-start>=maxMs){resolve(false);return;}
-      setTimeout(check,100);
+      setTimeout(check,80);
     })();
   });
 }
-async function init(){
-  // Сначала дожидаемся загрузки Telegram WebApp скрипта — без него нет user ID
-  await waitForTelegram(3000);
-  // Получаем Telegram User ID (в обёртке — на некоторых клиентах API может отличаться)
+// Запасной способ: достать данные пользователя из URL, даже если скрипт Telegram не загрузился.
+// Telegram кладёт их в location.hash как tgWebAppData (внутри — urlencoded user={json}).
+function getTgUserFromURL(){
   try{
-    if(typeof Telegram!=='undefined'&&Telegram.WebApp){
-      Telegram.WebApp.ready();
-      Telegram.WebApp.expand();
-      const user=Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user;
-      if(user&&user.id){
-        S.userId=user.id;
-        if(!S.pn&&user.first_name){const pn=document.getElementById('pname');if(pn)pn.value=user.first_name;}
+    const sources=[location.hash||'', location.search||''];
+    for(const s of sources){
+      const raw=s.replace(/^[#?]/,'');
+      const params=new URLSearchParams(raw);
+      let data=params.get('tgWebAppData');
+      if(data){
+        // tgWebAppData сам по себе urlencoded и содержит user=...
+        const inner=new URLSearchParams(decodeURIComponent(data));
+        const userStr=inner.get('user');
+        const startParam=inner.get('start_param');
+        let res={};
+        if(userStr){try{res.user=JSON.parse(userStr);}catch(e){}}
+        if(startParam)res.start_param=startParam;
+        if(res.user||res.start_param)return res;
       }
-      const sp=Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.start_param;
-      if(sp&&/^\d+$/.test(sp))_pendingReferrer=parseInt(sp,10);
     }
+  }catch(e){}
+  return null;
+}
+async function init(){
+  // Дожидаемся загрузки Telegram WebApp скрипта (коротко) — без него попробуем достать ID из URL
+  await waitForTelegram(1500);
+  // Получаем Telegram User ID
+  try{
+    let gotUser=null,gotStart=null;
+    if(typeof Telegram!=='undefined'&&Telegram.WebApp){
+      try{Telegram.WebApp.ready();Telegram.WebApp.expand();}catch(e){}
+      const idu=Telegram.WebApp.initDataUnsafe||{};
+      if(idu.user&&idu.user.id)gotUser=idu.user;
+      if(idu.start_param)gotStart=idu.start_param;
+    }
+    // Запасной вариант: если скрипт не дал user — берём из URL
+    if(!gotUser){
+      const fromUrl=getTgUserFromURL();
+      if(fromUrl){
+        if(fromUrl.user&&fromUrl.user.id)gotUser=fromUrl.user;
+        if(fromUrl.start_param)gotStart=fromUrl.start_param;
+      }
+    }
+    if(gotUser&&gotUser.id){
+      S.userId=gotUser.id;
+      if(!S.pn&&gotUser.first_name){const pn=document.getElementById('pname');if(pn)pn.value=gotUser.first_name;}
+    }
+    if(gotStart&&/^\d+$/.test(gotStart))_pendingReferrer=parseInt(gotStart,10);
   }catch(e){}
 
   // Загружаем локально сначала (быстро) — это никогда не должно падать
