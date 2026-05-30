@@ -35,7 +35,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .driver-pick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:-4px}
 .driver-opt{border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px;cursor:pointer;background:rgba(255,255,255,0.04);transition:all .15s;display:flex;align-items:center;gap:8px}
 .driver-opt.sel{border-width:2.5px;background:rgba(255,255,255,0.08)}
-.driver-num{font-size:18px;font-weight:800;min-width:28px;text-align:center}
+.dopt-helm{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.05);flex-shrink:0}
+.driver-num{font-size:18px;font-weight:800;text-align:left}
 .driver-name{font-size:12px;font-weight:600}
 .start-btn{padding:14px;font-size:15px;border:none;border-radius:12px;cursor:pointer;font-weight:600;width:100%;margin-top:4px}
 
@@ -45,6 +46,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 .header{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:8px 12px;display:flex;align-items:center;gap:8px}
 .header canvas{flex-shrink:0;border-radius:6px;display:none}
+.header canvas.helmet-avatar{display:block;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.12);padding:0}
 .hinfo{flex:1;min-width:0}
 .career-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:3px}
 .career-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -111,9 +113,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(20,20,35,0.95);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:8px 18px;border-radius:20px;font-size:12px;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;z-index:200;backdrop-filter:blur(10px)}
 .toast.show{opacity:1}
 
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:300;opacity:0;pointer-events:none;transition:opacity .2s;padding:20px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:300;opacity:0;pointer-events:none;transition:opacity .2s;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .modal-overlay.show{opacity:1;pointer-events:all}
-.modal-box{background:#181828;border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:24px;width:100%;max-width:320px;text-align:center}
+.modal-box{background:#181828;border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:24px;width:100%;max-width:320px;text-align:center;margin:auto}
 .modal-emoji{font-size:44px;margin-bottom:10px}
 .modal-title{font-size:18px;font-weight:700;margin-bottom:6px}
 .modal-text{font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:16px;line-height:1.6}
@@ -196,6 +198,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tabs.row2{margin-top:-4px}
 
 .hidden{display:none!important}
+body.modal-open{overflow:hidden}
 </style>
 </head>
 <body>
@@ -231,6 +234,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
     <div class="header">
       <canvas id="hcar" width="90" height="50"></canvas>
+      <canvas id="hhelmet" width="48" height="48" class="helmet-avatar"></canvas>
       <div class="hinfo">
         <div class="career-badge" id="cbadge">Картинг</div>
         <div class="career-name" id="cname">—</div>
@@ -348,27 +352,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 // ── ДАННЫЕ ───────────────────────────────────────────────────────────────────
 const TEAMS=[
   {id:'redbull',    n:'Red Bull',     c1:'#1B3A6B',c2:'#FFD700',num:'1',  dr:'VERSTAPPEN',academy:true, aname:'Red Bull Junior',        bonus:'Оффер раньше · +20% монет/клик',
-    drivers:[{dr:'VERSTAPPEN',num:'1'},{dr:'HADJAR',num:'6'}]},
+    drivers:[{dr:'VERSTAPPEN',num:'1', h1:'#13347A',h2:'#E1141A',h3:'#FFFFFF'},{dr:'HADJAR',num:'6',h1:'#1B1B22',h2:'#2E63C6',h3:'#E8E8E8'}]},
   {id:'ferrari',    n:'Ferrari',      c1:'#CC0000',c2:'#FFD700',num:'16', dr:'LECLERC',   academy:true, aname:'Ferrari Driver Academy', bonus:'Оффер раньше · +15% XP',
-    drivers:[{dr:'LECLERC',num:'16'},{dr:'HAMILTON',num:'44'}]},
+    drivers:[{dr:'LECLERC',num:'16',h1:'#C8102E',h2:'#1B1B22',h3:'#F0C808'},{dr:'HAMILTON',num:'44',h1:'#4B2E83',h2:'#F0C808',h3:'#FFFFFF'}]},
   {id:'mercedes',   n:'Mercedes',     c1:'#00A19C',c2:'#C0C0C0',num:'63', dr:'RUSSELL',   academy:true, aname:'Mercedes Junior',        bonus:'Оффер раньше · +10% пассив',
-    drivers:[{dr:'RUSSELL',num:'63'},{dr:'ANTONELLI',num:'12'}]},
+    drivers:[{dr:'RUSSELL',num:'63',h1:'#0A1A3F',h2:'#00D2BE',h3:'#FFFFFF'},{dr:'ANTONELLI',num:'12',h1:'#101820',h2:'#00D2BE',h3:'#E8E8E8'}]},
   {id:'mclaren',    n:'McLaren',      c1:'#FF6B00',c2:'#0C1C40',num:'4',  dr:'NORRIS',    academy:false,aname:'',                       bonus:'+10% к наградам турниров',
-    drivers:[{dr:'NORRIS',num:'4'},{dr:'PIASTRI',num:'81'}]},
+    drivers:[{dr:'NORRIS',num:'4',h1:'#FF6B00',h2:'#1B1B6B',h3:'#FFE000'},{dr:'PIASTRI',num:'81',h1:'#0A1A3F',h2:'#FF7A1A',h3:'#5BC2E7'}]},
   {id:'alpine',     n:'Alpine',       c1:'#0052CC',c2:'#E91E8C',num:'10', dr:'GASLY',     academy:false,aname:'',                       bonus:'Старт +500 монет',
-    drivers:[{dr:'GASLY',num:'10'},{dr:'COLAPINTO',num:'43'}]},
+    drivers:[{dr:'GASLY',num:'10',h1:'#1E3FA0',h2:'#E8E8E8',h3:'#E2231A'},{dr:'COLAPINTO',num:'43',h1:'#0A1A3F',h2:'#6CACE4',h3:'#74C0E0'}]},
   {id:'aston',      n:'Aston Martin', c1:'#005A4E',c2:'#C9A84C',num:'14', dr:'ALONSO',    academy:false,aname:'',                       bonus:'+8% пассивный доход',
-    drivers:[{dr:'ALONSO',num:'14'},{dr:'STROLL',num:'18'}]},
+    drivers:[{dr:'ALONSO',num:'14',h1:'#0A2A6B',h2:'#F0C808',h3:'#E2231A'},{dr:'STROLL',num:'18',h1:'#1B1B22',h2:'#E2231A',h3:'#F0C808'}]},
   {id:'williams',   n:'Williams',     c1:'#003E7A',c2:'#E0E8FF',num:'55', dr:'SAINZ',     academy:false,aname:'',                       bonus:'Хардкор: -20% монет +20% XP',
-    drivers:[{dr:'ALBON',num:'23'},{dr:'SAINZ',num:'55'}]},
+    drivers:[{dr:'ALBON',num:'23',h1:'#0A1A3F',h2:'#00A3E0',h3:'#E2231A'},{dr:'SAINZ',num:'55',h1:'#E63312',h2:'#1B1B22',h3:'#F0C808'}]},
   {id:'haas',       n:'Haas',         c1:'#B22222',c2:'#E8E8E8',num:'87', dr:'BEARMAN',   academy:false,aname:'',                       bonus:'+5% шанс победы',
-    drivers:[{dr:'OCON',num:'31'},{dr:'BEARMAN',num:'87'}]},
+    drivers:[{dr:'OCON',num:'31',h1:'#101820',h2:'#1B3FA0',h3:'#E8E8E8'},{dr:'BEARMAN',num:'87',h1:'#E8E8E8',h2:'#2AA84A',h3:'#1B1B22'}]},
   {id:'rbulls',     n:'Racing Bulls', c1:'#1C3BA0',c2:'#66B0FF',num:'30', dr:'LAWSON',    academy:false,aname:'',                       bonus:'+5% XP',
-    drivers:[{dr:'LAWSON',num:'30'},{dr:'LINDBLAD',num:'37'}]},
+    drivers:[{dr:'LAWSON',num:'30',h1:'#101820',h2:'#E8E8E8',h3:'#2E63C6'},{dr:'LINDBLAD',num:'37',h1:'#1B3FA0',h2:'#E03A3A',h3:'#FFFFFF'}]},
   {id:'audi',       n:'Audi F1',      c1:'#333333',c2:'#CC0000',num:'5',  dr:'BORTOLETO', academy:false,aname:'',                       bonus:'Апгрейды -6% дешевле',
-    drivers:[{dr:'HULKENBERG',num:'27'},{dr:'BORTOLETO',num:'5'}]},
+    drivers:[{dr:'HULKENBERG',num:'27',h1:'#1B1B22',h2:'#2AA84A',h3:'#E8E8E8'},{dr:'BORTOLETO',num:'5',h1:'#F0C808',h2:'#1B7A3E',h3:'#1B1B22'}]},
   {id:'cadillac',   n:'Cadillac',     c1:'#1A1A2E',c2:'#B8860B',num:'77', dr:'BOTTAS',    academy:false,aname:'',                       bonus:'+8% шанс победы',
-    drivers:[{dr:'PEREZ',num:'11'},{dr:'BOTTAS',num:'77'}]},
+    drivers:[{dr:'PEREZ',num:'11',h1:'#1B1B22',h2:'#E2231A',h3:'#F0C808'},{dr:'BOTTAS',num:'77',h1:'#0A1A3F',h2:'#00B2E3',h3:'#FFFFFF'}]},
 ];
 
 const CAREERS=[
@@ -703,7 +707,7 @@ function T(){return TEAMS.find(x=>x.id===S.tid)||TEAMS[0];}
 function curDriver(){
   const t=T();
   if(t.drivers&&t.drivers[S.did])return t.drivers[S.did];
-  return {dr:t.dr,num:t.num};
+  return {dr:t.dr,num:t.num,h1:t.c1,h2:t.c2,h3:'#ffffff'};
 }
 function C(){return CAREERS[S.cl];}
 
@@ -1219,6 +1223,67 @@ function drawHelmet(ctx,cx,cy,s,c1,c2){
   ctx.restore();
 }
 
+// Аватар-шлем для шапки: три зоны цвета по реальной палитре пилота (h1 корпус, h2 полоса/верх, h3 акцент)
+function drawHelmetAvatar(ctx,W,H,teamC1,d){
+  ctx.clearRect(0,0,W,H);
+  const h1=(d&&d.h1)||teamC1, h2=(d&&d.h2)||'#e8e8e8', h3=(d&&d.h3)||'#ffffff';
+  // фон-кружок в цвете команды
+  ctx.save();
+  ctx.beginPath();ctx.arc(W/2,H/2,W/2,0,Math.PI*2);ctx.clip();
+  ctx.fillStyle=teamC1;ctx.globalAlpha=0.20;ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;
+  // рисуем шлем в локальных координатах ~100x100, центр в (cx,cy)
+  ctx.translate(W/2,H/2);
+  const s=W/120; ctx.scale(s,s);
+  ctx.translate(0,6); // лёгкое смещение вниз
+  // силуэт шлема (вид сбоку, нос вправо)
+  ctx.beginPath();
+  ctx.moveTo(-44,16);
+  ctx.bezierCurveTo(-48,-14,-30,-50,4,-50);
+  ctx.bezierCurveTo(34,-50,52,-26,52,2);
+  ctx.bezierCurveTo(52,18,40,28,22,30);
+  ctx.bezierCurveTo(2,34,-30,28,-44,16);
+  ctx.closePath();
+  // корпус — основной цвет
+  ctx.fillStyle=h1;ctx.fill();
+  // верхняя секция (h2) — клин сверху
+  ctx.save();ctx.clip();
+  ctx.fillStyle=h2;
+  ctx.beginPath();
+  ctx.moveTo(-48,-6);
+  ctx.bezierCurveTo(-30,-52,30,-54,54,-20);
+  ctx.lineTo(54,-30);ctx.lineTo(-48,-30);
+  ctx.closePath();ctx.fill();
+  // акцентная полоса (h3) поперёк
+  ctx.fillStyle=h3;
+  ctx.fillRect(-50,-12,108,7);
+  ctx.restore();
+  // визор (тёмное стекло) — справа
+  ctx.fillStyle='#0b0b14';
+  ctx.beginPath();
+  ctx.moveTo(8,-4);
+  ctx.bezierCurveTo(8,-20,26,-28,46,-16);
+  ctx.bezierCurveTo(52,-10,52,6,44,12);
+  ctx.bezierCurveTo(34,18,16,16,9,9);
+  ctx.bezierCurveTo(5,5,6,0,8,-4);
+  ctx.closePath();ctx.fill();
+  // блик на визоре
+  ctx.fillStyle='rgba(255,255,255,0.30)';
+  ctx.beginPath();ctx.ellipse(24,-12,8,3.5,-0.3,0,Math.PI*2);ctx.fill();
+  // нижняя вентиляция/подбородок
+  ctx.fillStyle='rgba(0,0,0,0.25)';
+  ctx.beginPath();ctx.moveTo(-2,26);ctx.bezierCurveTo(14,34,34,30,44,18);ctx.lineTo(22,30);ctx.bezierCurveTo(8,33,-2,32,-2,26);ctx.closePath();ctx.fill();
+  // обводка
+  ctx.strokeStyle='rgba(0,0,0,0.25)';ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(-44,16);
+  ctx.bezierCurveTo(-48,-14,-30,-50,4,-50);
+  ctx.bezierCurveTo(34,-50,52,-26,52,2);
+  ctx.bezierCurveTo(52,18,40,28,22,30);
+  ctx.bezierCurveTo(2,34,-30,28,-44,16);
+  ctx.closePath();ctx.stroke();
+  ctx.restore();
+}
+
 function numPlate(ctx,cx,cy,num,dr,c1,c2){
   const pw=58,ph=26,px=cx-pw/2,py=cy-ph/2;
   ctx.fillStyle='rgba(0,0,0,0.2)';ctx.beginPath();ctx.roundRect(px+2,py+2,pw,ph,4);ctx.fill();
@@ -1507,9 +1572,9 @@ function showModal(em,ti,tx){
   document.getElementById('memoji').textContent=em;
   document.getElementById('mtitle').textContent=ti;
   document.getElementById('mtext').textContent=tx;
-  document.getElementById('modal').classList.add('show');
+  document.getElementById('modal').classList.add('show');document.body.classList.add('modal-open');
 }
-function closeModal(){document.getElementById('modal').classList.remove('show');}
+function closeModal(){document.getElementById('modal').classList.remove('show');document.body.classList.remove('modal-open');}
 
 // ── ПРОФИЛЬ ───────────────────────────────────────────────────────────────────
 const BOT_USERNAME='F1CareerBot';
@@ -1539,8 +1604,11 @@ function openProfile(){
   const eq=S.equipped?SHOP_ITEMS.find(i=>i.id===S.equipped):null;
   body.innerHTML=`
     <div style="text-align:center;margin-bottom:12px">
-      <div style="font-size:40px">${eq?eq.emoji:'🏎️'}</div>
-      <div style="font-size:18px;font-weight:700;margin-top:4px">${S.pn||'Гонщик'}</div>
+      <div style="position:relative;display:inline-block">
+        <canvas id="prof-helm" width="64" height="64" style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.05);border:2px solid ${t.c1}"></canvas>
+        ${eq?`<div style="position:absolute;bottom:-2px;right:-2px;font-size:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6))">${eq.emoji}</div>`:''}
+      </div>
+      <div style="font-size:18px;font-weight:700;margin-top:6px">${S.pn||'Гонщик'}</div>
       <div style="font-size:12px;color:${pickFloatColor(t)}">${t.n} · ${c.name}</div>
       <div style="font-size:10px;color:rgba(255,255,255,0.45);margin-top:2px">Пилот: ${curDriver().dr} #${curDriver().num}</div>
     </div>
@@ -1559,9 +1627,11 @@ function openProfile(){
       <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:8px">Вы оба получите +${fmt(REFERRAL_BONUS)} монет!</div>
       <button onclick="inviteFriend()" style="width:100%;padding:9px;border:none;border-radius:9px;background:#3aa86b;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Поделиться ссылкой</button>
     </div>`;
-  document.getElementById('profile-overlay').classList.add('show');
+  document.getElementById('profile-overlay').classList.add('show');document.body.classList.add('modal-open');
+  // дорисовываем шлем пилота
+  try{const ph=document.getElementById('prof-helm');if(ph)drawHelmetAvatar(ph.getContext('2d'),ph.width,ph.height,t.c1,curDriver());}catch(e){}
 }
-function closeProfile(){document.getElementById('profile-overlay').classList.remove('show');}
+function closeProfile(){document.getElementById('profile-overlay').classList.remove('show');document.body.classList.remove('modal-open');}
 
 // ── НАСТРОЙКИ ─────────────────────────────────────────────────────────────────
 function openSettings(){
@@ -1583,7 +1653,8 @@ function openSettings(){
     const sel=i===(S.did||0);
     return `<button onclick="changeDriver(${i})" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:9px;cursor:pointer;
       background:${sel?t.c1+'33':'rgba(255,255,255,0.05)'};border:1.5px solid ${sel?t.c1:'rgba(255,255,255,0.1)'};color:#fff">
-      <span style="font-size:16px;font-weight:800;min-width:24px;text-align:center;color:${sel?t.c2:'rgba(255,255,255,0.6)'}">${d.num}</span>
+      <canvas class="set-helm" width="34" height="34" data-idx="${i}" style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.05);flex-shrink:0"></canvas>
+      <span style="font-size:15px;font-weight:800;min-width:20px;text-align:center;color:${sel?t.c2:'rgba(255,255,255,0.6)'}">${d.num}</span>
       <span style="font-size:11px;font-weight:${sel?'700':'500'}">${d.dr}</span>
     </button>`;
   }).join('');
@@ -1613,9 +1684,17 @@ function openSettings(){
       <span style="color:#ff7a6b">⚠️ Опасная зона</span>
       <button onclick="resetProgress()" style="padding:10px;border-radius:9px;background:rgba(255,60,50,0.15);border:1px solid rgba(255,60,50,0.4);color:#ff7a6b;font-weight:600;font-size:12px;cursor:pointer">Сбросить весь прогресс</button>
     </div>`;
-  document.getElementById('settings-overlay').classList.add('show');
+  document.getElementById('settings-overlay').classList.add('show');document.body.classList.add('modal-open');
+  // дорисовываем шлемы пилотов на кнопках
+  try{
+    const drsNow=t.drivers||[{dr:t.dr,num:t.num}];
+    document.querySelectorAll('.set-helm').forEach(cv=>{
+      const idx=parseInt(cv.getAttribute('data-idx'),10);
+      drawHelmetAvatar(cv.getContext('2d'),cv.width,cv.height,t.c1,drsNow[idx]);
+    });
+  }catch(e){}
 }
-function closeSettings(){document.getElementById('settings-overlay').classList.remove('show');}
+function closeSettings(){document.getElementById('settings-overlay').classList.remove('show');document.body.classList.remove('modal-open');}
 
 // ── ТУТОРИАЛ ──────────────────────────────────────────────────────────────────
 const TUT_STEPS=[
@@ -1630,7 +1709,7 @@ let _tutStep=0;
 function startTutorial(){
   _tutStep=0;
   renderTutStep();
-  document.getElementById('tutorial-overlay').classList.add('show');
+  document.getElementById('tutorial-overlay').classList.add('show');document.body.classList.add('modal-open');
 }
 function renderTutStep(){
   const s=TUT_STEPS[_tutStep];if(!s)return;
@@ -1653,7 +1732,7 @@ function tutNext(){
 }
 function tutSkip(){tutFinish();}
 function tutFinish(){
-  document.getElementById('tutorial-overlay').classList.remove('show');
+  document.getElementById('tutorial-overlay').classList.remove('show');document.body.classList.remove('modal-open');
   S.tutDone=true;save();
 }
 function toggleSetting(key){
@@ -1840,6 +1919,8 @@ function render(){
     drawCar(hcar.getContext('2d'),hcar.width,hcar.height,t.c1,t.c2,d.num,d.dr,c.ct);
     const main=document.getElementById('car-main');
     drawCar(main.getContext('2d'),main.width,main.height,t.c1,t.c2,d.num,d.dr,c.ct);
+    const helm=document.getElementById('hhelmet');
+    if(helm)drawHelmetAvatar(helm.getContext('2d'),helm.width,helm.height,t.c1,d);
   }catch(e){console.log('canvas err',e);}
   // badge
   const badge=document.getElementById('cbadge');
@@ -2128,10 +2209,20 @@ function renderDriverPick(){
   wrap.innerHTML=drs.map((d,i)=>{
     const sel=i===selDriver;
     return `<div class="driver-opt ${sel?'sel':''}" id="dopt-${i}" onclick="selDriverFn(${i})" style="${sel?`border-color:${t.c1};box-shadow:0 0 10px ${t.c1}44`:''}">
-      <div class="driver-num" style="color:${sel?t.c2:'rgba(255,255,255,0.6)'}">${d.num}</div>
-      <div class="driver-name">${d.dr}</div>
+      <canvas class="dopt-helm" width="40" height="40" data-idx="${i}"></canvas>
+      <div>
+        <div class="driver-num" style="color:${sel?t.c2:'rgba(255,255,255,0.6)'}">${d.num}</div>
+        <div class="driver-name">${d.dr}</div>
+      </div>
     </div>`;
   }).join('');
+  // дорисовываем шлемы на канвасах
+  wrap.querySelectorAll('.dopt-helm').forEach(cv=>{
+    try{
+      const idx=parseInt(cv.getAttribute('data-idx'),10);
+      drawHelmetAvatar(cv.getContext('2d'),cv.width,cv.height,t.c1,drs[idx]);
+    }catch(e){}
+  });
 }
 function selDriverFn(i){
   selDriver=i;
