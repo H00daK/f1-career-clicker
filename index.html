@@ -169,11 +169,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="tab active" onclick="switchTab('upgrades')">Апгрейды</div>
       <div class="tab" onclick="switchTab('tournaments')">Турниры</div>
       <div class="tab" onclick="switchTab('achievements')">Достижения</div>
+      <div class="tab" onclick="switchTab('leaderboard')">🏆 Топ</div>
     </div>
 
     <div class="panel" id="panel-upgrades"><div class="panel-title">Запчасти</div><div id="upg-list"></div></div>
     <div class="panel hidden" id="panel-tournaments"><div class="panel-title">Турниры</div><div id="tourn-list"></div></div>
     <div class="panel hidden" id="panel-achievements"><div class="panel-title">Достижения</div><div id="ach-list"></div></div>
+    <div class="panel hidden" id="panel-leaderboard"><div class="panel-title">Топ гонщиков</div><div id="lb-list"><div style="font-size:12px;color:rgba(255,255,255,0.4);padding:8px 0">Загрузка...</div></div></div>
 
     <div class="disclaimer">Fan game · Not affiliated with Formula One Group</div>
   </div>
@@ -294,14 +296,64 @@ if(!CanvasRenderingContext2D.prototype.roundRect){
   };
 }
 
+// ── SUPABASE ──────────────────────────────────────────────────────────────────
+const SB_URL='https://ypdqmvivmqwhqurfpnkn.supabase.co';
+const SB_KEY='sb_publishable_T-gH4TI68q1qCj3tpsB_rQ_Ip-I5gLL';
+
+async function sbFetch(path,method='GET',body=null){
+  const opts={method,headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'}};
+  if(body)opts.body=JSON.stringify(body);
+  try{const r=await fetch(SB_URL+path,opts);return await r.json();}catch(e){return null;}
+}
+
+async function cloudLoad(userId){
+  const data=await sbFetch(`/rest/v1/players?id=eq.${userId}&select=*`);
+  if(data&&data.length>0){
+    const p=data[0];
+    S.pn=p.name||S.pn;
+    S.tid=p.team_id||S.tid;
+    S.coins=p.coins||0;
+    S.xp=p.xp||0;
+    S.cl=p.career_level||0;
+    S.tw=p.total_wins||0;
+    S.ul=p.upgrades||{};
+    S.tw_ids=p.won_tournaments||[];
+    S.tce=p.coins||0;
+    return true;
+  }
+  return false;
+}
+
+async function cloudSave(){
+  if(!S.userId)return;
+  const payload={
+    id:S.userId,name:S.pn,team_id:S.tid,
+    coins:Math.floor(S.coins),xp:Math.floor(S.xp),
+    career_level:S.cl,total_wins:S.tw,
+    upgrades:S.ul,won_tournaments:S.tw_ids,
+    updated_at:new Date().toISOString()
+  };
+  await sbFetch('/rest/v1/players','POST',payload);
+  // если уже есть — обновляем
+  await sbFetch(`/rest/v1/players?id=eq.${S.userId}`,'PATCH',payload);
+}
+
+async function loadLeaderboard(){
+  const data=await sbFetch('/rest/v1/leaderboard?select=*&limit=20');
+  return data||[];
+}
+
 // ── СОСТОЯНИЕ ─────────────────────────────────────────────────────────────────
 // tw_ids — турниры в которых побеждали хотя бы раз (для условия перехода)
-let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:null,tw_ids:[]};
+let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:null,tw_ids:[],userId:null};
 let selTeam='redbull';
 
 function load(){try{const d=localStorage.getItem('f1_v6');if(d)S={...S,...JSON.parse(d)};}catch(e){}}
-function save(){try{localStorage.setItem('f1_v6',JSON.stringify(S));}catch(e){}}
-
+function save(){
+  try{localStorage.setItem('f1_v6',JSON.stringify(S));}catch(e){}
+  // облачное сохранение если есть userId
+  if(S.userId)cloudSave();
+}
 function T(){return TEAMS.find(x=>x.id===S.tid)||TEAMS[0];}
 function C(){return CAREERS[S.cl];}
 
@@ -667,8 +719,34 @@ function drawF1(ctx,W,H,c1,c2,num,dr){
 
 // ── UI ───────────────────────────────────────────────────────────────────────
 function switchTab(name){
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['upgrades','tournaments','achievements'][i]===name));
-  ['upgrades','tournaments','achievements'].forEach(n=>{document.getElementById('panel-'+n).classList.toggle('hidden',n!==name);});
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['upgrades','tournaments','achievements','leaderboard'][i]===name));
+  ['upgrades','tournaments','achievements','leaderboard'].forEach(n=>{document.getElementById('panel-'+n).classList.toggle('hidden',n!==name);});
+  if(name==='leaderboard')renderLeaderboard();
+}
+
+async function renderLeaderboard(){
+  const el=document.getElementById('lb-list');
+  el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.4);padding:8px 0">Загрузка...</div>';
+  const rows=await loadLeaderboard();
+  if(!rows||rows.length===0){el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.4);padding:8px 0">Пока никого нет — стань первым!</div>';return;}
+  const CAREER_NAMES=['Картинг','Ф4','Ф3','Ф2','Ф1'];
+  const medals=['🥇','🥈','🥉'];
+  el.innerHTML=rows.map((r,i)=>{
+    const t=TEAMS.find(x=>x.id===r.team_id)||TEAMS[0];
+    const isMe=r.id===S.userId;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);${isMe?'background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;':''}">
+      <div style="font-size:16px;width:24px;text-align:center">${medals[i]||i+1}</div>
+      <div style="width:8px;height:8px;border-radius:50%;background:${t.c1};flex-shrink:0"></div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600">${r.name}${isMe?' (ты)':''}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.4)">${CAREER_NAMES[r.career_level]||'Картинг'} · ${t.n}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:13px;font-weight:700;color:#FFD700">${r.total_wins}</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.4)">побед</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 function showModal(em,ti,tx){
   document.getElementById('memoji').textContent=em;
@@ -856,39 +934,55 @@ function startGame(){
 }
 
 // ── PASSIVE INCOME ───────────────────────────────────────────────────────────
-// пассивный доход — только монеты, XP только через клики и турниры
 let _lastFullRender=0;
 setInterval(()=>{
   const cps=getCPS();
-  if(cps>0){
-    S.coins+=cps/20;S.tce+=cps/20;
-    // пассивный XP убран — только через клики и турниры
-  }
-  // быстрое обновление только цифр
+  if(cps>0){S.coins+=cps/20;S.tce+=cps/20;}
   try{
     document.getElementById('sv-coins').textContent=fmt(S.coins);
     document.getElementById('sv-cps').textContent=fmtCps(getCPS());
   }catch(e){}
-  // полный рендер каждые 2 секунды
   const now=Date.now();
   if(now-_lastFullRender>2000){_lastFullRender=now;render();}
 },50);
 setInterval(save,4000);
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
-load();
-if(typeof Telegram!=='undefined'&&Telegram.WebApp){
-  Telegram.WebApp.ready();
-  Telegram.WebApp.expand();
+async function init(){
+  // Получаем Telegram User ID
+  if(typeof Telegram!=='undefined'&&Telegram.WebApp){
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand();
+    const user=Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user;
+    if(user&&user.id){
+      S.userId=user.id;
+      // Если есть имя в Telegram — предзаполняем
+      if(!S.pn&&user.first_name)document.getElementById('pname').value=user.first_name;
+    }
+  }
+
+  // Загружаем локально сначала (быстро)
+  load();
+
+  // Затем грузим из облака если есть userId
+  if(S.userId){
+    const loaded=await cloudLoad(S.userId);
+    if(loaded){
+      // Прогресс загружен из облака
+    }
+  }
+
+  if(S.pn){
+    document.getElementById('screen-onboard').classList.add('hidden');
+    document.getElementById('screen-game').classList.remove('hidden');
+    if(S.offer)renderOfferBanner();
+    render();
+  } else {
+    buildOnboard();
+  }
 }
-if(S.pn){
-  document.getElementById('screen-onboard').classList.add('hidden');
-  document.getElementById('screen-game').classList.remove('hidden');
-  if(S.offer)renderOfferBanner();
-  render();
-} else {
-  buildOnboard();
-}
+
+init();
 </script>
 </body>
 </html>
