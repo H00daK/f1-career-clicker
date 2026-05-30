@@ -333,6 +333,7 @@ body.modal-open{overflow:hidden}
     <div class="tabs row2">
       <div class="tab" onclick="switchTab('race')">🏁 Заезд</div>
       <div class="tab" onclick="switchTab('rd')">🏗️ Команда</div>
+      <div class="tab" onclick="switchTab('club')">👥 Клуб</div>
     </div>
 
     <div class="panel" id="panel-upgrades"><div class="panel-title">Запчасти</div><div id="upg-list"></div></div>
@@ -352,6 +353,7 @@ body.modal-open{overflow:hidden}
     </div>
     <div class="panel hidden" id="panel-race"><div class="panel-title">🏁 Заезд на время</div><div id="race-body"></div></div>
     <div class="panel hidden" id="panel-rd"><div class="panel-title">🏗️ Развитие команды</div><div id="rd-body"></div></div>
+    <div class="panel hidden" id="panel-club"><div class="panel-title">👥 Клуб</div><div id="club-body"></div></div>
 
     <div class="disclaimer">Fan game · Not affiliated with Formula One Group</div>
   </div>
@@ -649,6 +651,7 @@ async function cloudLoad(userId){
     S.refCount=p.referrals_count||0;
     if(typeof p.best_streak==='number'&&S.daily)S.daily.streak=Math.max(S.daily.streak||0,0);
     if(p.best_streak)S.bestStreak=p.best_streak;
+    if(typeof p.club_id==='number')S.clubId=p.club_id; else if(p.club_id===null)S.clubId=null;
     return true;
   }
   return false;
@@ -729,7 +732,7 @@ let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:n
   referredBy:null,refCount:0,bestStreak:0,refClaimed:false,season:null,seasonTitles:0,
   sound:true,vibro:true,legacyPoints:0,prestigeCount:0,tutDone:false,did:0,baseClick:0,baseCps:0,
   playtime:0,trophies:[],raceBest:0,livery:null,weather:null,weatherUntil:0,
-  rd:{engine:0,aero:0,reliability:0}};
+  rd:{engine:0,aero:0,reliability:0},clubId:null,clubName:null};
 let selTeam='redbull';
 let selDriver=0;
 
@@ -923,7 +926,7 @@ function doPrestige(){
   const keep={
     ua:S.ua, shop:S.shop, equipped:S.equipped, livery:S.livery, pn:S.pn, tid:S.tid, userId:S.userId,
     sound:S.sound, vibro:S.vibro, refCount:S.refCount, referredBy:S.referredBy, refClaimed:S.refClaimed,
-    bestStreak:S.bestStreak, seasonTitles:S.seasonTitles, daily:S.daily, trophies:S.trophies, raceBest:S.raceBest, playtime:S.playtime
+    bestStreak:S.bestStreak, seasonTitles:S.seasonTitles, daily:S.daily, trophies:S.trophies, raceBest:S.raceBest, playtime:S.playtime, clubId:S.clubId, clubName:S.clubName
   };
   // полный сброс прогресса
   S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:keep.ua,pn:keep.pn,tid:keep.tid,offer:null,tw_ids:[],userId:keep.userId,
@@ -932,7 +935,7 @@ function doPrestige(){
     season:null,seasonTitles:keep.seasonTitles,sound:keep.sound,vibro:keep.vibro,
     legacyPoints:newLP,prestigeCount:newPrestigeCount,baseClick:0,baseCps:0,did:0,tutDone:true,
     trophies:keep.trophies||[],raceBest:keep.raceBest||0,playtime:keep.playtime||0,livery:keep.livery||null,
-    rd:{engine:0,aero:0,reliability:0}};
+    rd:{engine:0,aero:0,reliability:0},clubId:keep.clubId||null,clubName:keep.clubName||null};
   initQuests();
   playSound('win');haptic('success');
   showModal('♻️','Новая карьера!',`${S.pn}, ты начал заново как легенда. Очки наследия: ${newLP} (+${gain}). Постоянный бонус к доходу: +${Math.round(newLP*5)}%. Косметика и достижения сохранены!`);
@@ -1010,6 +1013,143 @@ function buyRD(id){
   toast(`${dept.emoji} ${dept.name} ур.${lvl+1}`);haptic('success');
   save();render();renderRD();
 }
+// ── КЛУБЫ ИГРОКОВ ────────────────────────────────────────────────────────────
+const CLUB_CREATE_COST=1000000; // создание клуба стоит монет
+async function renderClub(){
+  const el=document.getElementById('club-body');if(!el)return;
+  const t=T();
+  if(!S.userId){
+    el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.6);padding:10px;text-align:center">Клубы доступны только при входе через Telegram (нужен твой ID для синхронизации).</div>';
+    return;
+  }
+  el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.4);padding:10px">Загрузка...</div>';
+  // подтягиваем актуальное членство из БД
+  let myClub=null;
+  try{
+    const me=await sbFetch(`/rest/v1/players?id=eq.${S.userId}&select=club_id`);
+    if(me&&me[0]&&me[0].club_id){S.clubId=me[0].club_id;}else{S.clubId=null;}
+  }catch(e){}
+
+  if(S.clubId){
+    await renderMyClub(el,t);
+  }else{
+    await renderClubList(el,t);
+  }
+}
+// Экран «у меня есть клуб»
+async function renderMyClub(el,t){
+  let standings=[];
+  try{standings=await sbFetch('/rest/v1/club_standings?select=*&order=avg_level.desc,avg_earned.desc&limit=50')||[];}catch(e){}
+  const mine=standings.find(c=>c.club_id===S.clubId);
+  const myRank=mine?standings.indexOf(mine)+1:'—';
+  // участники моего клуба
+  let members=[];
+  try{members=await sbFetch(`/rest/v1/players?club_id=eq.${S.clubId}&select=name,career_level,coins_earned,total_wins&order=career_level.desc&limit=30`)||[];}catch(e){}
+  const clubName=mine?mine.club_name:(S.clubName||'Мой клуб');
+  S.clubName=clubName;
+  el.innerHTML=`
+    <div style="background:linear-gradient(135deg,${t.c1}33,${t.c1}11);border:1px solid ${t.c1}55;border-radius:14px;padding:14px;margin-bottom:12px">
+      <div style="font-size:10px;color:rgba(255,255,255,0.5)">Твой клуб</div>
+      <div style="font-size:20px;font-weight:800;margin:2px 0">${clubName}</div>
+      <div style="display:flex;gap:14px;margin-top:8px">
+        <div><div style="font-size:9px;color:rgba(255,255,255,0.5)">Место</div><div style="font-size:16px;font-weight:700;color:#ffd24a">${myRank===1?'🥇 1':myRank}</div></div>
+        <div><div style="font-size:9px;color:rgba(255,255,255,0.5)">Ср. уровень</div><div style="font-size:16px;font-weight:700">${mine?Number(mine.avg_level).toFixed(1):'0'}</div></div>
+        <div><div style="font-size:9px;color:rgba(255,255,255,0.5)">Участников</div><div style="font-size:16px;font-weight:700">${mine?mine.members:members.length}</div></div>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);margin-bottom:6px">Участники</div>
+    <div style="margin-bottom:12px">
+      ${members.map(m=>{
+        const lvl=['Картинг','Ф4','Ф3','Ф2','Ф1'][m.career_level]||'Картинг';
+        const me=String(m.name)===String(S.pn);
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;margin-bottom:3px;background:${me?'rgba(255,200,60,0.1)':'rgba(255,255,255,0.04)'}">
+          <span style="flex:1;font-size:12px;font-weight:${me?'700':'500'}">${m.name}${me?' (ты)':''}</span>
+          <span style="font-size:10px;color:rgba(255,255,255,0.6)">${lvl}</span>
+          <span style="font-size:10px;color:#ffd24a">🏆${m.total_wins||0}</span>
+        </div>`;
+      }).join('')||'<div style="font-size:11px;color:rgba(255,255,255,0.4)">Пока только ты</div>'}
+    </div>
+    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);margin-bottom:6px">🏆 Рейтинг клубов</div>
+    <div style="margin-bottom:12px">${renderClubStandingsRows(standings,t)}</div>
+    <button onclick="leaveClub(event)" style="width:100%;padding:11px;border-radius:10px;background:rgba(255,60,50,0.15);border:1px solid rgba(255,60,50,0.4);color:#ff7a6b;font-size:12px;font-weight:600;cursor:pointer">Покинуть клуб</button>
+  `;
+}
+// Экран «нет клуба» — список + создание
+async function renderClubList(el,t){
+  let standings=[];
+  try{standings=await sbFetch('/rest/v1/club_standings?select=*&order=avg_level.desc,avg_earned.desc&limit=50')||[];}catch(e){}
+  el.innerHTML=`
+    <div style="font-size:12px;color:rgba(255,255,255,0.65);line-height:1.5;margin-bottom:12px">
+      Вступай в клуб или создай свой! Рейтинг клуба — среднее по уровням участников. Объединяйся с друзьями и поднимайтесь в топе вместе.
+    </div>
+    <div style="background:rgba(124,90,255,0.1);border:1px solid rgba(124,90,255,0.35);border-radius:12px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">Создать свой клуб</div>
+      <input id="club-name-input" maxlength="24" placeholder="Название клуба" style="width:100%;padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.25);color:#fff;font-size:13px;margin-bottom:8px">
+      <button onclick="createClub(event)" style="width:100%;padding:10px;border-radius:8px;background:#7c5aff;border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Создать за ${fmt(CLUB_CREATE_COST)}💰</button>
+      <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:5px">У тебя: ${fmt(Math.floor(S.coins))}💰</div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);margin-bottom:6px">🏆 Клубы — нажми, чтобы вступить</div>
+    <div>${renderClubStandingsRows(standings,t,true)}</div>
+  `;
+}
+function renderClubStandingsRows(standings,t,joinable){
+  if(!standings||!standings.length)return '<div style="font-size:11px;color:rgba(255,255,255,0.4)">Пока нет клубов. Создай первый!</div>';
+  return standings.map((c,i)=>{
+    const medal=['🥇','🥈','🥉'][i]||`${i+1}.`;
+    const mine=c.club_id===S.clubId;
+    const click=joinable?`onclick="joinClub(${c.club_id},'${(c.club_name||'').replace(/'/g,'')}',event)" style="cursor:pointer"`:'';
+    return `<div ${click} style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;margin-bottom:3px;background:${mine?'rgba(255,200,60,0.12)':'rgba(255,255,255,0.04)'};${joinable?'cursor:pointer':''}">
+      <span style="width:24px;font-size:12px">${medal}</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600">${c.club_name}</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.5)">${c.members} участн. · ср.ур. ${Number(c.avg_level).toFixed(1)}</div>
+      </div>
+      ${joinable&&!mine?`<span style="font-size:10px;color:#7c5aff;font-weight:700">Вступить →</span>`:''}
+    </div>`;
+  }).join('');
+}
+async function createClub(ev){
+  const inp=document.getElementById('club-name-input');
+  const name=inp?inp.value.trim():'';
+  if(!name){toast('Введи название клуба');return;}
+  if(S.coins<CLUB_CREATE_COST){toast('Недостаточно монет');haptic('error');return;}
+  const btn=ev&&ev.target?ev.target:null;if(btn){btn.disabled=true;btn.textContent='⏳ Создаю...';}
+  try{
+    const res=await sbFetch('/rest/v1/rpc/create_club','POST',{p_user:S.userId,p_name:name});
+    // res — id нового клуба (число) или ошибка
+    if(typeof res==='number'||(res&&!res.message)){
+      S.coins-=CLUB_CREATE_COST;
+      S.clubId=(typeof res==='number')?res:S.clubId;
+      S.clubName=name;
+      await cloudSave();
+      toast('🎉 Клуб создан!');haptic('success');
+      save();renderClub();render();
+    }else{
+      toast('Не удалось создать (уже в клубе?)');haptic('error');
+      if(btn){btn.disabled=false;btn.textContent='Создать';}
+    }
+  }catch(e){toast('❌ Ошибка сети');if(btn){btn.disabled=false;btn.textContent='Создать';}}
+}
+async function joinClub(clubId,clubName,ev){
+  haptic('light');
+  try{
+    const res=await sbFetch('/rest/v1/rpc/join_club','POST',{p_user:S.userId,p_club:clubId});
+    if(res===true||res===null){ // RPC возвращает true; null если PostgREST не вернул тело
+      S.clubId=clubId;S.clubName=clubName;
+      save();toast('✅ Ты вступил в клуб!');haptic('success');renderClub();
+    }else{toast('Не удалось вступить');haptic('error');}
+  }catch(e){toast('❌ Ошибка сети');}
+}
+async function leaveClub(ev){
+  haptic('light');
+  const btn=ev&&ev.target?ev.target:null;if(btn){btn.disabled=true;btn.textContent='⏳...';}
+  try{
+    await sbFetch('/rest/v1/rpc/leave_club','POST',{p_user:S.userId});
+    S.clubId=null;S.clubName=null;
+    save();toast('Ты покинул клуб');haptic('success');renderClub();
+  }catch(e){toast('❌ Ошибка сети');if(btn){btn.disabled=false;btn.textContent='Покинуть клуб';}}
+}
+
 function renderRD(){
   const el=document.getElementById('rd-body');if(!el)return;
   const t=T();
@@ -1794,7 +1934,7 @@ function drawF1(ctx,W,H,c1,c2,num,dr,drv){
 }
 
 // ── UI ───────────────────────────────────────────────────────────────────────
-const ALL_TABS=['upgrades','tournaments','season','contracts','garage','achievements','leaderboard','race','rd'];
+const ALL_TABS=['upgrades','tournaments','season','contracts','garage','achievements','leaderboard','race','rd','club'];
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>{
     const tn=(t.getAttribute('onclick').match(/'([^']+)'/)||[])[1];
@@ -1805,6 +1945,7 @@ function switchTab(name){
   if(name==='season')renderSeason();
   if(name==='race')renderRace();
   if(name==='rd')renderRD();
+  if(name==='club')renderClub();
 }
 
 // ── ЗАЕЗД НА ВРЕМЯ (соревновательный, асинхронный) ──────────────────────────
