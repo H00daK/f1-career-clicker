@@ -2170,7 +2170,8 @@ function openSettings(){
         <button onclick="manualCloudLoad(event)" style="flex:1;padding:9px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:11px;cursor:pointer">☁️ Загрузить из облака</button>
       </div>
       <div style="font-size:9px;color:rgba(255,255,255,0.4)">Прогресс привязан к твоему Telegram. «Загрузить» подтянет сейв с другого устройства.</div>
-      <div style="font-size:9px;color:${S.userId?'rgba(120,200,160,0.8)':'rgba(255,140,120,0.9)'}">${S.userId?('🆔 Твой ID: '+S.userId+' (синхронизация активна)'):'⚠️ ID не получен — открой игру ЧЕРЕЗ Telegram (бота), а не в обычном браузере, иначе облако не синхронизируется'}</div>
+      <div style="font-size:9px;color:${S.userId?'rgba(120,200,160,0.8)':'rgba(255,140,120,0.9)'}">${S.userId?('🆔 Твой ID: '+S.userId+' (синхронизация активна)'):'⚠️ ID не получен от Telegram'}</div>
+      ${!S.userId?`<div style="font-size:8px;color:rgba(255,255,255,0.45);line-height:1.5;margin-top:2px">Диагностика: ${tgDiag()}</div>`:''}
     </div>
     ${isAdmin()?`
     <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px;border:1px solid rgba(120,90,255,0.4);border-radius:10px;padding:10px;background:rgba(120,90,255,0.08)">
@@ -2206,6 +2207,21 @@ function openSettings(){
 function closeSettings(){document.getElementById('settings-overlay').classList.remove('show');document.body.classList.remove('modal-open');}
 
 // ── АДМИН-ДЕЙСТВИЯ (только для ADMIN_IDS) ──
+// Диагностика подключения Telegram — показывает, на каком шаге теряется user ID
+function tgDiag(){
+  try{
+    if(typeof Telegram==='undefined')return 'Telegram объект отсутствует (скрипт не загрузился)';
+    if(!Telegram.WebApp)return 'Telegram.WebApp отсутствует';
+    const wa=Telegram.WebApp;
+    const ver=wa.version||'?';
+    const idu=wa.initDataUnsafe||{};
+    const hasInitData=wa.initData&&wa.initData.length>0;
+    const hasUser=idu.user&&idu.user.id;
+    if(hasUser)return 'user.id есть: '+idu.user.id+' (v'+ver+')';
+    if(hasInitData)return 'initData есть, но user пустой (v'+ver+'). Платформа: '+(wa.platform||'?');
+    return 'initData ПУСТОЙ (v'+ver+', платформа '+(wa.platform||'?')+'). Mini App открыт не как Web App — нужна настройка бота.';
+  }catch(e){return 'ошибка: '+e.message;}
+}
 // Ручная облачная синхронизация — с явным фидбеком на кнопке (без confirm, он глючит в Telegram)
 async function manualCloudSave(ev){
   if(!S.userId){toast('Нет Telegram ID — открой игру через Telegram');return;}
