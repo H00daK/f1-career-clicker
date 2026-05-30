@@ -1361,30 +1361,33 @@ function drawHelmetAvatar(ctx,W,H,teamC1,d){
 }
 
 function numPlate(ctx,cx,cy,num,dr,c1,c2){
-  const pw=62,ph=30,px=cx-pw/2,py=cy-ph/2,r=5;
+  const pw=64,ph=31,px=cx-pw/2,py=cy-ph/2,r=5;
   // тень
-  ctx.fillStyle='rgba(0,0,0,0.25)';ctx.beginPath();ctx.roundRect(px+2,py+3,pw,ph,r);ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,0.30)';ctx.beginPath();ctx.roundRect(px+2,py+3,pw,ph,r);ctx.fill();
+  // белая обводка-окантовка (отделяет табличку от болида любого цвета)
+  ctx.fillStyle='#ffffff';ctx.beginPath();ctx.roundRect(px-1.5,py-1.5,pw+3,ph+3,r+1);ctx.fill();
   // белая основа
   ctx.fillStyle='#fafafa';ctx.beginPath();ctx.roundRect(px,py,pw,ph,r);ctx.fill();
-  // верхняя цветная шапка с фамилией (клип по скруглению)
-  const hb=10;
+  const hb=11;
   ctx.save();ctx.beginPath();ctx.roundRect(px,py,pw,ph,r);ctx.clip();
-  ctx.fillStyle=c1;ctx.fillRect(px,py,pw,hb);
-  // фамилия на шапке — мелкий, но чёткий капс, по центру
+  // тёмная нейтральная шапка — не зависит от цвета болида
+  ctx.fillStyle='#15151e';ctx.fillRect(px,py,pw,hb);
+  // тонкая цветная полоса команды — граница шапки и номера (обозначает команду, не сливаясь)
+  ctx.fillStyle=c1;ctx.fillRect(px,py+hb-2,pw,2);
+  // фамилия на тёмной шапке — белый капс, по центру
   const name=(dr||'').toUpperCase();
-  ctx.fillStyle=pickReadable(c1);
+  ctx.fillStyle='#ffffff';
   ctx.textAlign='center';ctx.textBaseline='middle';
-  // ужимаем длинные фамилии по ширине
   let fs=7;ctx.font='700 '+fs+'px Arial, sans-serif';
   while(ctx.measureText(name).width>pw-7&&fs>4.5){fs-=0.5;ctx.font='700 '+fs+'px Arial, sans-serif';}
-  ctx.fillText(name,px+pw/2,py+hb/2+0.5);
+  ctx.fillText(name,px+pw/2,py+(hb-2)/2+0.5);
   ctx.restore();
-  // номер — крупный, по центру нижней части
+  // номер — крупный тёмный, по центру нижней части
   ctx.fillStyle='#15151e';
   ctx.font='800 18px Arial, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText(num,px+pw/2,py+hb+(ph-hb)/2+1);
   // тонкая рамка
-  ctx.strokeStyle='rgba(0,0,0,0.18)';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(px,py,pw,ph,r);ctx.stroke();
+  ctx.strokeStyle='rgba(0,0,0,0.15)';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(px,py,pw,ph,r);ctx.stroke();
   ctx.textBaseline='alphabetic';ctx.textAlign='left'; // вернуть дефолт
 }
 // читаемый цвет текста на фоне (бел/чёрн по яркости)
@@ -2146,12 +2149,16 @@ function renderLists(){
   const t=T();
   // upgrades
   const ul=document.getElementById('upg-list');ul.innerHTML='';
+  const lm=lvlMult();
   UPGRADES.forEach(u=>{
     const lvl=S.ul[u.id]||0,price=upgPrice(u),maxed=lvl>=u.ml,can=S.coins>=price&&!maxed;
+    // реальный доход апгрейда на текущем уровне (с множителем уровня)
+    const caShow=Math.round(u.ca*lm*10)/10;
+    const kaShow=Math.round(u.ka*lm);
     ul.innerHTML+=`<div class="upg-item">
       <div class="upg-icon">${u.emoji}</div>
       <div class="upg-info"><div class="upg-name">${u.name} <span style="font-size:9px;opacity:.5">ур.${lvl}/${u.ml}</span></div>
-      <div class="upg-desc">${u.desc} · +${u.ca}/с +${u.ka}/клик</div></div>
+      <div class="upg-desc">${u.desc} · +${caShow}/с +${kaShow}/клик</div></div>
       <button class="buy-btn ${can?'afford':''}" onclick="buyUpg('${u.id}')" ${maxed||!can?'disabled':''}>${maxed?'MAX':fmt(price)+'💰'}</button>
     </div>`;
   });
