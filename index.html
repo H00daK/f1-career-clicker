@@ -262,11 +262,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button id="promote-btn" onclick="tryPromote()" style="width:100%;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Перейти →</button>
     </div>
 
+    <div id="prestige-block" class="panel" style="display:none;border:1px solid rgba(180,120,255,0.35);background:linear-gradient(135deg,rgba(140,90,255,0.12),rgba(80,40,160,0.08))">
+      <div class="panel-title" style="color:#c9a8ff">♻️ Новая карьера (Престиж)</div>
+      <div id="prestige-body" style="font-size:12px;color:rgba(255,255,255,0.7);line-height:1.6"></div>
+    </div>
+
     <div class="tabs">
       <div class="tab active" onclick="switchTab('upgrades')">Апгрейды</div>
       <div class="tab" onclick="switchTab('tournaments')">Турниры</div>
       <div class="tab" onclick="switchTab('season')">🏆 Сезон</div>
-      <div class="tab" onclick="switchTab('contracts')">📋<span class="tab-dot" id="contracts-dot"></span></div>
+      <div class="tab" onclick="switchTab('contracts')">📋 Контр.<span class="tab-dot" id="contracts-dot"></span></div>
     </div>
     <div class="tabs row2">
       <div class="tab" onclick="switchTab('garage')">🔧 Гараж</div>
@@ -419,6 +424,8 @@ const ACHIEVEMENTS=[
   {id:'shop1', name:'Тюнинг',       desc:'Купи предмет в гараже',  emoji:'🛍️',r:1500, chk:s=>s.shop&&s.shop.length>=1},
   {id:'boost1',name:'Форсаж',       desc:'Активируй буст',         emoji:'🚀',r:1500, chk:s=>s.boosts&&Object.keys(s.boosts).length>=1},
   {id:'champ1',name:'Чемпион',      desc:'Выиграй чемпионат сезона',emoji:'🏆',r:15000,chk:s=>(s.seasonTitles||0)>=1},
+  {id:'prestige1',name:'Легенда',    desc:'Начни новую карьеру',     emoji:'♻️',r:50000, chk:s=>(s.prestigeCount||0)>=1},
+  {id:'legacy10',name:'Наследие',    desc:'Накопи 10 Очков наследия', emoji:'⭐',r:200000,chk:s=>(s.legacyPoints||0)>=10},
 ];
 
 // ── ГАРАЖ: косметика и буст-предметы ─────────────────────────────────────────
@@ -617,7 +624,7 @@ async function loadLeaderboard(){
 let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:null,tw_ids:[],userId:null,
   daily:{last:0,streak:0},quests:[],shop:[],equipped:null,lastSeen:0,boosts:{},
   referredBy:null,refCount:0,bestStreak:0,refClaimed:false,season:null,seasonTitles:0,
-  sound:true,vibro:true};
+  sound:true,vibro:true,legacyPoints:0,prestigeCount:0};
 let selTeam='redbull';
 
 function load(){
@@ -631,6 +638,8 @@ function load(){
   if(!S.boosts||typeof S.boosts!=='object')S.boosts={};
   if(typeof S.sound!=='boolean')S.sound=true;
   if(typeof S.vibro!=='boolean')S.vibro=true;
+  if(typeof S.legacyPoints!=='number')S.legacyPoints=0;
+  if(typeof S.prestigeCount!=='number')S.prestigeCount=0;
   if(S.season&&S.season.lvl!==S.cl)S.season=null; // сезон чужого уровня — сброс
   if(S.quests.length===0)initQuests();
 }
@@ -670,6 +679,8 @@ function shopBoost(type){
   SHOP_ITEMS.forEach(it=>{if(it.type===type&&S.shop.includes(it.id))m+=it.val;});
   return m;
 }
+// множитель от Очков наследия (+5% за каждое LP), сохраняется между престижами
+function legacyMult(){return 1+(S.legacyPoints||0)*0.05;}
 function clickVal(){
   const t=T();let v=C().cm;
   UPGRADES.forEach(u=>v+=u.ka*(S.ul[u.id]||0));
@@ -677,6 +688,7 @@ function clickVal(){
   if(t.id==='williams')v=Math.floor(v*0.8);
   v=Math.floor(v*(1+shopBoost('click')));
   v=Math.floor(v*clickBoostMult());
+  v=Math.floor(v*legacyMult());
   return Math.max(1,v);
 }
 function getCPS(){
@@ -685,6 +697,7 @@ function getCPS(){
   if(t.id==='mercedes')v*=1.1;
   if(t.id==='aston')v*=1.08;
   v*=(1+shopBoost('cps'));
+  v*=legacyMult();
   return v;
 }
 // фактический пассив с учётом временных бустов (для живого начисления)
@@ -746,6 +759,45 @@ function promote(){
   if(c.id==='f1')showModal('🏆','Добро пожаловать в Формулу 1!',msg);
   else showModal('🎉',`Повышение: ${c.name}!`,msg);
   checkAch();
+}
+
+// ── ПРЕСТИЖ / НОВАЯ КАРЬЕРА ──────────────────────────────────────────────────
+const PRESTIGE_BASE=500000; // делитель для расчёта LP
+// Сколько Очков наследия даст престиж ПРЯМО СЕЙЧАС (на основе всего заработанного + титулов)
+function prestigeLP(){
+  const fromEarned=Math.floor(Math.sqrt((S.tce||0)/PRESTIGE_BASE));
+  const fromTitles=(S.seasonTitles||0)*2;
+  return Math.max(0,fromEarned+fromTitles);
+}
+// Престиж доступен только на Ф1 и если он принесёт хотя бы +1 LP сверх текущих
+function prestigeAvailable(){
+  return S.cl>=4 && prestigeLP()>(S.legacyPoints||0);
+}
+// Сколько LP добавится (разница между потенциалом и уже имеющимися)
+function prestigeGain(){
+  return Math.max(0,prestigeLP()-(S.legacyPoints||0));
+}
+function doPrestige(){
+  if(!prestigeAvailable())return;
+  const gain=prestigeGain();
+  const newLP=(S.legacyPoints||0)+gain;
+  const newPrestigeCount=(S.prestigeCount||0)+1;
+  // сохраняем: косметика, достижения, надетое, настройки, рефералы, рекорды, userId
+  const keep={
+    ua:S.ua, shop:S.shop, equipped:S.equipped, pn:S.pn, tid:S.tid, userId:S.userId,
+    sound:S.sound, vibro:S.vibro, refCount:S.refCount, referredBy:S.referredBy, refClaimed:S.refClaimed,
+    bestStreak:S.bestStreak, seasonTitles:S.seasonTitles, daily:S.daily
+  };
+  // полный сброс прогресса
+  S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:keep.ua,pn:keep.pn,tid:keep.tid,offer:null,tw_ids:[],userId:keep.userId,
+    daily:keep.daily,quests:[],shop:keep.shop,equipped:keep.equipped,lastSeen:Date.now(),boosts:{},
+    referredBy:keep.referredBy,refCount:keep.refCount,bestStreak:keep.bestStreak,refClaimed:keep.refClaimed,
+    season:null,seasonTitles:keep.seasonTitles,sound:keep.sound,vibro:keep.vibro,
+    legacyPoints:newLP,prestigeCount:newPrestigeCount};
+  initQuests();
+  playSound('win');haptic('success');
+  showModal('♻️','Новая карьера!',`${S.pn}, ты начал заново как легенда. Очки наследия: ${newLP} (+${gain}). Постоянный бонус к доходу: +${Math.round(newLP*5)}%. Косметика и достижения сохранены!`);
+  checkAch();save();render();
 }
 function checkOffer(){
   const t=T();if(!t.academy||S.offer)return;
@@ -1421,6 +1473,7 @@ function playerTitles(){
   if((S.bestStreak||0)>=7)titles.push('🔥 Железная воля');
   if((S.refCount||0)>=1)titles.push('👥 Амбассадор');
   if((S.seasonTitles||0)>=1)titles.push(`🏆 Чемпион ×${S.seasonTitles}`);
+  if((S.prestigeCount||0)>=1)titles.push(`♻️ Легенда ×${S.prestigeCount}`);
   if(SHOP_ITEMS.filter(i=>i.type==='cosmetic').every(i=>S.shop.includes(i.id)))titles.push('💎 Коллекционер');
   return titles;
 }
@@ -1443,6 +1496,7 @@ function openProfile(){
       <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px"><div style="color:rgba(255,255,255,0.5);font-size:10px">Всего заработано</div><div style="font-weight:700">${fmt(S.tce)}💰</div></div>
       <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px"><div style="color:rgba(255,255,255,0.5);font-size:10px">Лучший стрик</div><div style="font-weight:700">${S.bestStreak||0} дн.</div></div>
       <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px"><div style="color:rgba(255,255,255,0.5);font-size:10px">Приглашено друзей</div><div style="font-weight:700">${S.refCount||0}</div></div>
+      <div style="background:rgba(140,90,255,0.12);border-radius:8px;padding:8px"><div style="color:#c9a8ff;font-size:10px">Очки наследия</div><div style="font-weight:700">${S.legacyPoints||0} <span style="font-size:9px;opacity:.6">(+${Math.round((S.legacyPoints||0)*5)}%)</span></div></div>
     </div>
     <div style="margin-top:14px;padding:10px;background:linear-gradient(120deg,rgba(80,180,120,0.15),rgba(60,160,255,0.1));border:1px solid rgba(120,200,160,0.3);border-radius:10px">
       <div style="font-size:12px;font-weight:600;margin-bottom:3px">👥 Пригласи друга</div>
@@ -1457,8 +1511,16 @@ function closeProfile(){document.getElementById('profile-overlay').classList.rem
 function openSettings(){
   const body=document.getElementById('settings-body');
   const t=T();
-  // список команд для смены
-  const teamOpts=TEAMS.map(tm=>`<option value="${tm.id}" ${tm.id===S.tid?'selected':''}>${tm.n}</option>`).join('');
+  // кастомная сетка команд (нативный select даёт белый фон в Telegram)
+  const teamGrid=TEAMS.map(tm=>{
+    const sel=tm.id===S.tid;
+    return `<button onclick="changeTeam('${tm.id}')" style="display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:9px;cursor:pointer;text-align:left;
+      background:${sel?tm.c1+'33':'rgba(255,255,255,0.05)'};border:1.5px solid ${sel?tm.c1:'rgba(255,255,255,0.1)'};color:#fff">
+      <span style="width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,${tm.c1},${tm.c2});flex-shrink:0"></span>
+      <span style="font-size:11px;font-weight:${sel?'700':'500'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${tm.n}</span>
+      ${sel?'<span style="margin-left:auto;font-size:10px">✓</span>':''}
+    </button>`;
+  }).join('');
   body.innerHTML=`
     <div class="set-row">
       <span>🔊 Звук</span>
@@ -1468,10 +1530,10 @@ function openSettings(){
       <span>📳 Вибрация</span>
       <button class="toggle ${S.vibro?'on':''}" onclick="toggleSetting('vibro')"><span class="knob"></span></button>
     </div>
-    <div class="set-row" style="flex-direction:column;align-items:stretch;gap:6px">
+    <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
       <span>🏎️ Команда</span>
-      <select id="team-select" onchange="changeTeam(this.value)" style="padding:9px;border-radius:9px;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(255,255,255,0.15);font-size:13px;outline:none">${teamOpts}</select>
-      <div style="font-size:10px;color:rgba(255,255,255,0.4)">Меняет только цвет болида и бонусы команды</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${teamGrid}</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.4)">Меняет цвет болида и бонусы команды</div>
     </div>
     <div class="set-row" style="flex-direction:column;align-items:stretch;gap:6px;border-bottom:none">
       <span style="color:#ff7a6b">⚠️ Опасная зона</span>
@@ -1490,9 +1552,13 @@ function changeTeam(id){
   if(!TEAMS.find(x=>x.id===id))return;
   S.tid=id;S.offer=null;
   toast(`🏎️ Команда изменена: ${T().n}`);
+  haptic('light');
   save();render();
+  // если открыты настройки — обновить выделение
+  if(document.getElementById('settings-overlay').classList.contains('show'))openSettings();
 }
 let _resetArmed=false;
+let _prestigeArmed=false;
 function resetProgress(){
   if(!_resetArmed){
     _resetArmed=true;
@@ -1675,6 +1741,7 @@ function render(){
   }catch(e){}
   // блок перехода — показываем только когда набрано достаточно XP
   renderPromoteBlock();
+  renderPrestigeBlock();
   renderLists();
   renderDailyBanner();
   updateContractsBadge();
@@ -1682,6 +1749,46 @@ function render(){
   try{if(!document.getElementById('panel-season').classList.contains('hidden'))renderSeason();}catch(e){}
   if(S.offer)renderOfferBanner();
   }catch(e){console.log('render err',e);}
+}
+
+function renderPrestigeBlock(){
+  const block=document.getElementById('prestige-block');
+  if(!block)return;
+  // показываем только на Ф1
+  if(S.cl<4){block.style.display='none';return;}
+  block.style.display='';
+  const body=document.getElementById('prestige-body');
+  const curLP=S.legacyPoints||0;
+  const gain=prestigeGain();
+  const avail=prestigeAvailable();
+  const curBonus=Math.round(curLP*5);
+  const nextBonus=Math.round((curLP+gain)*5);
+  let html=`<div style="margin-bottom:8px">Текущие Очки наследия: <b style="color:#c9a8ff">${curLP}</b> · бонус к доходу <b style="color:#c9a8ff">+${curBonus}%</b></div>`;
+  if(S.prestigeCount>0)html+=`<div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:8px">Карьер пройдено: ${S.prestigeCount}</div>`;
+  if(avail){
+    const armed=_prestigeArmed;
+    html+=`<div style="margin-bottom:10px">Начни новую карьеру с нуля и получи <b style="color:#c9a8ff">+${gain} LP</b> (итого +${nextBonus}% навсегда). Косметика и достижения сохранятся.</div>
+      <button id="prestige-do-btn" onclick="prestigeTap()" style="width:100%;padding:11px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;background:${armed?'linear-gradient(135deg,#ff5a8c,#a02850)':'linear-gradient(135deg,#8c5aff,#5a28a0)'};color:#fff">${armed?'⚠️ Точно? Нажми ещё раз':'♻️ Новая карьера (+'+gain+' LP)'}</button>`;
+  } else {
+    // сколько ещё заработать до следующего LP
+    const needLP=curLP+1;
+    const needEarned=Math.pow(needLP-(S.seasonTitles||0)*2,2)*PRESTIGE_BASE;
+    const left=Math.max(0,needEarned-(S.tce||0));
+    html+=`<div style="color:rgba(255,255,255,0.6)">Заработай ещё <b>${fmt(left)}</b> монет всего, чтобы получить следующее Очко наследия.</div>`;
+  }
+  body.innerHTML=html;
+}
+function prestigeTap(){
+  if(!prestigeAvailable())return;
+  if(!_prestigeArmed){
+    _prestigeArmed=true;
+    haptic('warning');
+    renderPrestigeBlock();
+    setTimeout(()=>{_prestigeArmed=false;try{renderPrestigeBlock();}catch(e){}},4000);
+    return;
+  }
+  _prestigeArmed=false;
+  doPrestige();
 }
 
 function renderPromoteBlock(){
