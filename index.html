@@ -1462,15 +1462,10 @@ function drawKart(ctx,W,H,c1,c2,num,dr,drv){
   ctx.fillStyle=c2;ctx.fillRect(fWx+52,gnd2-14,3,7);
   ctx.fillStyle=c2;ctx.fillRect(rWx-22,gnd2-22,7,18);
   ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(rWx-22,gnd2-10);ctx.lineTo(rWx+13,gnd2-10);ctx.lineTo(rWx+13,gnd2-6);ctx.lineTo(rWx-22,gnd2-6);ctx.closePath();ctx.fill();
-  ctx.fillStyle='#1a1a1a';ctx.fillRect(rWx+17,gnd2-52,14,22);
-  ctx.strokeStyle='#3a3a3a';ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(rWx+13,gnd2-38);ctx.lineTo(rWx-9,gnd2-30);ctx.stroke();
   const cL=rWx+28,cR=fWx-58,cT=gnd2-68;
-  cockpitRim(ctx,cL,cR,cT,c1);
-  ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-14,gnd2-46,9,6,0.5,0,Math.PI*2);ctx.stroke();
-  ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-23,gnd2-46);ctx.lineTo(cR-5,gnd2-46);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-14,gnd2-53);ctx.lineTo(cR-14,gnd2-39);ctx.stroke();
   const hs=0.44,hx=cL+42,hy=cT+3-32*hs;
   drawHelmet(ctx,hx,hy,hs,c1,c2,drv);
-  numPlate(ctx,(bx1+bx2)/2,gnd2-46,num,dr,c1,c2);
+  numPlate(ctx,(bx1+bx2)/2-16,gnd2-46,num,dr,c1,c2);
   wheel(ctx,rWx,rWy,RR,RI,c2);wheel(ctx,fWx,fWy,FR,RI-4,c2);
   ctx.restore();
 }
