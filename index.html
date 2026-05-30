@@ -2166,10 +2166,11 @@ function openSettings(){
     <div class="set-row" style="flex-direction:column;align-items:stretch;gap:6px">
       <span>☁️ Облачная синхронизация</span>
       <div style="display:flex;gap:6px">
-        <button onclick="manualCloudSave()" style="flex:1;padding:9px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:11px;cursor:pointer">💾 Сохранить в облако</button>
-        <button onclick="manualCloudLoad()" style="flex:1;padding:9px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:11px;cursor:pointer">☁️ Загрузить из облака</button>
+        <button onclick="manualCloudSave(event)" style="flex:1;padding:9px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:11px;cursor:pointer">💾 Сохранить в облако</button>
+        <button onclick="manualCloudLoad(event)" style="flex:1;padding:9px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:11px;cursor:pointer">☁️ Загрузить из облака</button>
       </div>
       <div style="font-size:9px;color:rgba(255,255,255,0.4)">Прогресс привязан к твоему Telegram. «Загрузить» подтянет сейв с другого устройства.</div>
+      <div style="font-size:9px;color:${S.userId?'rgba(120,200,160,0.8)':'rgba(255,140,120,0.9)'}">${S.userId?('🆔 Твой ID: '+S.userId+' (синхронизация активна)'):'⚠️ ID не получен — открой игру ЧЕРЕЗ Telegram (бота), а не в обычном браузере, иначе облако не синхронизируется'}</div>
     </div>
     ${isAdmin()?`
     <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px;border:1px solid rgba(120,90,255,0.4);border-radius:10px;padding:10px;background:rgba(120,90,255,0.08)">
@@ -2205,26 +2206,47 @@ function openSettings(){
 function closeSettings(){document.getElementById('settings-overlay').classList.remove('show');document.body.classList.remove('modal-open');}
 
 // ── АДМИН-ДЕЙСТВИЯ (только для ADMIN_IDS) ──
-// Ручная облачная синхронизация
-async function manualCloudSave(){
-  if(!S.userId){toast('Нет Telegram ID');return;}
-  toast('Сохраняю в облако...');
-  try{await cloudSave();toast('✅ Сохранено в облако');}catch(e){toast('❌ Ошибка сети');}
+// Ручная облачная синхронизация — с явным фидбеком на кнопке (без confirm, он глючит в Telegram)
+async function manualCloudSave(ev){
+  if(!S.userId){toast('Нет Telegram ID — открой игру через Telegram');return;}
+  const btn=ev&&ev.target?ev.target:null;const orig=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='⏳ Сохраняю...';}
+  haptic('light');
+  try{
+    await cloudSave();
+    toast('✅ Прогресс сохранён в облако');haptic('success');
+    if(btn){btn.textContent='✅ Сохранено';setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},1800);}
+  }catch(e){
+    toast('❌ Не удалось сохранить (нет сети?)');haptic('error');
+    if(btn){btn.textContent='❌ Ошибка';setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},1800);}
+  }
 }
-async function manualCloudLoad(){
-  if(!S.userId){toast('Нет Telegram ID');return;}
-  if(!confirm('Загрузить прогресс из облака? Текущий прогресс на этом устройстве будет заменён облачным.'))return;
-  toast('Загружаю из облака...');
+async function manualCloudLoad(ev){
+  if(!S.userId){toast('Нет Telegram ID — открой игру через Telegram');return;}
+  const btn=ev&&ev.target?ev.target:null;const orig=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='⏳ Загружаю...';}
+  haptic('light');
+  // резервная копия текущего локального прогресса на случай, если в облаке окажется хуже
+  let backup=null;try{backup=localStorage.getItem('f1_v6');}catch(e){}
   try{
     const ok=await cloudLoad(S.userId);
     if(ok){
       save();
       document.getElementById('screen-onboard').classList.add('hidden');
       document.getElementById('screen-game').classList.remove('hidden');
-      render();closeSettings();
-      toast('✅ Прогресс загружен');
-    }else{toast('В облаке нет сохранения');}
-  }catch(e){toast('❌ Ошибка сети');}
+      const ls=document.getElementById('screen-loading');if(ls)ls.style.display='none';
+      render();
+      toast('✅ Прогресс загружен из облака');haptic('success');
+      if(btn){btn.textContent='✅ Загружено';}
+      setTimeout(()=>closeSettings(),700);
+    }else{
+      toast('☁️ В облаке нет сохранения для твоего аккаунта');haptic('error');
+      if(btn){btn.textContent=orig;btn.disabled=false;}
+    }
+  }catch(e){
+    toast('❌ Не удалось загрузить (нет сети?)');haptic('error');
+    if(btn){btn.textContent='❌ Ошибка';setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},1800);}
+  }
 }
 
 function adminGive(n){if(!isAdmin())return;S.coins+=n;S.tce+=n;toast(`+${fmt(n)}💰`);haptic('success');save();render();openSettings();}
