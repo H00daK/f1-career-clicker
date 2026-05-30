@@ -317,6 +317,9 @@ body.modal-open{overflow:hidden}
       <div class="tab" onclick="switchTab('achievements')">Достижения</div>
       <div class="tab" onclick="switchTab('leaderboard')">📊 Топ</div>
     </div>
+    <div class="tabs row2">
+      <div class="tab" onclick="switchTab('race')">🏁 Заезд</div>
+    </div>
 
     <div class="panel" id="panel-upgrades"><div class="panel-title">Запчасти</div><div id="upg-list"></div></div>
     <div class="panel hidden" id="panel-tournaments"><div class="panel-title">Турниры</div><div id="tourn-list"></div></div>
@@ -333,6 +336,7 @@ body.modal-open{overflow:hidden}
       </div>
       <div id="lb-list"><div style="font-size:12px;color:rgba(255,255,255,0.4);padding:8px 0">Загрузка...</div></div>
     </div>
+    <div class="panel hidden" id="panel-race"><div class="panel-title">🏁 Заезд на время</div><div id="race-body"></div></div>
 
     <div class="disclaimer">Fan game · Not affiliated with Formula One Group</div>
   </div>
@@ -581,6 +585,24 @@ if(!CanvasRenderingContext2D.prototype.roundRect){
 const SB_URL='https://ypdqmvivmqwhqurfpnkn.supabase.co';
 const SB_KEY='sb_publishable_T-gH4TI68q1qCj3tpsB_rQ_Ip-I5gLL';
 
+// ── АДМИНКА ──────────────────────────────────────────────────────────────────
+// Telegram ID администраторов. ПЕРВЫЙ в списке — главный админ.
+// Узнать свой ID: напиши боту @userinfobot в Telegram, он пришлёт твой numeric ID.
+// Впиши его сюда вместо 0 (например: const ADMIN_IDS=[123456789];)
+const ADMIN_IDS=[625734380];  // главный админ — @H00daK
+const MAIN_ADMIN=ADMIN_IDS[0]; // главный админ — первый в списке
+function isAdmin(){return S.userId&&ADMIN_IDS.includes(Number(S.userId));}
+function isMainAdmin(){return S.userId&&Number(S.userId)===Number(MAIN_ADMIN);}
+
+// форматирование времени в игре
+function fmtPlaytime(ms){
+  const s=Math.floor((ms||0)/1000);
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);
+  if(h>0)return `${h} ч ${m} мин`;
+  if(m>0)return `${m} мин`;
+  return `${s} сек`;
+}
+
 async function sbFetch(path,method='GET',body=null){
   const opts={method,headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'}};
   if(body)opts.body=JSON.stringify(body);
@@ -618,6 +640,7 @@ async function cloudSave(){
     upgrades:S.ul,won_tournaments:S.tw_ids,
     coins_earned:Math.floor(S.tce),
     best_streak:Math.max(S.bestStreak||0,(S.daily&&S.daily.streak)||0),
+    race_best:Math.floor((S.raceBest||0)*10)/10,
     updated_at:new Date().toISOString()
   };
   await sbFetch('/rest/v1/players','POST',payload);
@@ -626,22 +649,29 @@ async function cloudSave(){
 }
 
 // Реферальный бонус: вызывается один раз для нового игрока, пришедшего по ссылке
-const REFERRAL_BONUS=2000;
+// Награда за реферала масштабируется: ~20 минут дохода на текущем уровне игрока,
+// с минимумом, растущим по карьерному уровню (чтобы на старте было осмысленно, а в late-game не обесценивалось).
+function referralBonus(){
+  const perMin=getCPS()*60;                  // монет в минуту от пассива (с учётом уровня)
+  const fromIncome=Math.floor(perMin*20);    // ~20 минут дохода
+  const floorByLvl=[2000,15000,60000,250000,1000000][S.cl]||2000; // минимум по уровню
+  return Math.max(floorByLvl,fromIncome);
+}
 async function tryClaimReferral(){
   if(S.refClaimed)return;            // уже начисляли локально
   if(!S.userId)return;
   if(!_pendingReferrer)return;       // не было реф-ссылки
   if(_pendingReferrer===S.userId)return; // нельзя пригласить себя
   if(S.referredBy)return;            // уже был приглашён ранее
-  // атомарное начисление через серверную функцию (защита от дабл-клейма в БД)
+  const bonus=referralBonus();
   await sbFetch('/rest/v1/rpc/claim_referral','POST',{
-    new_user:S.userId, referrer:_pendingReferrer, bonus:REFERRAL_BONUS
+    new_user:S.userId, referrer:_pendingReferrer, bonus:bonus
   });
   S.refClaimed=true;
   S.referredBy=_pendingReferrer;
   // перечитываем своё состояние из облака, чтобы подтянуть начисленный бонус
   await cloudLoad(S.userId);
-  toast(`🎁 Бонус за приглашение: +${fmt(REFERRAL_BONUS)} монет!`);
+  toast(`🎁 Бонус за приглашение: +${fmt(bonus)} монет!`);
   save();render();
 }
 
@@ -674,7 +704,8 @@ async function loadLeaderboard(){
 let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:null,tw_ids:[],userId:null,
   daily:{last:0,streak:0},quests:[],shop:[],equipped:null,lastSeen:0,boosts:{},
   referredBy:null,refCount:0,bestStreak:0,refClaimed:false,season:null,seasonTitles:0,
-  sound:true,vibro:true,legacyPoints:0,prestigeCount:0,tutDone:false,did:0,baseClick:0,baseCps:0};
+  sound:true,vibro:true,legacyPoints:0,prestigeCount:0,tutDone:false,did:0,baseClick:0,baseCps:0,
+  playtime:0,trophies:[],raceBest:0};
 let selTeam='redbull';
 let selDriver=0;
 
@@ -695,6 +726,9 @@ function load(){
   if(typeof S.did!=='number'||S.did<0||S.did>1)S.did=0;
   if(typeof S.baseClick!=='number')S.baseClick=0;
   if(typeof S.baseCps!=='number')S.baseCps=0;
+  if(typeof S.playtime!=='number')S.playtime=0;
+  if(!Array.isArray(S.trophies))S.trophies=[];
+  if(typeof S.raceBest!=='number')S.raceBest=0;
   if(S.season&&S.season.lvl!==S.cl)S.season=null; // сезон чужого уровня — сброс
   if(S.quests.length===0)initQuests();
 }
@@ -858,14 +892,15 @@ function doPrestige(){
   const keep={
     ua:S.ua, shop:S.shop, equipped:S.equipped, pn:S.pn, tid:S.tid, userId:S.userId,
     sound:S.sound, vibro:S.vibro, refCount:S.refCount, referredBy:S.referredBy, refClaimed:S.refClaimed,
-    bestStreak:S.bestStreak, seasonTitles:S.seasonTitles, daily:S.daily
+    bestStreak:S.bestStreak, seasonTitles:S.seasonTitles, daily:S.daily, trophies:S.trophies, raceBest:S.raceBest, playtime:S.playtime
   };
   // полный сброс прогресса
   S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:keep.ua,pn:keep.pn,tid:keep.tid,offer:null,tw_ids:[],userId:keep.userId,
     daily:keep.daily,quests:[],shop:keep.shop,equipped:keep.equipped,lastSeen:Date.now(),boosts:{},
     referredBy:keep.referredBy,refCount:keep.refCount,bestStreak:keep.bestStreak,refClaimed:keep.refClaimed,
     season:null,seasonTitles:keep.seasonTitles,sound:keep.sound,vibro:keep.vibro,
-    legacyPoints:newLP,prestigeCount:newPrestigeCount,baseClick:0,baseCps:0,did:0,tutDone:true};
+    legacyPoints:newLP,prestigeCount:newPrestigeCount,baseClick:0,baseCps:0,did:0,tutDone:true,
+    trophies:keep.trophies||[],raceBest:keep.raceBest||0,playtime:keep.playtime||0};
   initQuests();
   playSound('win');haptic('success');
   showModal('♻️','Новая карьера!',`${S.pn}, ты начал заново как легенда. Очки наследия: ${newLP} (+${gain}). Постоянный бонус к доходу: +${Math.round(newLP*5)}%. Косметика и достижения сохранены!`);
@@ -894,6 +929,9 @@ function doClick(e){
   S.coins+=coins;S.tce+=coins;S.tc++;
   addXP(1+S.cl);checkOffer();floatNum('+'+coins,e.clientX,e.clientY);
   playSound('click');haptic('light');spawnExhaust(e);
+  // разгон болида от клика
+  _carSpeed=Math.min(1,(_carSpeed||0)+0.13);
+  _lastClickTs=Date.now();
   checkAch();save();render();
 }
 // Режимы турнира: модификаторы к fee, призу и шансу
@@ -994,8 +1032,11 @@ function finishSeason(){
   if(myPos===1){
     S.coins+=rew.coins;S.tce+=rew.coins;addXP(rew.xp);
     S.seasonTitles=(S.seasonTitles||0)+1;
+    // трофей за чемпионство на этом уровне
+    if(!Array.isArray(S.trophies))S.trophies=[];
+    S.trophies.push({lvl:S.cl,team:S.tid,driver:curDriver().dr,date:Date.now()});
     playSound('win');haptic('success');
-    showModal('🏆','ЧЕМПИОН СЕЗОНА!',`${S.pn}, ты выиграл чемпионат ${C().name}! Награда: +${fmt(rew.coins)} монет, +${rew.xp} XP. Титулов: ${S.seasonTitles}.`);
+    showModal('🏆','ЧЕМПИОН СЕЗОНА!',`${S.pn}, ты выиграл чемпионат ${C().name}! Награда: +${fmt(rew.coins)} монет, +${rew.xp} XP. Кубок добавлен в Трофейный зал! 🏆`);
   } else if(myPos<=3){
     const c=Math.floor(rew.coins*0.4);S.coins+=c;S.tce+=c;addXP(Math.floor(rew.xp*0.4));
     showModal('🥈',`${myPos}-е место в чемпионате`,`Призовое место! +${fmt(c)} монет, +${Math.floor(rew.xp*0.4)} XP. В следующий раз — за титулом!`);
@@ -1203,12 +1244,13 @@ function renderActiveBoosts(){
 }
 
 // ── РИСОВАНИЕ БОЛИДОВ ─────────────────────────────────────────────────────────
-function wheel(ctx,x,y,ro,ri,c2,sp=5){
+function wheel(ctx,x,y,ro,ri,c2,sp=5,rot){
+  if(rot===undefined)rot=_wheelRot||0;
   ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x,y,ro,0,Math.PI*2);ctx.fill();
   ctx.strokeStyle='#2a2a2a';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,ro-3,0,Math.PI*2);ctx.stroke();
   ctx.fillStyle='#303030';ctx.beginPath();ctx.arc(x,y,ri,0,Math.PI*2);ctx.fill();
   for(let i=0;i<sp;i++){
-    const a=i*Math.PI*2/sp-Math.PI/2;
+    const a=i*Math.PI*2/sp-Math.PI/2+rot;
     ctx.save();ctx.translate(x,y);ctx.rotate(a);
     ctx.fillStyle='#484848';ctx.beginPath();ctx.moveTo(-2,0);ctx.lineTo(2,0);ctx.lineTo(1.5,-(ri-4));ctx.lineTo(-1.5,-(ri-4));ctx.closePath();ctx.fill();
     ctx.restore();
@@ -1438,12 +1480,58 @@ function drawCar(ctx,W,H,c1,c2,num,dr,carType,drv){
   else if(carType===2)drawF3(ctx,W,H,c1,c2,num,dr,drv);
   else if(carType===3)drawF2(ctx,W,H,c1,c2,num,dr,drv);
   else drawF1(ctx,W,H,c1,c2,num,dr,drv);
+  // детали, отражающие прокачку болида
+  try{drawUpgradeParts(ctx,W,H,c1,c2);}catch(e){}
+}
+// Визуальные апгрейды: чем выше прокачка, тем больше деталей на болиде
+function drawUpgradeParts(ctx,W,H,c1,c2){
+  const prog=upgradeProgress(); // 0..1
+  if(prog<=0)return;
+  const sc=W/500,gnd=Math.floor(H*0.78),gnd2=gnd/sc;
+  ctx.save();ctx.scale(sc,sc);
+  const rWx=100; // зад болида (у всех drawXX заднее колесо в районе x=100)
+  const fWx=360; // перёд
+  // >25% — задний спойлер (антикрыло) растёт
+  if(prog>=0.25){
+    const wing=Math.min(1,(prog-0.25)/0.5); // 0..1 рост
+    const wy=gnd2-58-wing*10;
+    ctx.fillStyle=c1;ctx.fillRect(rWx-30,wy,6,18+wing*8);            // стойка
+    ctx.fillStyle=c2;ctx.fillRect(rWx-40,wy-3,26,5+wing*3);          // плоскость крыла
+    ctx.fillStyle=dc(c1,15);ctx.fillRect(rWx-40,wy+2+wing*3,26,2);   // нижний элемент
+  }
+  // >55% — боковые winglets у переднего колеса
+  if(prog>=0.55){
+    ctx.fillStyle=c2;
+    ctx.beginPath();ctx.moveTo(fWx-6,gnd2-30);ctx.lineTo(fWx+14,gnd2-34);ctx.lineTo(fWx+14,gnd2-29);ctx.lineTo(fWx-6,gnd2-26);ctx.closePath();ctx.fill();
+  }
+  // >80% — передний сплиттер/крыло
+  if(prog>=0.80){
+    ctx.fillStyle=lc(c1,20);ctx.fillRect(fWx+30,gnd2-12,22,4);
+    ctx.fillStyle=c2;ctx.fillRect(fWx+44,gnd2-16,4,8);
+  }
+  ctx.restore();
 }
 
 function drawBgSmall(ctx,W,H,gnd){
   ctx.fillStyle='#12121f';ctx.fillRect(0,0,W,H);
   ctx.fillStyle='#1c1c2e';ctx.fillRect(0,gnd-2,W,H-(gnd-2));
   ctx.fillStyle='#22223a';ctx.fillRect(0,gnd-2,W,2);
+  // движущаяся дорожная разметка (скорость зависит от темпа кликов)
+  const off=_roadOffset||0;
+  ctx.fillStyle='rgba(255,255,255,0.16)';
+  const dashW=24,gap=26,step=dashW+gap,y=gnd+8;
+  for(let x=-step+((off)%step);x<W;x+=step){
+    ctx.fillRect(x,y,dashW,3);
+  }
+  // линии скорости при быстрой езде
+  if((_carSpeed||0)>0.25){
+    ctx.strokeStyle=`rgba(255,255,255,${0.05+(_carSpeed||0)*0.12})`;ctx.lineWidth=1.5;
+    for(let i=0;i<4;i++){
+      const ly=20+i*16+((off*1.5)%30);
+      const lx=(off*3+i*120)%(W+80)-40;
+      ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(lx-18-(_carSpeed||0)*30,ly);ctx.stroke();
+    }
+  }
 }
 
 function drawKart(ctx,W,H,c1,c2,num,dr,drv){
@@ -1574,7 +1662,7 @@ function drawF1(ctx,W,H,c1,c2,num,dr,drv){
 }
 
 // ── UI ───────────────────────────────────────────────────────────────────────
-const ALL_TABS=['upgrades','tournaments','season','contracts','garage','achievements','leaderboard'];
+const ALL_TABS=['upgrades','tournaments','season','contracts','garage','achievements','leaderboard','race'];
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>{
     const tn=(t.getAttribute('onclick').match(/'([^']+)'/)||[])[1];
@@ -1583,6 +1671,143 @@ function switchTab(name){
   ALL_TABS.forEach(n=>{document.getElementById('panel-'+n).classList.toggle('hidden',n!==name);});
   if(name==='leaderboard')renderLeaderboard();
   if(name==='season')renderSeason();
+  if(name==='race')renderRace();
+}
+
+// ── ЗАЕЗД НА ВРЕМЯ (соревновательный, асинхронный) ──────────────────────────
+const RACE_DURATION=30; // секунд
+let _raceState=null;    // {clicks,timeLeft,running}
+function renderRace(){
+  const el=document.getElementById('race-body');if(!el)return;
+  const t=T();
+  const best=S.raceBest||0;
+  el.innerHTML=`
+    <div style="text-align:center;padding:4px 0">
+      <div style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.6;margin-bottom:10px">
+        Кликай как можно быстрее ${RACE_DURATION} секунд! Скорость болида = средний темп кликов.
+        Твой результат сохранится, и друзья смогут его побить.
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;padding:10px">
+          <div style="font-size:10px;color:rgba(255,255,255,0.5)">Твой рекорд</div>
+          <div style="font-size:20px;font-weight:800;color:${t.c2}">${best.toFixed(1)}</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.4)">кликов/сек</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;padding:10px">
+          <div style="font-size:10px;color:rgba(255,255,255,0.5)">Длительность</div>
+          <div style="font-size:20px;font-weight:800">${RACE_DURATION}<span style="font-size:11px">сек</span></div>
+        </div>
+      </div>
+      <button onclick="startRace()" style="width:100%;padding:13px;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;background:${t.c1};color:${t.c2}">🏁 Стартовать заезд</button>
+    </div>
+    <div style="margin-top:14px">
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);margin-bottom:6px">🏆 Рекорды гонщиков</div>
+      <div id="race-lb"><div style="font-size:11px;color:rgba(255,255,255,0.4);padding:6px 0">Загрузка...</div></div>
+    </div>`;
+  loadRaceLeaderboard();
+}
+async function loadRaceLeaderboard(){
+  const box=document.getElementById('race-lb');if(!box)return;
+  try{
+    const rows=await sbFetch('/rest/v1/players?select=name,race_best,team_id&race_best=gt.0&order=race_best.desc&limit=10');
+    if(!rows||!rows.length){box.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,0.4);padding:6px 0">Пока никто не проехал заезд. Будь первым!</div>';return;}
+    box.innerHTML=rows.map((r,i)=>{
+      const me=String(r.name)===String(S.pn);
+      const medal=['🥇','🥈','🥉'][i]||`${i+1}.`;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;margin-bottom:3px;background:${me?'rgba(255,200,60,0.12)':'rgba(255,255,255,0.04)'}">
+        <span style="width:22px;font-size:12px">${medal}</span>
+        <span style="flex:1;font-size:12px;font-weight:${me?'700':'500'}">${r.name}${me?' (ты)':''}</span>
+        <span style="font-size:12px;font-weight:700;color:#ffd24a">${(r.race_best||0).toFixed(1)}</span>
+      </div>`;
+    }).join('');
+  }catch(e){
+    box.innerHTML='<div style="font-size:10px;color:rgba(255,255,255,0.4);padding:6px 0">Рекорды недоступны (нужна колонка race_best в БД).</div>';
+  }
+}
+function startRace(){
+  if(_raceState&&_raceState.running)return;
+  const t=T();
+  const el=document.getElementById('race-body');
+  // экран отсчёта
+  let count=3;
+  el.innerHTML=`<div style="text-align:center;padding:30px 0"><div id="race-count" style="font-size:64px;font-weight:900;color:${t.c2}">${count}</div><div style="font-size:12px;color:rgba(255,255,255,0.5)">Приготовься...</div></div>`;
+  const cd=setInterval(()=>{
+    count--;
+    const cEl=document.getElementById('race-count');
+    if(count>0){if(cEl)cEl.textContent=count;haptic('light');}
+    else{clearInterval(cd);runRace();}
+  },800);
+}
+function runRace(){
+  const t=T();
+  _raceState={clicks:0,timeLeft:RACE_DURATION,running:true};
+  haptic('success');playSound('win');
+  const el=document.getElementById('race-body');
+  el.innerHTML=`
+    <div style="text-align:center">
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+        <div><span style="font-size:10px;color:rgba(255,255,255,0.5)">Время</span><div id="race-time" style="font-size:22px;font-weight:800">${RACE_DURATION}.0</div></div>
+        <div><span style="font-size:10px;color:rgba(255,255,255,0.5)">Кликов</span><div id="race-clicks" style="font-size:22px;font-weight:800;color:${t.c2}">0</div></div>
+        <div><span style="font-size:10px;color:rgba(255,255,255,0.5)">CPS</span><div id="race-cps" style="font-size:22px;font-weight:800">0.0</div></div>
+      </div>
+      <div style="height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;margin-bottom:14px"><div id="race-bar" style="height:100%;width:100%;background:${t.c1};transition:width .1s"></div></div>
+      <button id="race-tap" onclick="raceTap()" style="width:100%;height:160px;border:none;border-radius:16px;font-size:24px;font-weight:900;cursor:pointer;background:linear-gradient(160deg,${t.c1},${dc(t.c1,40)});color:${t.c2};user-select:none;-webkit-tap-highlight-color:transparent">ТАПАЙ! 🏎️</button>
+    </div>`;
+  const start=Date.now();
+  _raceState.timer=setInterval(()=>{
+    const elapsed=(Date.now()-start)/1000;
+    const left=Math.max(0,RACE_DURATION-elapsed);
+    _raceState.timeLeft=left;
+    const tEl=document.getElementById('race-time'),bEl=document.getElementById('race-bar'),cEl=document.getElementById('race-cps');
+    if(tEl)tEl.textContent=left.toFixed(1);
+    if(bEl)bEl.style.width=(left/RACE_DURATION*100)+'%';
+    if(cEl)cEl.textContent=(_raceState.clicks/Math.max(0.1,elapsed)).toFixed(1);
+    if(left<=0)finishRace();
+  },100);
+}
+function raceTap(){
+  if(!_raceState||!_raceState.running)return;
+  _raceState.clicks++;
+  const cEl=document.getElementById('race-clicks');if(cEl)cEl.textContent=_raceState.clicks;
+  haptic('light');
+  // разгон болида в анимации
+  _carSpeed=Math.min(1,(_carSpeed||0)+0.05);_lastClickTs=Date.now();
+}
+function finishRace(){
+  if(!_raceState)return;
+  clearInterval(_raceState.timer);
+  _raceState.running=false;
+  const cps=_raceState.clicks/RACE_DURATION;
+  const isRecord=cps>(S.raceBest||0);
+  if(isRecord){S.raceBest=cps;save();cloudSave();}
+  const t=T();
+  // место среди рекордов друзей определим после загрузки
+  const el=document.getElementById('race-body');
+  el.innerHTML=`
+    <div style="text-align:center;padding:10px 0">
+      <div style="font-size:44px">${isRecord?'🏆':'🏁'}</div>
+      <div style="font-size:18px;font-weight:800;margin:6px 0">${isRecord?'Новый рекорд!':'Заезд завершён'}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.7);margin-bottom:4px">Средняя скорость клика:</div>
+      <div style="font-size:34px;font-weight:900;color:${t.c2}">${cps.toFixed(1)} <span style="font-size:13px">кл/сек</span></div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">${_raceState.clicks} кликов за ${RACE_DURATION} сек</div>
+      <div id="race-place" style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:10px"></div>
+      <button onclick="renderRace()" style="width:100%;padding:12px;border:none;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;background:${t.c1};color:${t.c2};margin-top:14px">Ещё раз</button>
+    </div>`;
+  haptic(isRecord?'success':'light');playSound(isRecord?'win':'click');
+  // определяем место среди всех рекордов
+  computeRacePlace(cps);
+  _raceState=null;
+}
+async function computeRacePlace(cps){
+  try{
+    const rows=await sbFetch('/rest/v1/players?select=race_best&race_best=gt.0&order=race_best.desc&limit=200');
+    if(rows&&rows.length){
+      const better=rows.filter(r=>(r.race_best||0)>cps).length;
+      const place=better+1;
+      const pEl=document.getElementById('race-place');
+      if(pEl)pEl.innerHTML=`Это <b style="color:#ffd24a">${place}-е место</b> среди ${rows.length} гонщиков`;
+    }
+  }catch(e){}
 }
 
 function renderSeason(){
@@ -1688,9 +1913,37 @@ function playerTitles(){
   if((S.bestStreak||0)>=7)titles.push('🔥 Железная воля');
   if((S.refCount||0)>=1)titles.push('👥 Амбассадор');
   if((S.seasonTitles||0)>=1)titles.push(`🏆 Чемпион ×${S.seasonTitles}`);
+  if(isMainAdmin())titles.push('🛠️ Главный админ');
+  else if(isAdmin())titles.push('🛠️ Админ');
   if((S.prestigeCount||0)>=1)titles.push(`♻️ Легенда ×${S.prestigeCount}`);
   if(SHOP_ITEMS.filter(i=>i.type==='cosmetic').every(i=>S.shop.includes(i.id)))titles.push('💎 Коллекционер');
   return titles;
+}
+// Трофейный зал — кубки за чемпионства по уровням
+function renderTrophyHall(){
+  const tr=S.trophies||[];
+  const levelNames=['Картинг','Формула 4','Формула 3','Формула 2','Формула 1'];
+  const levelEmoji=['🥇','🏆','🏆','🏆','👑'];
+  // считаем кубки по уровням
+  const byLvl={};
+  tr.forEach(t=>{byLvl[t.lvl]=(byLvl[t.lvl]||0)+1;});
+  let cells='';
+  for(let lvl=0;lvl<5;lvl++){
+    const cnt=byLvl[lvl]||0;
+    const won=cnt>0;
+    cells+=`<div style="flex:1;min-width:54px;text-align:center;padding:8px 4px;border-radius:10px;
+      background:${won?'linear-gradient(160deg,rgba(255,200,60,0.18),rgba(180,130,20,0.1))':'rgba(255,255,255,0.03)'};
+      border:1px solid ${won?'rgba(255,200,60,0.4)':'rgba(255,255,255,0.06)'};opacity:${won?'1':'0.5'}">
+      <div style="font-size:22px;filter:${won?'none':'grayscale(1)'}">${won?levelEmoji[lvl]:'🔒'}</div>
+      <div style="font-size:8.5px;color:rgba(255,255,255,0.6);margin-top:2px">${levelNames[lvl]}</div>
+      ${cnt>1?`<div style="font-size:9px;font-weight:700;color:#ffd24a">×${cnt}</div>`:''}
+    </div>`;
+  }
+  return `<div style="margin-top:14px;padding:12px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.07)">
+    <div style="font-size:12px;font-weight:700;margin-bottom:8px">🏆 Трофейный зал ${tr.length?`· ${tr.length} ${tr.length===1?'кубок':'кубков'}`:''}</div>
+    <div style="display:flex;gap:5px">${cells}</div>
+    ${tr.length===0?'<div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:8px;text-align:center">Выиграй чемпионат сезона, чтобы получить первый кубок</div>':''}
+  </div>`;
 }
 function openProfile(){
   const t=T(),c=C();
@@ -1717,9 +1970,10 @@ function openProfile(){
       <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px"><div style="color:rgba(255,255,255,0.5);font-size:10px">Приглашено друзей</div><div style="font-weight:700">${S.refCount||0}</div></div>
       <div style="background:rgba(140,90,255,0.12);border-radius:8px;padding:8px"><div style="color:#c9a8ff;font-size:10px">Очки наследия</div><div style="font-weight:700">${S.legacyPoints||0} <span style="font-size:9px;opacity:.6">(+${Math.round((S.legacyPoints||0)*5)}%)</span></div></div>
     </div>
+    ${renderTrophyHall()}
     <div style="margin-top:14px;padding:10px;background:linear-gradient(120deg,rgba(80,180,120,0.15),rgba(60,160,255,0.1));border:1px solid rgba(120,200,160,0.3);border-radius:10px">
       <div style="font-size:12px;font-weight:600;margin-bottom:3px">👥 Пригласи друга</div>
-      <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:8px">Вы оба получите +${fmt(REFERRAL_BONUS)} монет!</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:8px">Чем выше твой уровень, тем больше бонус за друга!</div>
       <button onclick="inviteFriend()" style="width:100%;padding:9px;border:none;border-radius:9px;background:#3aa86b;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Поделиться ссылкой</button>
     </div>`;
   document.getElementById('profile-overlay').classList.add('show');document.body.classList.add('modal-open');
@@ -1775,6 +2029,23 @@ function openSettings(){
       <span>📖 Обучение</span>
       <button onclick="closeSettings();startTutorial()" style="padding:10px;border-radius:9px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:12px;cursor:pointer;font-weight:600">Показать туториал</button>
     </div>
+    <div class="set-row">
+      <span>⏱️ Время в игре</span>
+      <span style="font-weight:700">${fmtPlaytime(S.playtime)}</span>
+    </div>
+    ${isAdmin()?`
+    <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px;border:1px solid rgba(120,90,255,0.4);border-radius:10px;padding:10px;background:rgba(120,90,255,0.08)">
+      <span style="color:#c9a8ff;font-weight:700">🛠️ Админ-панель ${isMainAdmin()?'· ГЛАВНЫЙ':''}</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <button onclick="adminGive(100000)" style="padding:9px;border-radius:8px;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:11px;cursor:pointer">+100K 💰</button>
+        <button onclick="adminGive(10000000)" style="padding:9px;border-radius:8px;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:11px;cursor:pointer">+10M 💰</button>
+        <button onclick="adminLevelUp()" style="padding:9px;border-radius:8px;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:11px;cursor:pointer">⬆️ Уровень +1</button>
+        <button onclick="adminMaxUpg()" style="padding:9px;border-radius:8px;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:11px;cursor:pointer">🔧 Прокачать всё</button>
+        <button onclick="adminAddLP(5)" style="padding:9px;border-radius:8px;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:11px;cursor:pointer">⭐ +5 LP</button>
+        <button onclick="adminAddXP()" style="padding:9px;border-radius:8px;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:11px;cursor:pointer">📈 +XP уровня</button>
+      </div>
+      <div style="font-size:9px;color:rgba(255,255,255,0.4)">Видно только администраторам. Твой ID: ${S.userId||'—'}</div>
+    </div>`:''}
     <div class="set-row" style="flex-direction:column;align-items:stretch;gap:6px;border-bottom:none">
       <span style="color:#ff7a6b">⚠️ Опасная зона</span>
       <button onclick="resetProgress()" style="padding:10px;border-radius:9px;background:rgba(255,60,50,0.15);border:1px solid rgba(255,60,50,0.4);color:#ff7a6b;font-weight:600;font-size:12px;cursor:pointer">Сбросить весь прогресс</button>
@@ -1790,6 +2061,13 @@ function openSettings(){
   }catch(e){}
 }
 function closeSettings(){document.getElementById('settings-overlay').classList.remove('show');document.body.classList.remove('modal-open');}
+
+// ── АДМИН-ДЕЙСТВИЯ (только для ADMIN_IDS) ──
+function adminGive(n){if(!isAdmin())return;S.coins+=n;S.tce+=n;toast(`+${fmt(n)}💰`);haptic('success');save();render();openSettings();}
+function adminLevelUp(){if(!isAdmin())return;if(S.cl<4){S.cl++;S.ul={};S.baseClick=0;S.baseCps=0;toast(`Уровень: ${C().name}`);}else toast('Уже Ф1');haptic('success');save();render();openSettings();}
+function adminMaxUpg(){if(!isAdmin())return;UPGRADES.forEach(u=>S.ul[u.id]=u.ml);toast('Болид прокачан 100%');haptic('success');save();render();openSettings();}
+function adminAddLP(n){if(!isAdmin())return;S.legacyPoints=(S.legacyPoints||0)+n;toast(`+${n} Очков наследия`);haptic('success');save();render();openSettings();}
+function adminAddXP(){if(!isAdmin())return;S.xp+=C().xp;toast('+XP уровня');haptic('success');save();render();openSettings();}
 
 // ── ТУТОРИАЛ ──────────────────────────────────────────────────────────────────
 const TUT_STEPS=[
@@ -2362,7 +2640,39 @@ setInterval(()=>{
   const now=Date.now();
   if(now-_lastFullRender>2000){_lastFullRender=now;render();}
 },50);
-setInterval(save,4000);
+setInterval(()=>{if(S.pn){S.playtime=(S.playtime||0)+4000;}save();},4000);
+
+// ── АНИМАЦИЯ ДВИЖЕНИЯ БОЛИДА ──
+let _carSpeed=0;      // 0..1 текущая скорость
+let _wheelRot=0;      // угол вращения колёс
+let _roadOffset=0;    // смещение дорожной разметки
+let _lastClickTs=0;
+let _animLast=performance.now();
+function carAnimLoop(now){
+  const dt=Math.min(0.05,(now-_animLast)/1000);_animLast=now;
+  // затухание скорости, если давно не кликали
+  const sinceClick=Date.now()-_lastClickTs;
+  if(sinceClick>250)_carSpeed=Math.max(0,_carSpeed-dt*0.6);
+  // лёгкий «холостой ход» от пассивного дохода: болид всегда чуть катится
+  const idle=getEffectiveCPS()>0?0.08:0;
+  const spd=Math.max(idle,_carSpeed);
+  // крутим колёса и двигаем дорогу пропорционально скорости
+  _wheelRot+=dt*(2+spd*32);
+  _roadOffset-=dt*(40+spd*520);
+  // перерисовываем только главный болид (лёгкая операция)
+  if(S.pn){
+    try{
+      const main=document.getElementById('car-main');
+      if(main&&!document.getElementById('screen-game').classList.contains('hidden')){
+        const t=T(),c=C(),d=curDriver();
+        drawCar(main.getContext('2d'),main.width,main.height,t.c1,t.c2,d.num,d.dr,c.ct,d);
+      }
+    }catch(e){}
+  }
+  requestAnimationFrame(carAnimLoop);
+}
+requestAnimationFrame(carAnimLoop);
+
 
 // тикер бустов: каждую секунду обновляем таймеры и ловим истечение
 let _boostSnapshot='';
