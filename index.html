@@ -352,7 +352,7 @@ body.modal-open{overflow:hidden}
 // ── ДАННЫЕ ───────────────────────────────────────────────────────────────────
 const TEAMS=[
   {id:'redbull',    n:'Red Bull',     c1:'#1B3A6B',c2:'#FFD700',num:'1',  dr:'VERSTAPPEN',academy:true, aname:'Red Bull Junior',        bonus:'Оффер раньше · +20% монет/клик',
-    drivers:[{dr:'VERSTAPPEN',num:'1',nat:'nl', h1:'#13347A',h2:'#E1141A',h3:'#FFFFFF'},{dr:'HADJAR',num:'6',nat:'fr',h1:'#1B1B22',h2:'#2E63C6',h3:'#E8E8E8'}]},
+    drivers:[{dr:'VERSTAPPEN',num:'1',nat:'nl',h1:'#13347A',h2:'#E1141A',h3:'#FFFFFF'},{dr:'HADJAR',num:'6',nat:'fr',h1:'#1B1B22',h2:'#2E63C6',h3:'#E8E8E8'}]},
   {id:'ferrari',    n:'Ferrari',      c1:'#CC0000',c2:'#FFD700',num:'16', dr:'LECLERC',   academy:true, aname:'Ferrari Driver Academy', bonus:'Оффер раньше · +15% XP',
     drivers:[{dr:'LECLERC',num:'16',nat:'mc',h1:'#C8102E',h2:'#1B1B22',h3:'#F0C808'},{dr:'HAMILTON',num:'44',nat:'gb',h1:'#4B2E83',h2:'#F0C808',h3:'#FFFFFF'}]},
   {id:'mercedes',   n:'Mercedes',     c1:'#00A19C',c2:'#C0C0C0',num:'63', dr:'RUSSELL',   academy:true, aname:'Mercedes Junior',        bonus:'Оффер раньше · +10% пассив',
@@ -1204,25 +1204,6 @@ function wheel(ctx,x,y,ro,ri,c2,sp=5){
   ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();
 }
 
-function drawHelmet(ctx,cx,cy,s,c1,c2){
-  ctx.save();ctx.translate(cx,cy);ctx.scale(s,s);
-  ctx.fillStyle='#e8e8e8';ctx.beginPath();ctx.moveTo(-42,20);ctx.bezierCurveTo(-46,-12,-30,-50,2,-52);ctx.bezierCurveTo(30,-52,50,-26,50,4);ctx.bezierCurveTo(50,20,36,32,18,32);ctx.bezierCurveTo(0,36,-28,30,-42,20);ctx.closePath();ctx.fill();
-  ctx.fillStyle=c1;ctx.beginPath();ctx.moveTo(-42,4);ctx.bezierCurveTo(-46,-12,-30,-50,2,-52);ctx.bezierCurveTo(30,-52,50,-26,50,4);ctx.lineTo(18,4);ctx.bezierCurveTo(22,-20,-20,-36,-28,4);ctx.closePath();ctx.fill();
-  ctx.save();ctx.beginPath();ctx.moveTo(-42,20);ctx.bezierCurveTo(-46,-12,-30,-50,2,-52);ctx.bezierCurveTo(30,-52,50,-26,50,4);ctx.bezierCurveTo(50,20,36,32,18,32);ctx.bezierCurveTo(0,36,-28,30,-42,20);ctx.closePath();ctx.clip();
-  ctx.fillStyle=c2;ctx.fillRect(-46,6,98,8);ctx.restore();
-  ctx.fillStyle='#cecece';ctx.beginPath();ctx.moveTo(-4,28);ctx.bezierCurveTo(4,38,20,38,30,28);ctx.bezierCurveTo(40,18,44,8,42,2);ctx.lineTo(18,32);ctx.bezierCurveTo(4,36,-4,34,-4,28);ctx.closePath();ctx.fill();
-  ctx.fillStyle='#888';for(let i=0;i<3;i++){ctx.beginPath();ctx.roundRect(10+i*9,20,6,9,2);ctx.fill();}
-  ctx.fillStyle='#111';ctx.beginPath();ctx.moveTo(6,-2);ctx.bezierCurveTo(6,-20,24,-28,44,-14);ctx.bezierCurveTo(50,-8,50,6,42,12);ctx.bezierCurveTo(34,20,14,18,6,10);ctx.bezierCurveTo(3,6,4,2,6,-2);ctx.closePath();ctx.fill();
-  ctx.fillStyle='rgba(8,28,60,0.92)';ctx.beginPath();ctx.moveTo(9,-1);ctx.bezierCurveTo(9,-17,25,-25,42,-13);ctx.bezierCurveTo(47,-8,47,5,40,11);ctx.bezierCurveTo(32,17,14,15,8,8);ctx.bezierCurveTo(5,4,7,2,9,-1);ctx.closePath();ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,0.28)';ctx.beginPath();ctx.moveTo(14,-12);ctx.bezierCurveTo(20,-20,36,-20,42,-10);ctx.bezierCurveTo(30,-9,18,-8,14,-12);ctx.closePath();ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,0.5)';ctx.beginPath();ctx.ellipse(19,-12,5,3,-0.3,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='rgba(0,0,0,0.22)';for(let i=0;i<3;i++){ctx.save();ctx.translate(-12+i*12,-42);ctx.rotate(0.08);ctx.beginPath();ctx.roundRect(-3,0,6,10,2);ctx.fill();ctx.restore();}
-  ctx.fillStyle='#444';ctx.beginPath();ctx.roundRect(-48,-2,10,16,3);ctx.fill();
-  ctx.fillStyle='#1a1a1a';ctx.beginPath();ctx.roundRect(-46,0,6,12,2);ctx.fill();
-  ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-42,20);ctx.bezierCurveTo(-46,-12,-30,-50,2,-52);ctx.bezierCurveTo(30,-52,50,-26,50,4);ctx.bezierCurveTo(50,20,36,32,18,32);ctx.bezierCurveTo(0,36,-28,30,-42,20);ctx.closePath();ctx.stroke();
-  ctx.restore();
-}
-
 // Упрощённый флаг пилота (аккуратный мини-прямоугольник). Сложные флаги — узнаваемое приближение.
 function drawFlag(ctx,x,y,w,h,nat){
   ctx.save();
@@ -1269,6 +1250,37 @@ function drawFlag(ctx,x,y,w,h,nat){
       ctx.fillStyle='#888';ctx.fillRect(x,y,w,h);
   }
   ctx.strokeStyle='rgba(0,0,0,0.4)';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(x,y,w,h,2);ctx.stroke();
+  ctx.restore();
+}
+
+function drawHelmet(ctx,cx,cy,s,c1,c2,d){
+  // если передан пилот — используем его палитру вместо командных цветов
+  const body=(d&&d.h1)||c1;        // корпус
+  const band=(d&&d.h2)||c2;        // полоса
+  const top =(d&&d.h3)||'#e8e8e8'; // верхняя секция/акцент
+  ctx.save();ctx.translate(cx,cy);ctx.scale(s,s);
+  // корпус — основной цвет пилота (h1), вся форма шлема
+  ctx.fillStyle=body;ctx.beginPath();ctx.moveTo(-42,20);ctx.bezierCurveTo(-46,-12,-30,-50,2,-52);ctx.bezierCurveTo(30,-52,50,-26,50,4);ctx.bezierCurveTo(50,20,36,32,18,32);ctx.bezierCurveTo(0,36,-28,30,-42,20);ctx.closePath();ctx.fill();
+  // верхняя секция (h2) + акцентная полоса (h3) — внутри силуэта
+  ctx.save();ctx.beginPath();ctx.moveTo(-42,20);ctx.bezierCurveTo(-46,-12,-30,-50,2,-52);ctx.bezierCurveTo(30,-52,50,-26,50,4);ctx.bezierCurveTo(50,20,36,32,18,32);ctx.bezierCurveTo(0,36,-28,30,-42,20);ctx.closePath();ctx.clip();
+  // верхний клин — вторичный цвет (h2)
+  ctx.fillStyle=band;ctx.beginPath();ctx.moveTo(-46,-8);ctx.bezierCurveTo(-28,-52,34,-54,52,-18);ctx.lineTo(52,-30);ctx.lineTo(-46,-30);ctx.closePath();ctx.fill();
+  // акцентная полоса — h3
+  ctx.fillStyle=top;ctx.fillRect(-48,-10,100,7);
+  ctx.restore();
+  // нижняя кромка
+  ctx.fillStyle='rgba(0,0,0,0.18)';ctx.beginPath();ctx.moveTo(-4,28);ctx.bezierCurveTo(4,38,20,38,30,28);ctx.bezierCurveTo(40,18,44,8,42,2);ctx.lineTo(18,32);ctx.bezierCurveTo(4,36,-4,34,-4,28);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#888';for(let i=0;i<3;i++){ctx.beginPath();ctx.roundRect(10+i*9,20,6,9,2);ctx.fill();}
+  // визор
+  ctx.fillStyle='#111';ctx.beginPath();ctx.moveTo(6,-2);ctx.bezierCurveTo(6,-20,24,-28,44,-14);ctx.bezierCurveTo(50,-8,50,6,42,12);ctx.bezierCurveTo(34,20,14,18,6,10);ctx.bezierCurveTo(3,6,4,2,6,-2);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(8,28,60,0.92)';ctx.beginPath();ctx.moveTo(9,-1);ctx.bezierCurveTo(9,-17,25,-25,42,-13);ctx.bezierCurveTo(47,-8,47,5,40,11);ctx.bezierCurveTo(32,17,14,15,8,8);ctx.bezierCurveTo(5,4,7,2,9,-1);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.28)';ctx.beginPath();ctx.moveTo(14,-12);ctx.bezierCurveTo(20,-20,36,-20,42,-10);ctx.bezierCurveTo(30,-9,18,-8,14,-12);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.5)';ctx.beginPath();ctx.ellipse(19,-12,5,3,-0.3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,0.22)';for(let i=0;i<3;i++){ctx.save();ctx.translate(-12+i*12,-42);ctx.rotate(0.08);ctx.beginPath();ctx.roundRect(-3,0,6,10,2);ctx.fill();ctx.restore();}
+  // флаг на затылочной части шлема
+  if(d&&d.nat){ctx.save();ctx.rotate(-0.05);drawFlag(ctx,-42,-4,26,17,d.nat);ctx.restore();}
+  else{ctx.fillStyle='#444';ctx.beginPath();ctx.roundRect(-48,-2,10,16,3);ctx.fill();ctx.fillStyle='#1a1a1a';ctx.beginPath();ctx.roundRect(-46,0,6,12,2);ctx.fill();}
+  ctx.strokeStyle='rgba(0,0,0,0.15)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-42,20);ctx.bezierCurveTo(-46,-12,-30,-50,2,-52);ctx.bezierCurveTo(30,-52,50,-26,50,4);ctx.bezierCurveTo(50,20,36,32,18,32);ctx.bezierCurveTo(0,36,-28,30,-42,20);ctx.closePath();ctx.stroke();
   ctx.restore();
 }
 
@@ -1321,12 +1333,8 @@ function drawHelmetAvatar(ctx,W,H,teamC1,d){
   // нижняя вентиляция/подбородок
   ctx.fillStyle='rgba(0,0,0,0.25)';
   ctx.beginPath();ctx.moveTo(-2,26);ctx.bezierCurveTo(14,34,34,30,44,18);ctx.lineTo(22,30);ctx.bezierCurveTo(8,33,-2,32,-2,26);ctx.closePath();ctx.fill();
-  // флаг национальности на боковине шлема
-  if(d&&d.nat){
-    ctx.save();ctx.rotate(-0.12);
-    drawFlag(ctx,-40,-8,20,13,d.nat);
-    ctx.restore();
-  }
+  // флаг национальности (крупно, на боковине)
+  if(d&&d.nat){ctx.save();ctx.rotate(-0.06);drawFlag(ctx,-42,-6,30,20,d.nat);ctx.restore();}
   // обводка
   ctx.strokeStyle='rgba(0,0,0,0.25)';ctx.lineWidth=2;
   ctx.beginPath();
@@ -1386,13 +1394,13 @@ function drawHalo(ctx,cx,cT,c1){
   ctx.strokeStyle=lc(c1,16);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-hw+4,cT+1);ctx.bezierCurveTo(cx-hw+14,cT-ht+6,cx+hw-14,cT-ht+6,cx+hw-4,cT+1);ctx.stroke();
 }
 
-function drawCar(ctx,W,H,c1,c2,num,dr,carType){
+function drawCar(ctx,W,H,c1,c2,num,dr,carType,drv){
   ctx.clearRect(0,0,W,H);
-  if(carType===0)drawKart(ctx,W,H,c1,c2,num,dr);
-  else if(carType===1)drawF4(ctx,W,H,c1,c2,num,dr);
-  else if(carType===2)drawF3(ctx,W,H,c1,c2,num,dr);
-  else if(carType===3)drawF2(ctx,W,H,c1,c2,num,dr);
-  else drawF1(ctx,W,H,c1,c2,num,dr);
+  if(carType===0)drawKart(ctx,W,H,c1,c2,num,dr,drv);
+  else if(carType===1)drawF4(ctx,W,H,c1,c2,num,dr,drv);
+  else if(carType===2)drawF3(ctx,W,H,c1,c2,num,dr,drv);
+  else if(carType===3)drawF2(ctx,W,H,c1,c2,num,dr,drv);
+  else drawF1(ctx,W,H,c1,c2,num,dr,drv);
 }
 
 function drawBgSmall(ctx,W,H,gnd){
@@ -1401,7 +1409,7 @@ function drawBgSmall(ctx,W,H,gnd){
   ctx.fillStyle='#22223a';ctx.fillRect(0,gnd-2,W,2);
 }
 
-function drawKart(ctx,W,H,c1,c2,num,dr){
+function drawKart(ctx,W,H,c1,c2,num,dr,drv){
   const sc=W/500,gnd=Math.floor(H*0.78);
   ctx.save();ctx.scale(sc,sc);
   const W2=500,gnd2=gnd/sc;
@@ -1424,13 +1432,13 @@ function drawKart(ctx,W,H,c1,c2,num,dr){
   ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-14,gnd2-46,9,6,0.5,0,Math.PI*2);ctx.stroke();
   ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-23,gnd2-46);ctx.lineTo(cR-5,gnd2-46);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-14,gnd2-53);ctx.lineTo(cR-14,gnd2-39);ctx.stroke();
   const hs=0.44,hx=cL+42,hy=cT+3-32*hs;
-  drawHelmet(ctx,hx,hy,hs,c1,c2);
+  drawHelmet(ctx,hx,hy,hs,c1,c2,drv);
   numPlate(ctx,(bx1+bx2)/2,gnd2-46,num,dr,c1,c2);
   wheel(ctx,rWx,rWy,RR,RI,c2);wheel(ctx,fWx,fWy,FR,RI-4,c2);
   ctx.restore();
 }
 
-function drawF4(ctx,W,H,c1,c2,num,dr){
+function drawF4(ctx,W,H,c1,c2,num,dr,drv){
   const sc=W/500,gnd2=Math.floor(H*0.78/sc);
   ctx.save();ctx.scale(sc,sc);
   drawBgSmall(ctx,500,H/sc,gnd2);
@@ -1448,13 +1456,13 @@ function drawF4(ctx,W,H,c1,c2,num,dr){
   ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-12,gnd2-40,9,6,0.5,0,Math.PI*2);ctx.stroke();
   ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-21,gnd2-40);ctx.lineTo(cR-3,gnd2-40);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-12,gnd2-47);ctx.lineTo(cR-12,gnd2-33);ctx.stroke();
   const hs=0.44,hx=cL+38,hy=cT+4-32*hs;
-  drawHelmet(ctx,hx,hy,hs,c1,c2);
+  drawHelmet(ctx,hx,hy,hs,c1,c2,drv);
   numPlate(ctx,(bx1+bx2)/2,gnd2-36,num,dr,c1,c2);
   wheel(ctx,rWx,gnd2-RR,RR,RI,c2,5);wheel(ctx,fWx,gnd2-FR,FR,RI-3,c2,5);
   ctx.restore();
 }
 
-function drawF3(ctx,W,H,c1,c2,num,dr){
+function drawF3(ctx,W,H,c1,c2,num,dr,drv){
   const sc=W/500,gnd2=Math.floor(H*0.78/sc);
   ctx.save();ctx.scale(sc,sc);
   drawBgSmall(ctx,500,H/sc,gnd2);
@@ -1472,13 +1480,13 @@ function drawF3(ctx,W,H,c1,c2,num,dr){
   ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-12,gnd2-38,9,6,0.5,0,Math.PI*2);ctx.stroke();
   ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-21,gnd2-38);ctx.lineTo(cR-3,gnd2-38);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-12,gnd2-45);ctx.lineTo(cR-12,gnd2-31);ctx.stroke();
   const hs=0.44,hx=cL+36,hy=cT+4-32*hs;
-  drawHelmet(ctx,hx,hy,hs,c1,c2);
+  drawHelmet(ctx,hx,hy,hs,c1,c2,drv);
   numPlate(ctx,(bx1+bx2)/2,gnd2-34,num,dr,c1,c2);
   wheel(ctx,rWx,gnd2-RR,RR,RI,c2,6);wheel(ctx,fWx,gnd2-FR,FR,RI-3,c2,6);
   ctx.restore();
 }
 
-function drawF2(ctx,W,H,c1,c2,num,dr){
+function drawF2(ctx,W,H,c1,c2,num,dr,drv){
   const sc=W/500,gnd2=Math.floor(H*0.8/sc);
   ctx.save();ctx.scale(sc,sc);
   drawBgSmall(ctx,500,H/sc,gnd2);
@@ -1498,13 +1506,13 @@ function drawF2(ctx,W,H,c1,c2,num,dr){
   ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-12,gnd2-36,9,6,0.5,0,Math.PI*2);ctx.stroke();
   ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-21,gnd2-36);ctx.lineTo(cR-3,gnd2-36);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-12,gnd2-43);ctx.lineTo(cR-12,gnd2-29);ctx.stroke();
   const hs=0.44,hx=cL+34,hy=cT+4-32*hs;
-  drawHelmet(ctx,hx,hy,hs,c1,c2);
+  drawHelmet(ctx,hx,hy,hs,c1,c2,drv);
   numPlate(ctx,(bx1+bx2)/2,gnd2-34,num,dr,c1,c2);
   wheel(ctx,rWx,gnd2-RR,RR,RI,c2,6);wheel(ctx,fWx,gnd2-FR,FR,RI-4,c2,6);
   ctx.restore();
 }
 
-function drawF1(ctx,W,H,c1,c2,num,dr){
+function drawF1(ctx,W,H,c1,c2,num,dr,drv){
   const sc=W/500,gnd2=Math.floor(H*0.82/sc);
   ctx.save();ctx.scale(sc,sc);
   drawBgSmall(ctx,500,H/sc,gnd2);
@@ -1527,7 +1535,7 @@ function drawF1(ctx,W,H,c1,c2,num,dr){
   ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-12,gnd2-34,9,6,0.5,0,Math.PI*2);ctx.stroke();
   ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-21,gnd2-34);ctx.lineTo(cR-3,gnd2-34);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-12,gnd2-41);ctx.lineTo(cR-12,gnd2-27);ctx.stroke();
   const hs=0.44,hx=cL+34,hy=cT+4-32*hs;
-  drawHelmet(ctx,hx,hy,hs,c1,c2);
+  drawHelmet(ctx,hx,hy,hs,c1,c2,drv);
   numPlate(ctx,(bx1+bx2)/2,gnd2-36,num,dr,c1,c2);
   wheel(ctx,rWx,gnd2-RR,RR,RI,c2,7);wheel(ctx,fWx,gnd2-FR,FR,RI-4,c2,7);
   ctx.restore();
@@ -1971,9 +1979,9 @@ function render(){
   try{
     const d=curDriver();
     const hcar=document.getElementById('hcar');
-    drawCar(hcar.getContext('2d'),hcar.width,hcar.height,t.c1,t.c2,d.num,d.dr,c.ct);
+    drawCar(hcar.getContext('2d'),hcar.width,hcar.height,t.c1,t.c2,d.num,d.dr,c.ct,d);
     const main=document.getElementById('car-main');
-    drawCar(main.getContext('2d'),main.width,main.height,t.c1,t.c2,d.num,d.dr,c.ct);
+    drawCar(main.getContext('2d'),main.width,main.height,t.c1,t.c2,d.num,d.dr,c.ct,d);
     const helm=document.getElementById('hhelmet');
     if(helm)drawHelmetAvatar(helm.getContext('2d'),helm.width,helm.height,t.c1,d);
   }catch(e){console.log('canvas err',e);}
