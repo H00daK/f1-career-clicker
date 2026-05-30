@@ -109,6 +109,52 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 .disclaimer{font-size:9px;color:rgba(255,255,255,0.2);text-align:center;padding:4px 8px}
 
+/* DAILY BONUS */
+.daily-banner{border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;border:1px solid;background:linear-gradient(120deg,rgba(255,200,50,0.12),rgba(255,140,0,0.08));border-color:rgba(255,200,50,0.3)}
+.daily-text{flex:1}
+.daily-title{font-size:12px;font-weight:600;color:#FFD54A}
+.daily-sub{font-size:10px;color:rgba(255,255,255,0.55);margin-top:1px}
+.daily-streak{display:flex;gap:3px;margin-top:5px}
+.streak-dot{width:16px;height:16px;border-radius:4px;background:rgba(255,255,255,0.08);font-size:8px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-weight:700}
+.streak-dot.on{background:rgba(255,200,50,0.85);color:#3a2a00}
+.daily-btn{padding:8px 16px;font-size:12px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:#FFC832;color:#3a2a00;white-space:nowrap}
+.daily-btn:disabled{opacity:0.4;cursor:not-allowed;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.4)}
+
+/* QUESTS / CONTRACTS */
+.quest-item{padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+.quest-item:last-child{border-bottom:none}
+.q-top{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.q-icon{font-size:18px;width:24px;text-align:center}
+.q-name{font-size:12px;font-weight:600;flex:1}
+.q-reward{font-size:10px;color:#FFD54A;font-weight:600;white-space:nowrap}
+.q-bar{height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin-bottom:4px}
+.q-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#5aa0ff,#90c8ff);transition:width .3s}
+.q-prog{font-size:10px;color:rgba(255,255,255,0.4);display:flex;justify-content:space-between;align-items:center}
+.q-claim{padding:4px 12px;font-size:10px;border-radius:8px;background:rgba(100,220,120,0.2);border:1px solid rgba(100,220,120,0.4);color:#90e8a0;cursor:pointer;font-weight:600}
+
+/* GARAGE */
+.shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.shop-card{border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px;background:rgba(255,255,255,0.04);text-align:center;position:relative}
+.shop-card.owned{border-color:rgba(100,220,120,0.4)}
+.shop-emoji{font-size:26px}
+.shop-name{font-size:11px;font-weight:600;margin-top:4px}
+.shop-bonus{font-size:9px;color:rgba(255,255,255,0.5);margin-top:2px;line-height:1.3;min-height:24px}
+.shop-btn{margin-top:6px;width:100%;padding:6px;font-size:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.08);color:#fff;cursor:pointer;font-weight:600}
+.shop-btn.afford{background:rgba(100,180,255,0.18);border-color:rgba(100,180,255,0.35);color:#90c8ff}
+.shop-btn:disabled{opacity:0.35;cursor:not-allowed}
+.shop-btn.equipped{background:rgba(100,220,120,0.2);border-color:rgba(100,220,120,0.4);color:#90e8a0}
+.shop-sect{font-size:10px;font-weight:600;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 8px}
+.shop-sect:first-child{margin-top:0}
+
+/* TOURNAMENT MODE PICKER */
+.mode-row{display:flex;gap:6px;margin:6px 0}
+.mode-opt{flex:1;padding:6px 4px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);font-size:10px;text-align:center;cursor:pointer;transition:all .12s}
+.mode-opt.sel{border-color:rgba(255,200,50,0.5);background:rgba(255,200,50,0.12)}
+.mode-emoji{font-size:14px}
+.mode-lbl{font-size:9px;margin-top:1px}
+
+.tabs.row2{margin-top:-4px}
+
 .hidden{display:none!important}
 </style>
 </head>
@@ -131,6 +177,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div id="screen-game" class="hidden">
   <div class="game-inner" id="game-inner">
     <div id="offer-container"></div>
+    <div id="daily-container"></div>
 
     <div class="header">
       <canvas id="hcar" width="90" height="50"></canvas>
@@ -150,6 +197,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="clicker-wrap">
       <div class="car-btn" id="car-btn" onclick="doClick(event)">
         <canvas id="car-main" width="440" height="120"></canvas>
+        <div id="cosmetic-badge" style="position:absolute;top:6px;right:8px;font-size:20px;display:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6))"></div>
       </div>
       <div class="click-hint" id="chint">+1 монета за клик</div>
       <div class="xp-bar-wrap">
@@ -168,12 +216,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="tabs">
       <div class="tab active" onclick="switchTab('upgrades')">Апгрейды</div>
       <div class="tab" onclick="switchTab('tournaments')">Турниры</div>
+      <div class="tab" onclick="switchTab('contracts')">📋 Контракты</div>
+    </div>
+    <div class="tabs row2">
+      <div class="tab" onclick="switchTab('garage')">🔧 Гараж</div>
       <div class="tab" onclick="switchTab('achievements')">Достижения</div>
       <div class="tab" onclick="switchTab('leaderboard')">🏆 Топ</div>
     </div>
 
     <div class="panel" id="panel-upgrades"><div class="panel-title">Запчасти</div><div id="upg-list"></div></div>
     <div class="panel hidden" id="panel-tournaments"><div class="panel-title">Турниры</div><div id="tourn-list"></div></div>
+    <div class="panel hidden" id="panel-contracts"><div class="panel-title">Спонсорские контракты</div><div id="quest-list"></div></div>
+    <div class="panel hidden" id="panel-garage"><div class="panel-title">Гараж</div><div id="garage-list"></div></div>
     <div class="panel hidden" id="panel-achievements"><div class="panel-title">Достижения</div><div id="ach-list"></div></div>
     <div class="panel hidden" id="panel-leaderboard"><div class="panel-title">Топ гонщиков</div><div id="lb-list"><div style="font-size:12px;color:rgba(255,255,255,0.4);padding:8px 0">Загрузка...</div></div></div>
 
@@ -274,6 +328,34 @@ const ACHIEVEMENTS=[
   {id:'f1',  name:'Формула 1!',   desc:'Достигни вершины',     emoji:'🏎️',chk:s=>s.cl>=4},
   {id:'10k', name:'Богач трассы', desc:'Накопи 10 000 монет',  emoji:'💰',chk:s=>s.tce>=10000},
   {id:'all', name:'Полный болид', desc:'Все апгрейды куплены', emoji:'🌟',chk:s=>UPGRADES.every(u=>(s.ul[u.id]||0)>0)},
+  {id:'streak3',name:'Постоянство', desc:'Стрик входа 3 дня',     emoji:'📅',chk:s=>s.daily&&s.daily.streak>=3},
+  {id:'streak7',name:'Железная воля',desc:'Стрик входа 7 дней',    emoji:'🔥',chk:s=>s.daily&&s.daily.streak>=7},
+  {id:'shop1', name:'Тюнинг',       desc:'Купи предмет в гараже',  emoji:'🛍️',chk:s=>s.shop&&s.shop.length>=1},
+];
+
+// ── ГАРАЖ: косметика и буст-предметы ─────────────────────────────────────────
+// type:'click' (+% к клику), 'cps' (+% к пассиву), 'cosmetic' (только вид)
+// Бусты переживают повышение уровня (хранятся в S.shop)
+const SHOP_ITEMS=[
+  // Буст-предметы
+  {id:'lucky_helmet', name:'Счастливый шлем', emoji:'⛑️', price:5000,    type:'click', val:0.10, desc:'+10% монет за клик'},
+  {id:'turbo_chip',   name:'Турбо-чип',       emoji:'🔌', price:25000,   type:'cps',   val:0.10, desc:'+10% пассивный доход'},
+  {id:'gold_gloves',  name:'Золотые перчатки', emoji:'🧤', price:120000,  type:'click', val:0.20, desc:'+20% монет за клик'},
+  {id:'ai_engineer',  name:'ИИ-инженер',       emoji:'🤖', price:600000,  type:'cps',   val:0.25, desc:'+25% пассивный доход'},
+  // Чистая косметика — наклейки/талисманы (только вид и статус)
+  {id:'flames',       name:'Наклейки-пламя',   emoji:'🔥', price:3000,    type:'cosmetic', desc:'Стиль. Просто красиво'},
+  {id:'star_deco',    name:'Звёздный декор',   emoji:'✨', price:40000,   type:'cosmetic', desc:'Сверкающий болид'},
+  {id:'crown',        name:'Корона чемпиона',  emoji:'👑', price:300000,  type:'cosmetic', desc:'Для настоящих королей трассы'},
+  {id:'diamond',      name:'Алмазная ливрея',  emoji:'💎', price:2000000, type:'cosmetic', desc:'Роскошь высшего класса'},
+];
+
+// ── СПОНСОРСКИЕ КОНТРАКТЫ (квесты) ───────────────────────────────────────────
+// metric: счётчик-источник; вознаграждение зависит от уровня карьеры (см. genQuest)
+const QUEST_POOL=[
+  {id:'clicker',  metric:'tc',  emoji:'👆', name:'Отработай круги',   verb:'Сделай', unit:'кликов',  base:150},
+  {id:'racer',    metric:'tw',  emoji:'🏁', name:'Победный контракт',  verb:'Выиграй',unit:'турниров',base:2},
+  {id:'earner',   metric:'tce', emoji:'💰', name:'Финплан спонсора',   verb:'Заработай',unit:'монет', base:8000},
+  {id:'tuner',    metric:'upg', emoji:'🔧', name:'Доводка болида',     verb:'Прокачай',unit:'ур. апгрейдов',base:6},
 ];
 
 // ── УТИЛИТЫ ──────────────────────────────────────────────────────────────────
@@ -282,6 +364,8 @@ const dc=(h,a)=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b
 function fmt(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return Math.floor(n).toString();}
 // м/сек — показываем дробные числа
 function fmtCps(n){if(n>=1000)return(n/1000).toFixed(1)+'K';if(n>=1)return n.toFixed(1);if(n>0)return n.toFixed(2);return '0';}
+// баланс монет — с копейками на малых значениях, K/M на больших
+function fmtCoins(n){if(n>=1e6)return(n/1e6).toFixed(2)+'M';if(n>=1e4)return(n/1e3).toFixed(1)+'K';if(n>=100)return n.toFixed(1);return n.toFixed(2);}
 
 // roundRect polyfill для iOS WebView
 if(!CanvasRenderingContext2D.prototype.roundRect){
@@ -345,10 +429,19 @@ async function loadLeaderboard(){
 
 // ── СОСТОЯНИЕ ─────────────────────────────────────────────────────────────────
 // tw_ids — турниры в которых побеждали хотя бы раз (для условия перехода)
-let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:null,tw_ids:[],userId:null};
+let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:null,tw_ids:[],userId:null,
+  daily:{last:0,streak:0},quests:[],shop:[],equipped:null};
 let selTeam='redbull';
 
-function load(){try{const d=localStorage.getItem('f1_v6');if(d)S={...S,...JSON.parse(d)};}catch(e){}}
+function load(){
+  try{const d=localStorage.getItem('f1_v6');if(d)S={...S,...JSON.parse(d)};}catch(e){}
+  // защита от старых сейвов без новых полей
+  if(!S.daily||typeof S.daily!=='object')S.daily={last:0,streak:0};
+  if(!Array.isArray(S.quests))S.quests=[];
+  if(!Array.isArray(S.shop))S.shop=[];
+  if(typeof S.equipped==='undefined')S.equipped=null;
+  if(S.quests.length===0)initQuests();
+}
 function save(){
   try{localStorage.setItem('f1_v6',JSON.stringify(S));}catch(e){}
   // облачное сохранение если есть userId
@@ -379,11 +472,17 @@ function canPromote(){
   return{ok:true};
 }
 
+function shopBoost(type){
+  let m=0;
+  SHOP_ITEMS.forEach(it=>{if(it.type===type&&S.shop.includes(it.id))m+=it.val;});
+  return m;
+}
 function clickVal(){
   const t=T();let v=C().cm;
   UPGRADES.forEach(u=>v+=u.ka*(S.ul[u.id]||0));
   if(t.id==='redbull')v=Math.floor(v*1.2);
   if(t.id==='williams')v=Math.floor(v*0.8);
+  v=Math.floor(v*(1+shopBoost('click')));
   return Math.max(1,v);
 }
 function getCPS(){
@@ -391,6 +490,7 @@ function getCPS(){
   const t=T();
   if(t.id==='mercedes')v*=1.1;
   if(t.id==='aston')v*=1.08;
+  v*=(1+shopBoost('cps'));
   return v;
 }
 function upgPrice(u){
@@ -399,10 +499,18 @@ function upgPrice(u){
   return p;
 }
 function winChance(t){
-  let b=t.wb+Object.values(S.ul).reduce((a,x)=>a+x,0)*0.015;
+  // Прокачка болида — главный фактор. 0% прокачки = низкий шанс, 100% = высокий.
+  const prog=upgradeProgress(); // 0..1 на текущем уровне
+  // t.wb трактуем как «потолок» шанса для полностью прокачанного болида (престижнее турнир — ниже потолок)
+  // floor — минимальный шанс на голом болиде (примерно треть от потолка)
+  const ceil=t.wb;             // напр. 0.58 для лёгкого, 0.25 для титульного
+  const floor=ceil*0.30;       // на 0% прокачки
+  let b=floor+(ceil-floor)*prog; // линейно растёт с прокачкой болида
+  // небольшой бонус за «переинвестирование» — победы тоже чуть помогают (опыт пилота)
+  b+=Math.min(S.tw,20)*0.003;  // максимум +6% за 20 побед
   const tm=T();
   if(tm.id==='haas'||tm.id==='cadillac')b+=0.06;
-  return Math.min(b,0.88);
+  return Math.max(0.05,Math.min(b,0.92));
 }
 function addXP(a){
   const t=T();
@@ -451,6 +559,10 @@ function acceptOffer(){
   toast(`🎓 ${S.offer.an} дала +30% XP!`);
   S.offer=null;
   document.getElementById('offer-container').innerHTML='';
+  // если XP уже хватает, но болид не прокачан — подсказать игроку
+  if(S.xp>=C().xp&&upgradeProgress()<0.70&&S.cl<4){
+    showModal('🔧','XP набран, но болид не готов',`Для перехода в ${CAREERS[Math.min(S.cl+1,4)].name} нужно прокачать болид минимум на 70% (сейчас ${Math.floor(upgradeProgress()*100)}%). Загляни во вкладку «Апгрейды».`);
+  }
   save();render();
 }
 function doClick(e){
@@ -460,15 +572,28 @@ function doClick(e){
   S.coins+=coins;S.tce+=coins;S.tc++;
   addXP(1);checkOffer();floatNum('+'+coins,e.clientX,e.clientY);checkAch();save();render();
 }
+// Режимы турнира: модификаторы к fee, призу и шансу
+const TOURN_MODES={
+  safe:  {lbl:'🛡️ Осторожно', fee:0.7, reward:0.6, chance:+0.12},
+  std:   {lbl:'⚖️ Стандарт',  fee:1.0, reward:1.0, chance:0.0},
+  bold:  {lbl:'🔥 Агрессивно', fee:1.3, reward:1.8, chance:-0.15},
+};
+let tournMode={}; // id -> 'safe'|'std'|'bold'
+
+function setTournMode(id,mode){tournMode[id]=mode;render();}
+
 function enterTournament(id){
-  const t=getTournaments().find(x=>x.id===id);if(!t||S.coins<t.fee)return;
-  S.coins-=t.fee;
-  let reward=t.cr;
+  const t=getTournaments().find(x=>x.id===id);if(!t)return;
+  const mode=TOURN_MODES[tournMode[id]||'std'];
+  const fee=Math.floor(t.fee*mode.fee);
+  if(S.coins<fee)return;
+  S.coins-=fee;
+  let reward=Math.floor(t.cr*mode.reward);
   if(T().id==='mclaren')reward=Math.floor(reward*1.1);
-  const won=Math.random()<winChance(t);
+  const chance=Math.max(0.05,Math.min(0.95,winChance(t)+mode.chance));
+  const won=Math.random()<chance;
   if(won){
     S.coins+=reward;S.tce+=reward;S.tw++;addXP(t.xpr);
-    // отмечаем победу в этом турнире
     if(!S.tw_ids.includes(t.id))S.tw_ids.push(t.id);
     showModal('🏆',`Победа в "${t.name}"!`,`+${t.xpr} XP, +${fmt(reward)} монет!`);
   } else {
@@ -487,6 +612,99 @@ function buyUpg(id){
 }
 function checkAch(){
   ACHIEVEMENTS.forEach(a=>{if(!S.ua.includes(a.id)&&a.chk(S)){S.ua.push(a.id);toast(`🎖️ ${a.name}`);}});
+}
+
+// ── ЕЖЕДНЕВНЫЙ БОНУС ──────────────────────────────────────────────────────────
+function dayStamp(d=new Date()){return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();}
+function dailyAvailable(){return S.daily.last!==dayStamp();}
+function dailyReward(forStreak){
+  // ориентир ~10 минут дохода: max(пассив за 600с, флор от клика)
+  const cps=getCPS();
+  const fromCps=cps*600;
+  const fromClick=clickVal()*120; // флор для тех, у кого мало пассива
+  const base=Math.max(fromCps,fromClick, 200*(S.cl+1));
+  // множитель стрика: день1≈1.14 ... день7+=2.0
+  const streak=Math.min(forStreak!==undefined?forStreak:S.daily.streak,7);
+  const m=1+streak/7; // 1.14..2.0
+  return Math.floor(base*m);
+}
+// какой стрик будет при следующем заборе (для корректного превью)
+function nextStreak(){
+  const yest=dayStamp(new Date(Date.now()-86400000));
+  return S.daily.last===yest?Math.min(S.daily.streak+1,7):1;
+}
+function claimDaily(){
+  if(!dailyAvailable())return;
+  const today=dayStamp();
+  const yest=dayStamp(new Date(Date.now()-86400000));
+  // продолжаем стрик если последний заход был вчера, иначе сброс на 1
+  if(S.daily.last===yest)S.daily.streak=Math.min(S.daily.streak+1,7);
+  else S.daily.streak=1;
+  S.daily.last=today;
+  const r=dailyReward();
+  S.coins+=r;S.tce+=r;
+  showModal('🎁',`День ${S.daily.streak} стрика!`,`Ежедневный бонус: +${fmt(r)} монет!${S.daily.streak<7?' Заходи завтра — бонус вырастет.':' Максимальный стрик!'}`);
+  checkAch();save();render();
+}
+
+// ── СПОНСОРСКИЕ КОНТРАКТЫ (квесты) ───────────────────────────────────────────
+function questMetricValue(metric){
+  if(metric==='tc')return S.tc;
+  if(metric==='tw')return S.tw;
+  if(metric==='tce')return S.tce;
+  if(metric==='upg')return UPGRADES.reduce((s,u)=>s+(S.ul[u.id]||0),0);
+  return 0;
+}
+function genQuest(poolItem){
+  // масштаб цели и награды от уровня карьеры
+  const lvlMul=Math.pow(3,S.cl); // картинг x1 ... ф1 x81
+  const target=Math.ceil(poolItem.base*(poolItem.metric==='tw'||poolItem.metric==='upg'?(1+S.cl):lvlMul));
+  // награда: ~разумная доля от цены апгрейдов уровня
+  const coinR=Math.floor((poolItem.metric==='tce'?target*0.4:target*40)*(1+S.cl*0.5))+ 300*(S.cl+1);
+  const xpR=Math.floor(C().xp*0.04*(1+S.cl*0.2))+20;
+  return {
+    id:poolItem.id, emoji:poolItem.emoji, name:poolItem.name,
+    verb:poolItem.verb, unit:poolItem.unit, metric:poolItem.metric,
+    start:questMetricValue(poolItem.metric), target,
+    coinR, xpR, claimed:false
+  };
+}
+function initQuests(){
+  // 3 случайных контракта из пула
+  const pool=[...QUEST_POOL].sort(()=>Math.random()-0.5).slice(0,3);
+  S.quests=pool.map(genQuest);
+}
+function questProgress(q){
+  const cur=questMetricValue(q.metric)-q.start;
+  return {cur:Math.max(0,cur),done:cur>=q.target};
+}
+function claimQuest(id){
+  const q=S.quests.find(x=>x.id===id);if(!q)return;
+  const p=questProgress(q);if(!p.done||q.claimed)return;
+  S.coins+=q.coinR;S.tce+=q.coinR;addXP(q.xpR);
+  toast(`📋 Контракт выполнен: +${fmt(q.coinR)}💰 +${q.xpR} XP`);
+  // заменяем выполненный контракт новым из пула
+  const used=S.quests.map(x=>x.id);
+  const fresh=QUEST_POOL.filter(x=>!used.includes(x.id));
+  const pick=fresh.length>0?fresh[Math.floor(Math.random()*fresh.length)]:QUEST_POOL[Math.floor(Math.random()*QUEST_POOL.length)];
+  const idx=S.quests.findIndex(x=>x.id===id);
+  S.quests[idx]=genQuest(pick);
+  checkAch();save();render();
+}
+
+// ── ГАРАЖ ─────────────────────────────────────────────────────────────────────
+function buyShopItem(id){
+  const it=SHOP_ITEMS.find(x=>x.id===id);if(!it)return;
+  if(S.shop.includes(id)){
+    // косметику можно надеть/снять
+    if(it.type==='cosmetic')S.equipped=(S.equipped===id?null:id);
+    save();render();return;
+  }
+  if(S.coins<it.price)return;
+  S.coins-=it.price;S.shop.push(id);
+  if(it.type==='cosmetic')S.equipped=id;
+  toast(`${it.emoji} ${it.name} куплено!`);
+  checkAch();save();render();
 }
 
 // ── РИСОВАНИЕ БОЛИДОВ ─────────────────────────────────────────────────────────
@@ -718,9 +936,13 @@ function drawF1(ctx,W,H,c1,c2,num,dr){
 }
 
 // ── UI ───────────────────────────────────────────────────────────────────────
+const ALL_TABS=['upgrades','tournaments','contracts','garage','achievements','leaderboard'];
 function switchTab(name){
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['upgrades','tournaments','achievements','leaderboard'][i]===name));
-  ['upgrades','tournaments','achievements','leaderboard'].forEach(n=>{document.getElementById('panel-'+n).classList.toggle('hidden',n!==name);});
+  document.querySelectorAll('.tab').forEach(t=>{
+    const tn=(t.getAttribute('onclick').match(/'([^']+)'/)||[])[1];
+    t.classList.toggle('active',tn===name);
+  });
+  ALL_TABS.forEach(n=>{document.getElementById('panel-'+n).classList.toggle('hidden',n!==name);});
   if(name==='leaderboard')renderLeaderboard();
 }
 
@@ -766,6 +988,40 @@ function floatNum(txt,x,y){
   document.body.appendChild(el);setTimeout(()=>el.remove(),700);
 }
 
+function renderDailyBanner(){
+  const cont=document.getElementById('daily-container');
+  if(!cont)return;
+  const avail=dailyAvailable();
+  const t=T();
+  // точки стрика 1..7
+  let dots='';
+  for(let i=1;i<=7;i++){
+    const on=i<=S.daily.streak;
+    dots+=`<div class="streak-dot ${on?'on':''}">${i}</div>`;
+  }
+  if(avail){
+    const ns=nextStreak();
+    const r=dailyReward(ns);
+    cont.innerHTML=`<div class="daily-banner">
+      <div class="daily-text">
+        <div class="daily-title">🎁 Ежедневный бонус готов</div>
+        <div class="daily-sub">Награда: +${fmt(r)} монет · день ${ns}/7</div>
+        <div class="daily-streak">${dots}</div>
+      </div>
+      <button class="daily-btn" onclick="claimDaily()">Забрать</button>
+    </div>`;
+  } else {
+    cont.innerHTML=`<div class="daily-banner" style="opacity:.75">
+      <div class="daily-text">
+        <div class="daily-title">✅ Бонус получен сегодня</div>
+        <div class="daily-sub">Возвращайся завтра — стрик ${S.daily.streak}/7 даёт до x2</div>
+        <div class="daily-streak">${dots}</div>
+      </div>
+      <button class="daily-btn" disabled>Завтра</button>
+    </div>`;
+  }
+}
+
 function renderOfferBanner(){
   if(!S.offer)return;
   const t=T();
@@ -794,7 +1050,7 @@ function render(){
   badge.textContent=c.name;badge.style.background=t.c1+'33';badge.style.color=t.c2;
   document.getElementById('cname').textContent=`${S.pn} · ${t.n}`;
   document.getElementById('csub').textContent=c.xp===Infinity?'🏆 Вершина достигнута!':`До ${CAREERS[Math.min(S.cl+1,4)].name}: ${Math.floor(S.xp)}/${c.xp} XP`;
-  document.getElementById('sv-coins').textContent=fmt(S.coins);
+  document.getElementById('sv-coins').textContent=fmtCoins(S.coins);
   document.getElementById('sv-cps').textContent=fmtCps(getCPS());
   document.getElementById('sv-wins').textContent=S.tw;
   const xpPct=c.xp===Infinity?100:Math.min(100,Math.floor(S.xp/c.xp*100));
@@ -802,9 +1058,19 @@ function render(){
   document.getElementById('xpfill').style.background=t.c1;
   document.getElementById('xpnum').textContent=c.xp===Infinity?'MAX':`${Math.floor(S.xp)}/${c.xp}`;
   document.getElementById('chint').textContent=`+${clickVal()} монет за клик`;
+  // косметический бейдж на болиде
+  try{
+    const cb=document.getElementById('cosmetic-badge');
+    if(cb){
+      const eq=S.equipped?SHOP_ITEMS.find(i=>i.id===S.equipped):null;
+      if(eq){cb.textContent=eq.emoji;cb.style.display='block';}
+      else cb.style.display='none';
+    }
+  }catch(e){}
   // блок перехода — показываем только когда набрано достаточно XP
   renderPromoteBlock();
   renderLists();
+  renderDailyBanner();
   if(S.offer)renderOfferBanner();
   }catch(e){console.log('render err',e);}
 }
@@ -828,15 +1094,32 @@ function renderPromoteBlock(){
   btn.disabled=!allOk;
   // условия
   const next=CAREERS[Math.min(S.cl+1,4)].name;
-  let html=`<div style="color:rgba(255,255,255,0.8);font-weight:600;margin-bottom:6px">Условия для перехода в ${next}:</div>`;
-  html+=`<div>${upgOk?'✅':'⏳'} Прокачка болида: ${upgPct}% / 70% минимум</div>`;
+  let html=`<div style="color:rgba(255,255,255,0.8);font-weight:600;margin-bottom:8px">Условия для перехода в ${next}:</div>`;
+  // прокачка — с прогресс-баром и подсветкой
+  const upgColor=upgOk?'#90e8a0':'#ff9a6b';
+  html+=`<div style="margin-bottom:4px">${upgOk?'✅':'⏳'} Прокачка болида: <b style="color:${upgColor}">${upgPct}%</b> / 70% минимум</div>`;
+  html+=`<div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin:0 0 8px 18px;max-width:220px">
+    <div style="height:100%;width:${Math.min(100,upgPct/70*100)}%;background:${upgColor};border-radius:3px"></div>
+    <div style="position:relative"></div>
+  </div>`;
   if(avail.length>0){
     avail.forEach(t2=>{
       const won=S.tw_ids.includes(t2.id);
       html+=`<div>${won?'✅':'⏳'} Победа: ${t2.name}</div>`;
     });
   }
+  // итоговая подсказка
+  if(!allOk){
+    let need=[];
+    if(!upgOk)need.push(`докупи апгрейды до 70% (сейчас ${upgPct}%)`);
+    if(!tournOk)need.push(`выиграй: ${missing.map(m=>m.name).join(', ')}`);
+    html+=`<div style="margin-top:8px;padding:7px 9px;background:rgba(255,154,107,0.12);border:1px solid rgba(255,154,107,0.3);border-radius:8px;font-size:11px;color:#ffb38f">⚠️ Осталось: ${need.join(' · ')}</div>`;
+  } else {
+    html+=`<div style="margin-top:8px;padding:7px 9px;background:rgba(144,232,160,0.12);border:1px solid rgba(144,232,160,0.3);border-radius:8px;font-size:11px;color:#90e8a0">✅ Все условия выполнены — жми «Перейти»!</div>`;
+  }
   document.getElementById('promote-conditions').innerHTML=html;
+  // текст кнопки
+  btn.textContent=allOk?'Перейти →':(!upgOk?'Нужно 70% прокачки':'Выиграй все турниры');
 }
 
 function renderLists(){
@@ -860,11 +1143,24 @@ function renderLists(){
     tl.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.4);padding:8px 0">Турниры недоступны на этом уровне</div>';
   }
   curTournaments.forEach(t2=>{
-    const can=S.coins>=t2.fee;
+    const cm=tournMode[t2.id]||'std';
+    const mode=TOURN_MODES[cm];
+    const fee=Math.floor(t2.fee*mode.fee);
+    const reward=Math.floor(t2.cr*mode.reward);
+    const chance=Math.round(Math.max(0.05,Math.min(0.95,winChance(t2)+mode.chance))*100);
+    const can=S.coins>=fee;
     const won=S.tw_ids.includes(t2.id);
+    let modeBtns='';
+    ['safe','std','bold'].forEach(mk=>{
+      modeBtns+=`<div class="mode-opt ${cm===mk?'sel':''}" onclick="setTournMode('${t2.id}','${mk}')">
+        <div class="mode-emoji">${TOURN_MODES[mk].lbl.split(' ')[0]}</div>
+        <div class="mode-lbl">${TOURN_MODES[mk].lbl.split(' ')[1]}</div>
+      </div>`;
+    });
     tl.innerHTML+=`<div class="tourn-item">
-      <div class="t-row"><div class="t-name">${won?'✅ ':''} ${t2.name}</div><div class="t-fee">${fmt(t2.fee)}💰</div></div>
-      <div class="t-info">Приз: ${fmt(t2.cr)}💰 · +${t2.xpr} XP · Шанс: ~${Math.round(winChance(t2)*100)}%</div>
+      <div class="t-row"><div class="t-name">${won?'✅ ':''} ${t2.name}</div><div class="t-fee">${fmt(fee)}💰</div></div>
+      <div class="t-info">Приз: ${fmt(reward)}💰 · +${t2.xpr} XP · Шанс: ~${chance}%</div>
+      <div class="mode-row">${modeBtns}</div>
       <button class="enter-btn ${can?'ready':''}" onclick="enterTournament('${t2.id}')" ${!can?'disabled':''}>${can?'Участвовать':'Мало монет'}</button>
     </div>`;
   });
@@ -878,6 +1174,57 @@ function renderLists(){
       ${done?'<span style="font-size:13px;margin-left:auto">✅</span>':''}
     </div>`;
   });
+  // contracts (quests)
+  const ql=document.getElementById('quest-list');
+  if(ql){
+    ql.innerHTML='';
+    if(!S.quests||S.quests.length===0){
+      ql.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.4);padding:8px 0">Контракты загружаются...</div>';
+    } else {
+      S.quests.forEach(q=>{
+        const p=questProgress(q);
+        const pct=Math.min(100,Math.floor(p.cur/q.target*100));
+        ql.innerHTML+=`<div class="quest-item">
+          <div class="q-top">
+            <div class="q-icon">${q.emoji}</div>
+            <div class="q-name">${q.name}</div>
+            <div class="q-reward">+${fmt(q.coinR)}💰 +${q.xpR}XP</div>
+          </div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-bottom:4px">${q.verb} ${fmt(q.target)} ${q.unit}</div>
+          <div class="q-bar"><div class="q-fill" style="width:${pct}%"></div></div>
+          <div class="q-prog">
+            <span>${fmt(p.cur)} / ${fmt(q.target)}</span>
+            ${p.done?`<button class="q-claim" onclick="claimQuest('${q.id}')">Забрать</button>`:`<span>${pct}%</span>`}
+          </div>
+        </div>`;
+      });
+    }
+  }
+  // garage
+  const gl=document.getElementById('garage-list');
+  if(gl){
+    gl.innerHTML='';
+    const boosts=SHOP_ITEMS.filter(i=>i.type!=='cosmetic');
+    const cosm=SHOP_ITEMS.filter(i=>i.type==='cosmetic');
+    const renderCard=(it)=>{
+      const owned=S.shop.includes(it.id);
+      const can=S.coins>=it.price;
+      const isCosm=it.type==='cosmetic';
+      const equipped=isCosm&&S.equipped===it.id;
+      let btn;
+      if(!owned)btn=`<button class="shop-btn ${can?'afford':''}" onclick="buyShopItem('${it.id}')" ${can?'':'disabled'}>${fmt(it.price)}💰</button>`;
+      else if(isCosm)btn=`<button class="shop-btn ${equipped?'equipped':''}" onclick="buyShopItem('${it.id}')">${equipped?'✓ Надето':'Надеть'}</button>`;
+      else btn=`<button class="shop-btn equipped" disabled>✓ Активно</button>`;
+      return `<div class="shop-card ${owned?'owned':''}">
+        <div class="shop-emoji">${it.emoji}</div>
+        <div class="shop-name">${it.name}</div>
+        <div class="shop-bonus">${it.desc}</div>
+        ${btn}
+      </div>`;
+    };
+    gl.innerHTML=`<div class="shop-sect">⚡ Буст-предметы (навсегда)</div><div class="shop-grid">${boosts.map(renderCard).join('')}</div>
+      <div class="shop-sect">🎨 Косметика</div><div class="shop-grid">${cosm.map(renderCard).join('')}</div>`;
+  }
   }catch(e){console.log('list err',e);}
 }
 
@@ -939,7 +1286,7 @@ setInterval(()=>{
   const cps=getCPS();
   if(cps>0){S.coins+=cps/20;S.tce+=cps/20;}
   try{
-    document.getElementById('sv-coins').textContent=fmt(S.coins);
+    document.getElementById('sv-coins').textContent=fmtCoins(S.coins);
     document.getElementById('sv-cps').textContent=fmtCps(getCPS());
   }catch(e){}
   const now=Date.now();
