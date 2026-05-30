@@ -2900,7 +2900,20 @@ setInterval(()=>{
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 let _pendingReferrer=null;
+// Ждём, пока подгрузится telegram-web-app.js (он даёт user ID). До 3 сек.
+function waitForTelegram(maxMs=3000){
+  return new Promise(resolve=>{
+    const start=Date.now();
+    (function check(){
+      if(typeof Telegram!=='undefined'&&Telegram.WebApp){resolve(true);return;}
+      if(Date.now()-start>=maxMs){resolve(false);return;}
+      setTimeout(check,100);
+    })();
+  });
+}
 async function init(){
+  // Сначала дожидаемся загрузки Telegram WebApp скрипта — без него нет user ID
+  await waitForTelegram(3000);
   // Получаем Telegram User ID (в обёртке — на некоторых клиентах API может отличаться)
   try{
     if(typeof Telegram!=='undefined'&&Telegram.WebApp){
