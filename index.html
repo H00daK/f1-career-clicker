@@ -2172,10 +2172,11 @@ function openSettings(){
         <button onclick="manualCloudSave(event)" style="flex:1;padding:9px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:11px;cursor:pointer">💾 Сохранить в облако</button>
         <button onclick="manualCloudLoad(event)" style="flex:1;padding:9px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#fff;font-size:11px;cursor:pointer">☁️ Загрузить из облака</button>
       </div>
+      ${!S.userId?`<button onclick="forceConnectId(event)" style="width:100%;margin-top:6px;padding:10px;border-radius:8px;background:#7c5aff;border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer">🔄 Подключить Telegram ID сейчас</button>`:''}
       <div style="font-size:9px;color:rgba(255,255,255,0.4)">Прогресс привязан к твоему Telegram. «Загрузить» подтянет сейв с другого устройства.</div>
       <div style="font-size:9px;color:${S.userId?'rgba(120,200,160,0.8)':'rgba(255,140,120,0.9)'}">${S.userId?('🆔 Твой ID: '+S.userId+' (синхронизация активна)'):'⚠️ ID не получен от Telegram'}</div>
       ${!S.userId?`<div style="font-size:8px;color:rgba(255,255,255,0.45);line-height:1.5;margin-top:2px">Диагностика: ${tgDiag()}</div>`:''}
-      <div style="font-size:8px;color:rgba(255,255,255,0.3);margin-top:2px">версия sync-v5</div>
+      <div style="font-size:8px;color:rgba(255,255,255,0.3);margin-top:2px">версия sync-v7</div>
     </div>
     ${isAdmin()?`
     <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px;border:1px solid rgba(120,90,255,0.4);border-radius:10px;padding:10px;background:rgba(120,90,255,0.08)">
@@ -2223,28 +2224,20 @@ function tgDiag(){
     return 'скрипт есть, но initData пустой (v'+(wa.version||'?')+', платформа '+(wa.platform||'?')+')'+urlInfo;
   }catch(e){return 'ошибка: '+e.message;}
 }
-// Ручная облачная синхронизация — с явным фидбеком на кнопке (без confirm, он глючит в Telegram)
-async function manualCloudSave(ev){
-  if(!S.userId){toast('Нет Telegram ID — открой игру через Telegram');return;}
+// Принудительно подключить ID из Telegram/URL и сразу загрузить прогресс
+async function forceConnectId(ev){
   const btn=ev&&ev.target?ev.target:null;const orig=btn?btn.textContent:'';
-  if(btn){btn.disabled=true;btn.textContent='⏳ Сохраняю...';}
-  haptic('light');
-  try{
-    await cloudSave();
-    toast('✅ Прогресс сохранён в облако');haptic('success');
-    if(btn){btn.textContent='✅ Сохранено';setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},1800);}
-  }catch(e){
-    toast('❌ Не удалось сохранить (нет сети?)');haptic('error');
-    if(btn){btn.textContent='❌ Ошибка';setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},1800);}
+  if(btn){btn.disabled=true;btn.textContent='⏳ Подключаю...';}
+  let u=null;
+  try{if(typeof Telegram!=='undefined'&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user)u=Telegram.WebApp.initDataUnsafe.user;}catch(e){}
+  if(!u){const fu=getTgUserFromURL();if(fu&&fu.user)u=fu.user;}
+  if(!u||!u.id){
+    toast('❌ ID не найден ни в Telegram, ни в URL');haptic('error');
+    if(btn){btn.textContent=orig;btn.disabled=false;}
+    return;
   }
-}
-async function manualCloudLoad(ev){
-  if(!S.userId){toast('Нет Telegram ID — открой игру через Telegram');return;}
-  const btn=ev&&ev.target?ev.target:null;const orig=btn?btn.textContent:'';
-  if(btn){btn.disabled=true;btn.textContent='⏳ Загружаю...';}
-  haptic('light');
-  // резервная копия текущего локального прогресса на случай, если в облаке окажется хуже
-  let backup=null;try{backup=localStorage.getItem('f1_v6');}catch(e){}
+  S.userId=u.id;
+  toast('🆔 ID подключён: '+u.id);haptic('success');
   try{
     const ok=await cloudLoad(S.userId);
     if(ok){
@@ -2253,17 +2246,63 @@ async function manualCloudLoad(ev){
       document.getElementById('screen-game').classList.remove('hidden');
       const ls=document.getElementById('screen-loading');if(ls)ls.style.display='none';
       render();
-      toast('✅ Прогресс загружен из облака');haptic('success');
-      if(btn){btn.textContent='✅ Загружено';}
+      toast('✅ Прогресс загружен из облака');
       setTimeout(()=>closeSettings(),700);
     }else{
-      toast('☁️ В облаке нет сохранения для твоего аккаунта');haptic('error');
-      if(btn){btn.textContent=orig;btn.disabled=false;}
+      toast('☁️ ID подключён, но в облаке нет сейва');
+      save();openSettings();
+    }
+  }catch(e){toast('❌ Ошибка сети при загрузке');if(btn){btn.textContent=orig;btn.disabled=false;}}
+}
+// Ручная облачная синхронизация — с явным фидбеком на кнопке (без confirm, он глючит в Telegram)
+async function manualCloudSave(ev){
+  const btn=ev&&ev.target?ev.target:null;const orig=btn?btn.textContent:'';
+  const flash=(txt,revert=true)=>{if(btn){btn.textContent=txt;btn.disabled=true;if(revert)setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},1800);}};
+  haptic('light');
+  // если ID нет — пробуем достать из Telegram/URL прямо сейчас
+  if(!S.userId)tryAttachId();
+  if(!S.userId){toast('❌ Нет Telegram ID — нажми «Подключить ID»');haptic('error');flash('❌ Нет ID');return;}
+  flash('⏳ Сохраняю...',false);
+  try{
+    await cloudSave();
+    toast('✅ Прогресс сохранён в облако');haptic('success');flash('✅ Сохранено');
+  }catch(e){
+    toast('❌ Не удалось сохранить (нет сети?)');haptic('error');flash('❌ Ошибка');
+  }
+}
+async function manualCloudLoad(ev){
+  const btn=ev&&ev.target?ev.target:null;const orig=btn?btn.textContent:'';
+  const flash=(txt,revert=true)=>{if(btn){btn.textContent=txt;btn.disabled=true;if(revert)setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},1800);}};
+  haptic('light');
+  if(!S.userId)tryAttachId();
+  if(!S.userId){toast('❌ Нет Telegram ID — нажми «Подключить ID»');haptic('error');flash('❌ Нет ID');return;}
+  flash('⏳ Загружаю...',false);
+  try{
+    const ok=await cloudLoad(S.userId);
+    if(ok){
+      save();
+      document.getElementById('screen-onboard').classList.add('hidden');
+      document.getElementById('screen-game').classList.remove('hidden');
+      const ls=document.getElementById('screen-loading');if(ls)ls.style.display='none';
+      render();
+      toast('✅ Прогресс загружен из облака');haptic('success');flash('✅ Загружено',false);
+      setTimeout(()=>closeSettings(),700);
+    }else{
+      toast('☁️ В облаке нет сохранения для твоего аккаунта');haptic('error');flash('☁️ Пусто');
     }
   }catch(e){
-    toast('❌ Не удалось загрузить (нет сети?)');haptic('error');
-    if(btn){btn.textContent='❌ Ошибка';setTimeout(()=>{btn.textContent=orig;btn.disabled=false;},1800);}
+    toast('❌ Не удалось загрузить (нет сети?)');haptic('error');flash('❌ Ошибка');
   }
+}
+// Пытается получить и применить Telegram ID из скрипта или URL (синхронно)
+function tryAttachId(){
+  try{
+    let u=null;
+    if(typeof Telegram!=='undefined'&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user)u=Telegram.WebApp.initDataUnsafe.user;
+    if(!u){const fu=getTgUserFromURL();if(fu&&fu.user)u=fu.user;}
+    if(u&&u.id){S.userId=u.id;return true;}
+  }catch(e){}
+  return false;
 }
 
 function adminGive(n){if(!isAdmin())return;S.coins+=n;S.tce+=n;toast(`+${fmt(n)}💰`);haptic('success');save();render();openSettings();}
@@ -2999,6 +3038,36 @@ async function init(){
     // Последний резерв: если даже отрисовка упала — показываем онбординг
     try{buildOnboard();document.getElementById('screen-onboard').classList.remove('hidden');}catch(e2){}
     hideLoading();
+  }
+
+  // Фоновая дозагрузка ID: если на старте Telegram не отдал ID, перепроверяем ещё 12 секунд.
+  // Как только ID появился (из скрипта или URL) — применяем и подтягиваем прогресс автоматически.
+  if(!S.userId){
+    let tries=0;
+    const retry=setInterval(async()=>{
+      tries++;
+      if(S.userId||tries>24){clearInterval(retry);return;} // 24*500мс = 12 сек
+      let u=null;
+      try{
+        if(typeof Telegram!=='undefined'&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user)u=Telegram.WebApp.initDataUnsafe.user;
+      }catch(e){}
+      if(!u){const fu=getTgUserFromURL();if(fu&&fu.user)u=fu.user;}
+      if(u&&u.id){
+        clearInterval(retry);
+        S.userId=u.id;
+        try{
+          const ok=await cloudLoad(S.userId);
+          if(ok){
+            save();
+            document.getElementById('screen-onboard').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            const ls=document.getElementById('screen-loading');if(ls)ls.style.display='none';
+            render();
+            toast('✅ Прогресс синхронизирован');
+          }
+        }catch(e){}
+      }
+    },500);
   }
 }
 
