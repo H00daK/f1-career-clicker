@@ -7,11 +7,11 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0e0e1a;color:#fff;display:flex;flex-direction:column;max-width:480px;margin:0 auto;height:100vh;position:relative}
+html,body{min-height:100vh}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0e0e1a;color:#fff;max-width:480px;margin:0 auto;padding-bottom:40px}
 
 /* ONBOARD */
-#screen-onboard{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+#screen-onboard{padding:16px;display:flex;flex-direction:column;gap:12px}
 .ob-title{font-size:22px;font-weight:600;text-align:center;margin-top:8px}
 .ob-sub{font-size:12px;color:rgba(255,255,255,0.5);text-align:center}
 .ob-label{font-size:12px;color:rgba(255,255,255,0.6);font-weight:500}
@@ -19,7 +19,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ob-input:focus{border-color:rgba(255,255,255,0.35)}
 .teams-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .team-card{border:1.5px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px;cursor:pointer;background:rgba(255,255,255,0.04);transition:all .15s;position:relative;overflow:hidden}
-.team-card.sel{border-width:2px}
+.team-card.sel{border-width:2.5px;background:rgba(255,255,255,0.09);}
+.team-card .sel-check{display:none;position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.team-card.sel .sel-check{display:flex}
 .tc-bar{height:3px;border-radius:2px;margin-bottom:7px}
 .tc-name{font-size:12px;font-weight:600}
 .tc-bonus{font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px;line-height:1.4}
@@ -27,11 +29,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .start-btn{padding:14px;font-size:15px;border:none;border-radius:12px;cursor:pointer;font-weight:600;width:100%;margin-top:4px}
 
 /* GAME */
-#screen-game{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:0}
-.game-inner{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;padding-bottom:60px}
+#screen-game{padding:10px;display:flex;flex-direction:column;gap:8px}
+.game-inner{display:flex;flex-direction:column;gap:8px}
 
-.header{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px}
-.header canvas{flex-shrink:0;border-radius:8px}
+.header{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:8px 12px;display:flex;align-items:center;gap:8px}
+.header canvas{flex-shrink:0;border-radius:6px;display:none}
 .hinfo{flex:1;min-width:0}
 .career-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:3px}
 .career-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -43,7 +45,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .stat-lbl{font-size:10px;color:rgba(255,255,255,0.4);margin-top:1px}
 
 .clicker-wrap{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px;text-align:center}
-.car-btn{width:100%;height:130px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:8px;transition:transform .08s;user-select:none;-webkit-user-select:none;position:relative;overflow:hidden}
+.car-btn{width:100%;height:100px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:8px;transition:transform .08s;user-select:none;-webkit-user-select:none;position:relative;overflow:hidden}
 .car-btn:active{transform:scale(0.96)}
 .click-hint{font-size:11px;color:rgba(255,255,255,0.4)}
 .xp-bar-wrap{margin-top:8px}
@@ -57,7 +59,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .offer-sub{font-size:10px;color:rgba(255,255,255,0.5);margin-top:1px}
 .offer-btn{padding:6px 14px;font-size:11px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
 
-.tabs{display:flex;gap:5px;position:sticky;top:0;z-index:10;background:#0e0e1a;padding:2px 0}
+.tabs{display:flex;gap:5px;padding:2px 0;margin-bottom:2px}
 .tab{flex:1;padding:8px 4px;font-size:11px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);cursor:pointer;color:rgba(255,255,255,0.5);text-align:center;transition:all .15s}
 .tab.active{background:rgba(255,255,255,0.14);color:#fff;border-color:rgba(255,255,255,0.2)}
 
@@ -151,9 +153,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
       <div class="click-hint" id="chint">+1 монета за клик</div>
       <div class="xp-bar-wrap">
-        <div class="xp-labels"><span>XP</span><span id="xpnum">0/300</span></div>
+        <div class="xp-labels"><span>XP</span><span id="xpnum">0/4000</span></div>
         <div class="xp-bar"><div class="xp-fill" id="xpfill" style="width:0%"></div></div>
       </div>
+    </div>
+
+    <!-- Блок перехода на следующий уровень -->
+    <div id="promote-block" class="panel" style="display:none">
+      <div class="panel-title">🏁 Переход на следующий уровень</div>
+      <div id="promote-conditions" style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:10px;line-height:1.8"></div>
+      <button id="promote-btn" onclick="tryPromote()" style="width:100%;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Перейти →</button>
     </div>
 
     <div class="tabs">
@@ -197,32 +206,62 @@ const TEAMS=[
 ];
 
 const CAREERS=[
-  {id:'karting',name:'Картинг',   xp:300,    cm:1,  ct:0},
-  {id:'f4',     name:'Формула 4', xp:900,    cm:3,  ct:1},
-  {id:'f3',     name:'Формула 3', xp:2200,   cm:7,  ct:2},
-  {id:'f2',     name:'Формула 2', xp:5500,   cm:16, ct:3},
-  {id:'f1',     name:'Формула 1', xp:Infinity,cm:38,ct:4},
+  {id:'karting',name:'Картинг',   xp:4000,    cm:1,  ct:0},
+  {id:'f4',     name:'Формула 4', xp:15000,   cm:3,  ct:1},
+  {id:'f3',     name:'Формула 3', xp:60000,   cm:7,  ct:2},
+  {id:'f2',     name:'Формула 2', xp:200000,  cm:16, ct:3},
+  {id:'f1',     name:'Формула 1', xp:Infinity,cm:38, ct:4},
 ];
 
 const UPGRADES=[
-  {id:'tires',  name:'Шины',           emoji:'⚫',desc:'Сцепление с трассой',  bp:60,    ca:0.5,ka:1, ml:10},
-  {id:'engine', name:'Двигатель',      emoji:'🔧',desc:'Мощность и момент',    bp:250,   ca:2,  ka:2, ml:10},
-  {id:'aero',   name:'Аэродинамика',   emoji:'💨',desc:'Прижимная сила',       bp:600,   ca:6,  ka:3, ml:8},
-  {id:'susp',   name:'Подвеска',       emoji:'🛞',desc:'Устойчивость',         bp:1500,  ca:15, ka:5, ml:8},
-  {id:'gearbox',name:'Коробка передач',emoji:'⚙️',desc:'Скорость переключений',bp:4000,  ca:40, ka:10,ml:6},
-  {id:'fuel',   name:'Топливо',        emoji:'⛽',desc:'Оптимальный расход',   bp:10000, ca:100,ka:20,ml:6},
-  {id:'team',   name:'Инженеры',       emoji:'👷',desc:'Пит-стоп 2 сек',       bp:25000, ca:250,ka:50,ml:5},
-  {id:'sim',    name:'Симулятор',      emoji:'🕹️',desc:'Виртуальные тренировки',bp:70000,ca:700,ka:100,ml:5},
+  {id:'tires',  name:'Шины',           emoji:'⚫',desc:'Сцепление с трассой',  bp:100,   ca:0.2, ka:1,  ml:10},
+  {id:'engine', name:'Двигатель',      emoji:'🔧',desc:'Мощность и момент',    bp:600,   ca:0.8, ka:2,  ml:10},
+  {id:'aero',   name:'Аэродинамика',   emoji:'💨',desc:'Прижимная сила',       bp:2000,  ca:2,   ka:3,  ml:8},
+  {id:'susp',   name:'Подвеска',       emoji:'🔩',desc:'Устойчивость',         bp:6000,  ca:5,   ka:5,  ml:8},
+  {id:'gearbox',name:'Коробка передач',emoji:'⚙️',desc:'Скорость переключений',bp:18000, ca:14,  ka:10, ml:6},
+  {id:'fuel',   name:'Топливо',        emoji:'⛽',desc:'Оптимальный расход',   bp:55000, ca:40,  ka:20, ml:6},
+  {id:'team',   name:'Инженеры',       emoji:'👷',desc:'Пит-стоп 2 сек',       bp:160000,ca:110, ka:50, ml:5},
+  {id:'sim',    name:'Симулятор',      emoji:'💻',desc:'Виртуальные тренировки',bp:450000,ca:320, ka:100,ml:5},
 ];
 
-const TOURNAMENTS=[
-  {id:'loc',name:'Местные гонки',        fee:40,    xpr:50,   cr:100,   mc:0,wb:0.55},
-  {id:'reg',name:'Региональный чемп.',   fee:180,   xpr:140,  cr:380,   mc:0,wb:0.45},
-  {id:'nat',name:'Национальная серия',   fee:600,   xpr:350,  cr:1100,  mc:1,wb:0.42},
-  {id:'con',name:'Континентальный кубок',fee:2500,  xpr:900,  cr:4200,  mc:2,wb:0.38},
-  {id:'f2c',name:'Чемпионат Ф2',         fee:10000, xpr:2500, cr:15000, mc:3,wb:0.35},
-  {id:'f1r',name:'Этап Формулы 1',       fee:40000, xpr:6000, cr:65000, mc:4,wb:0.30},
+// Турниры по уровням карьеры — у каждого уровня свой набор с уникальными названиями
+const TOURNAMENTS_BY_LEVEL=[
+  // 0 — Картинг
+  [
+    {id:'kart_cup',   name:'Кубок картодрома',    fee:80,    xpr:30,   cr:200,    wb:0.58},
+    {id:'kart_city',  name:'Городской чемпионат', fee:300,   xpr:90,   cr:700,    wb:0.50},
+    {id:'kart_open',  name:'Открытый турнир',      fee:800,   xpr:200,  cr:1800,   wb:0.44},
+  ],
+  // 1 — Формула 4
+  [
+    {id:'f4_sprint',  name:'Спринт Ф4',            fee:2000,  xpr:120,  cr:4000,   wb:0.52},
+    {id:'f4_regional',name:'Региональная Ф4',      fee:6000,  xpr:300,  cr:12000,  wb:0.46},
+    {id:'f4_masters', name:'Мастерс Ф4',           fee:15000, xpr:700,  cr:30000,  wb:0.40},
+  ],
+  // 2 — Формула 3
+  [
+    {id:'f3_sprint',  name:'Гран-при Ф3',          fee:10000, xpr:400,  cr:22000,  wb:0.48},
+    {id:'f3_euro',    name:'Евросерия Ф3',         fee:28000, xpr:900,  cr:60000,  wb:0.42},
+    {id:'f3_world',   name:'Кубок мира Ф3',        fee:70000, xpr:2000, cr:150000, wb:0.36},
+  ],
+  // 3 — Формула 2
+  [
+    {id:'f2_feature', name:'Основная гонка Ф2',    fee:50000, xpr:1200, cr:120000, wb:0.44},
+    {id:'f2_champ',   name:'Чемпионат Ф2',         fee:150000,xpr:3000, cr:350000, wb:0.38},
+    {id:'f2_super',   name:'Суперфинал Ф2',        fee:400000,xpr:7000, cr:900000, wb:0.32},
+  ],
+  // 4 — Формула 1
+  [
+    {id:'f1_gp',      name:'Гран-при Ф1',          fee:200000,xpr:2000, cr:500000, wb:0.35},
+    {id:'f1_sprint',  name:'Спринт Ф1',            fee:500000,xpr:5000, cr:1200000,wb:0.30},
+    {id:'f1_wdc',     name:'Борьба за титул WDC',  fee:1500000,xpr:12000,cr:4000000,wb:0.25},
+  ],
 ];
+
+// Получаем турниры текущего уровня
+function getTournaments(){return TOURNAMENTS_BY_LEVEL[S.cl]||[];}
+// Совместимость — для winChance и enterTournament
+const TOURNAMENTS=TOURNAMENTS_BY_LEVEL.flat();
 
 const ACHIEVEMENTS=[
   {id:'c1',  name:'Первый клик',  desc:'Нажми на машину',     emoji:'👆',chk:s=>s.tc>=1},
@@ -239,16 +278,54 @@ const ACHIEVEMENTS=[
 const lc=(h,a)=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`rgb(${Math.min(255,r+a)},${Math.min(255,g+a)},${Math.min(255,b+a)})`;};
 const dc=(h,a)=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`rgb(${Math.max(0,r-a)},${Math.max(0,g-a)},${Math.max(0,b-a)})`;};
 function fmt(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return Math.floor(n).toString();}
+// м/сек — показываем дробные числа
+function fmtCps(n){if(n>=1000)return(n/1000).toFixed(1)+'K';if(n>=1)return n.toFixed(1);if(n>0)return n.toFixed(2);return '0';}
+
+// roundRect polyfill для iOS WebView
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    var rad=typeof r==='number'?r:0;
+    this.moveTo(x+rad,y);
+    this.lineTo(x+w-rad,y);this.quadraticCurveTo(x+w,y,x+w,y+rad);
+    this.lineTo(x+w,y+h-rad);this.quadraticCurveTo(x+w,y+h,x+w-rad,y+h);
+    this.lineTo(x+rad,y+h);this.quadraticCurveTo(x,y+h,x,y+h-rad);
+    this.lineTo(x,y+rad);this.quadraticCurveTo(x,y,x+rad,y);
+    this.closePath();
+  };
+}
 
 // ── СОСТОЯНИЕ ─────────────────────────────────────────────────────────────────
-let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:null};
+// tw_ids — турниры в которых побеждали хотя бы раз (для условия перехода)
+let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:null,tw_ids:[]};
 let selTeam='redbull';
 
-function load(){try{const d=localStorage.getItem('f1_v4');if(d)S={...S,...JSON.parse(d)};}catch(e){}}
-function save(){try{localStorage.setItem('f1_v4',JSON.stringify(S));}catch(e){}}
+function load(){try{const d=localStorage.getItem('f1_v6');if(d)S={...S,...JSON.parse(d)};}catch(e){}}
+function save(){try{localStorage.setItem('f1_v6',JSON.stringify(S));}catch(e){}}
 
 function T(){return TEAMS.find(x=>x.id===S.tid)||TEAMS[0];}
 function C(){return CAREERS[S.cl];}
+
+// Считаем % прокачки текущего уровня (сумма уровней / макс возможных)
+function upgradeProgress(){
+  const total=UPGRADES.reduce((s,u)=>s+u.ml,0);
+  const cur=UPGRADES.reduce((s,u)=>s+(S.ul[u.id]||0),0);
+  return cur/total;
+}
+
+// Турниры доступные на текущем уровне карьеры
+function availableTournaments(){
+  return getTournaments();
+}
+
+// Условие перехода: 70% апгрейдов + победа в каждом доступном турнире
+function canPromote(){
+  if(S.xp<C().xp)return false;
+  if(upgradeProgress()<0.70)return{ok:false,reason:`Прокачай болид минимум на 70% (сейчас ${Math.floor(upgradeProgress()*100)}%)`};
+  const avail=availableTournaments();
+  const missing=avail.filter(t=>!S.tw_ids.includes(t.id));
+  if(missing.length>0)return{ok:false,reason:`Выиграй хотя бы раз: ${missing.map(t=>t.name).join(', ')}`};
+  return{ok:true};
+}
 
 function clickVal(){
   const t=T();let v=C().cm;
@@ -281,14 +358,36 @@ function addXP(a){
   if(t.id==='rbulls')a*=1.05;
   if(t.id==='williams')a*=1.2;
   S.xp+=a;
-  if(S.xp>=C().xp&&S.cl<4){S.xp=0;promote();}
+  // автоперехода нет — игрок должен сам проверить условия
+}
+function tryPromote(){
+  // Проверяем условия перехода
+  const check=canPromote();
+  if(check===true||check.ok){
+    promote();
+  } else {
+    showModal('🚫','Переход невозможен',check.reason||'Выполни все условия для перехода!');
+  }
 }
 function promote(){
+  // Сохраняем накопленный CPS и клик-значение перед сбросом
+  const prevCps=getCPS();
+  const prevClick=clickVal();
+
   S.cl++;
+  S.offer=null;
+  S.tw_ids=[]; // сбрасываем победы турниров для нового уровня
+
+  // Сбрасываем апгрейды — но монеты и опыт остаются
+  S.ul={};
+
   const c=C(),t=T();
-  if(c.id==='f1')showModal('🏆','Добро пожаловать в Формулу 1!',`${S.pn}, команда ${t.n} подписала контракт! Ты прошёл путь от картинга до вершины!`);
-  else showModal('🎉',`Повышение: ${c.name}!`,`${S.pn}, новые турниры и апгрейды открыты!`);
-  checkOffer();checkAch();
+  const msg=c.id==='f1'
+    ?`${S.pn}, команда ${t.n} подписала контракт! Апгрейды сброшены — новый болид, новые вызовы!`
+    :`${S.pn}, апгрейды сброшены! Прокачивай новый болид с нуля. Монеты и м/сек сохранены.`;
+  if(c.id==='f1')showModal('🏆','Добро пожаловать в Формулу 1!',msg);
+  else showModal('🎉',`Повышение: ${c.name}!`,msg);
+  checkAch();
 }
 function checkOffer(){
   const t=T();if(!t.academy||S.offer)return;
@@ -310,13 +409,20 @@ function doClick(e){
   addXP(1);checkOffer();floatNum('+'+coins,e.clientX,e.clientY);checkAch();save();render();
 }
 function enterTournament(id){
-  const t=TOURNAMENTS.find(x=>x.id===id);if(!t||S.coins<t.fee)return;
+  const t=getTournaments().find(x=>x.id===id);if(!t||S.coins<t.fee)return;
   S.coins-=t.fee;
   let reward=t.cr;
   if(T().id==='mclaren')reward=Math.floor(reward*1.1);
   const won=Math.random()<winChance(t);
-  if(won){S.coins+=reward;S.tce+=reward;S.tw++;addXP(t.xpr);showModal('🏆',`Победа!`,`+${t.xpr} XP, +${fmt(reward)} монет!`);}
-  else{const c=Math.floor(reward*0.15);S.coins+=c;S.tce+=c;addXP(Math.floor(t.xpr*0.3));showModal('😤','Не повезло...',`+${fmt(c)} монет утешения. Прокачай болид!`);}
+  if(won){
+    S.coins+=reward;S.tce+=reward;S.tw++;addXP(t.xpr);
+    // отмечаем победу в этом турнире
+    if(!S.tw_ids.includes(t.id))S.tw_ids.push(t.id);
+    showModal('🏆',`Победа в "${t.name}"!`,`+${t.xpr} XP, +${fmt(reward)} монет!`);
+  } else {
+    const c=Math.floor(reward*0.15);S.coins+=c;S.tce+=c;addXP(Math.floor(t.xpr*0.3));
+    showModal('😤','Не повезло...',`+${fmt(c)} монет утешения. Прокачай болид и попробуй снова!`);
+  }
   checkOffer();checkAch();save();render();
 }
 function buyUpg(id){
@@ -452,7 +558,7 @@ function drawKart(ctx,W,H,c1,c2,num,dr){
   const hs=0.44,hx=cL+42,hy=cT+3-32*hs;
   drawHelmet(ctx,hx,hy,hs,c1,c2);
   numPlate(ctx,(bx1+bx2)/2,gnd2-46,num,dr,c1,c2);
-  wheel(ctx,rWx,rWy,RR,RI,c2);wheel(ctx,fWx,fWy,FR,FI,c2);
+  wheel(ctx,rWx,rWy,RR,RI,c2);wheel(ctx,fWx,fWy,FR,RI-4,c2);
   ctx.restore();
 }
 
@@ -596,28 +702,68 @@ function renderOfferBanner(){
 }
 
 function render(){
+  try{
   const c=C(),t=T();
-  // header car
-  const hcar=document.getElementById('hcar');
-  drawCar(hcar.getContext('2d'),hcar.width,hcar.height,t.c1,t.c2,t.num,t.dr,c.ct);
-  // main car
-  const main=document.getElementById('car-main');
-  drawCar(main.getContext('2d'),main.width,main.height,t.c1,t.c2,t.num,t.dr,c.ct);
+  // canvas — в отдельном try
+  try{
+    const hcar=document.getElementById('hcar');
+    drawCar(hcar.getContext('2d'),hcar.width,hcar.height,t.c1,t.c2,t.num,t.dr,c.ct);
+    const main=document.getElementById('car-main');
+    drawCar(main.getContext('2d'),main.width,main.height,t.c1,t.c2,t.num,t.dr,c.ct);
+  }catch(e){console.log('canvas err',e);}
   // badge
   const badge=document.getElementById('cbadge');
   badge.textContent=c.name;badge.style.background=t.c1+'33';badge.style.color=t.c2;
   document.getElementById('cname').textContent=`${S.pn} · ${t.n}`;
   document.getElementById('csub').textContent=c.xp===Infinity?'🏆 Вершина достигнута!':`До ${CAREERS[Math.min(S.cl+1,4)].name}: ${Math.floor(S.xp)}/${c.xp} XP`;
-  // stats
   document.getElementById('sv-coins').textContent=fmt(S.coins);
-  document.getElementById('sv-cps').textContent=fmt(getCPS());
+  document.getElementById('sv-cps').textContent=fmtCps(getCPS());
   document.getElementById('sv-wins').textContent=S.tw;
-  // xp
   const xpPct=c.xp===Infinity?100:Math.min(100,Math.floor(S.xp/c.xp*100));
   document.getElementById('xpfill').style.width=xpPct+'%';
   document.getElementById('xpfill').style.background=t.c1;
   document.getElementById('xpnum').textContent=c.xp===Infinity?'MAX':`${Math.floor(S.xp)}/${c.xp}`;
   document.getElementById('chint').textContent=`+${clickVal()} монет за клик`;
+  // блок перехода — показываем только когда набрано достаточно XP
+  renderPromoteBlock();
+  renderLists();
+  if(S.offer)renderOfferBanner();
+  }catch(e){console.log('render err',e);}
+}
+
+function renderPromoteBlock(){
+  const block=document.getElementById('promote-block');
+  const c=C();
+  if(S.cl>=4||S.xp<c.xp){block.style.display='none';return;}
+  block.style.display='';
+  const t=T();
+  const upgPct=Math.floor(upgradeProgress()*100);
+  const upgOk=upgradeProgress()>=0.70;
+  const avail=availableTournaments();
+  const missing=avail.filter(t2=>!S.tw_ids.includes(t2.id));
+  const tournOk=missing.length===0;
+  const allOk=upgOk&&tournOk;
+  // кнопка
+  const btn=document.getElementById('promote-btn');
+  btn.style.background=allOk?t.c1:'rgba(255,255,255,0.1)';
+  btn.style.color=allOk?t.c2:'rgba(255,255,255,0.4)';
+  btn.disabled=!allOk;
+  // условия
+  const next=CAREERS[Math.min(S.cl+1,4)].name;
+  let html=`<div style="color:rgba(255,255,255,0.8);font-weight:600;margin-bottom:6px">Условия для перехода в ${next}:</div>`;
+  html+=`<div>${upgOk?'✅':'⏳'} Прокачка болида: ${upgPct}% / 70% минимум</div>`;
+  if(avail.length>0){
+    avail.forEach(t2=>{
+      const won=S.tw_ids.includes(t2.id);
+      html+=`<div>${won?'✅':'⏳'} Победа: ${t2.name}</div>`;
+    });
+  }
+  document.getElementById('promote-conditions').innerHTML=html;
+}
+
+function renderLists(){
+  try{
+  const t=T();
   // upgrades
   const ul=document.getElementById('upg-list');ul.innerHTML='';
   UPGRADES.forEach(u=>{
@@ -631,12 +777,17 @@ function render(){
   });
   // tournaments
   const tl=document.getElementById('tourn-list');tl.innerHTML='';
-  TOURNAMENTS.forEach(t2=>{
-    const unl=S.cl>=t2.mc,can=S.coins>=t2.fee&&unl;
+  const curTournaments=getTournaments();
+  if(curTournaments.length===0){
+    tl.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.4);padding:8px 0">Турниры недоступны на этом уровне</div>';
+  }
+  curTournaments.forEach(t2=>{
+    const can=S.coins>=t2.fee;
+    const won=S.tw_ids.includes(t2.id);
     tl.innerHTML+=`<div class="tourn-item">
-      <div class="t-row"><div class="t-name">${unl?t2.name:'🔒 '+t2.name}</div><div class="t-fee">${fmt(t2.fee)}💰</div></div>
+      <div class="t-row"><div class="t-name">${won?'✅ ':''} ${t2.name}</div><div class="t-fee">${fmt(t2.fee)}💰</div></div>
       <div class="t-info">Приз: ${fmt(t2.cr)}💰 · +${t2.xpr} XP · Шанс: ~${Math.round(winChance(t2)*100)}%</div>
-      <button class="enter-btn ${can?'ready':''}" onclick="enterTournament('${t2.id}')" ${!can?'disabled':''}>${!unl?'Откр.: '+CAREERS[t2.mc].name:can?'Участвовать':'Мало монет'}</button>
+      <button class="enter-btn ${can?'ready':''}" onclick="enterTournament('${t2.id}')" ${!can?'disabled':''}>${can?'Участвовать':'Мало монет'}</button>
     </div>`;
   });
   // achievements
@@ -649,7 +800,7 @@ function render(){
       ${done?'<span style="font-size:13px;margin-left:auto">✅</span>':''}
     </div>`;
   });
-  if(S.offer)renderOfferBanner();
+  }catch(e){console.log('list err',e);}
 }
 
 // ── ONBOARDING ───────────────────────────────────────────────────────────────
@@ -657,6 +808,7 @@ function buildOnboard(){
   const g=document.getElementById('teams-grid');g.innerHTML='';
   TEAMS.forEach(t=>{
     g.innerHTML+=`<div class="team-card" id="tc-${t.id}" onclick="selTeamFn('${t.id}')">
+      <div class="sel-check" id="chk-${t.id}">✓</div>
       <div class="tc-bar" style="background:linear-gradient(90deg,${t.c1} 60%,${t.c2})"></div>
       <div class="tc-name">${t.n}</div>
       <div class="tc-bonus">${t.bonus}</div>
@@ -667,15 +819,34 @@ function buildOnboard(){
 }
 function selTeamFn(id){
   selTeam=id;
-  document.querySelectorAll('.team-card').forEach(el=>el.classList.remove('sel'));
+  // сбрасываем все карточки
+  document.querySelectorAll('.team-card').forEach(el=>{
+    el.classList.remove('sel');
+    el.style.borderColor='rgba(255,255,255,0.1)';
+    el.style.boxShadow='none';
+  });
   const t=TEAMS.find(x=>x.id===id);
   const card=document.getElementById('tc-'+id);
-  if(card){card.classList.add('sel');card.style.borderColor=t.c1;}
+  if(card){
+    card.classList.add('sel');
+    card.style.borderColor=t.c1;
+    card.style.boxShadow=`0 0 12px ${t.c1}55`;
+    // чекмарк в цвет команды
+    const chk=document.getElementById('chk-'+id);
+    if(chk){chk.style.background=t.c1;chk.style.color=t.c2;}
+  }
   const btn=document.getElementById('start-btn');
   btn.style.background=t.c1;btn.style.color=t.c2;
 }
 function startGame(){
-  const n=document.getElementById('pname').value.trim()||'Гонщик';
+  const n=document.getElementById('pname').value.trim();
+  if(!n){
+    const inp=document.getElementById('pname');
+    inp.style.borderColor='#ff1801';
+    inp.placeholder='Введи имя гонщика!';
+    inp.focus();
+    return;
+  }
   const t=TEAMS.find(x=>x.id===selTeam);
   S.pn=n;S.tid=selTeam;
   if(t.id==='alpine')S.coins=500;
@@ -685,12 +856,22 @@ function startGame(){
 }
 
 // ── PASSIVE INCOME ───────────────────────────────────────────────────────────
+// пассивный доход — только монеты, XP только через клики и турниры
+let _lastFullRender=0;
 setInterval(()=>{
   const cps=getCPS();
   if(cps>0){
     S.coins+=cps/20;S.tce+=cps/20;
-    addXP(0.04);checkOffer();checkAch();render();
+    // пассивный XP убран — только через клики и турниры
   }
+  // быстрое обновление только цифр
+  try{
+    document.getElementById('sv-coins').textContent=fmt(S.coins);
+    document.getElementById('sv-cps').textContent=fmtCps(getCPS());
+  }catch(e){}
+  // полный рендер каждые 2 секунды
+  const now=Date.now();
+  if(now-_lastFullRender>2000){_lastFullRender=now;render();}
 },50);
 setInterval(save,4000);
 
