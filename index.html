@@ -1567,31 +1567,39 @@ function drawCar(ctx,W,H,c1,c2,num,dr,carType,drv){
   else if(carType===3)drawF2(ctx,W,H,c1,c2,num,dr,drv);
   else drawF1(ctx,W,H,c1,c2,num,dr,drv);
   // ливрея (косметическое покрытие корпуса)
-  try{drawLivery(ctx,W,H);}catch(e){}
+  try{drawLivery(ctx,W,H,carType);}catch(e){}
   // детали, отражающие прокачку болида
   try{drawUpgradeParts(ctx,W,H,c1,c2);}catch(e){}
 }
 // Косметические ливреи поверх корпуса
-function drawLivery(ctx,W,H){
+function drawLivery(ctx,W,H,carType){
   if(!S.livery)return;
   const sc=W/500,gnd=Math.floor(H*0.78),gnd2=gnd/sc;
   ctx.save();ctx.scale(sc,sc);
+  // У каждого болида своя нижняя кромка борта — подбираем высоту и ширину полосы под форму.
+  // [x1, x2, y(от земли вверх)]
+  const cfg=[
+    [130,338,40], // картинг — кузов узкий и выше
+    [120,352,28], // Ф4
+    [118,356,28], // Ф3
+    [116,360,28], // Ф2
+    [112,366,30], // Ф1
+  ][carType||0]||[120,352,28];
+  const x1=cfg[0],x2=cfg[1],y=gnd2-cfg[2],h=4;
   if(S.livery==='stripe'){
-    // две белые гоночные полосы вдоль корпуса
-    ctx.fillStyle='rgba(255,255,255,0.85)';
-    ctx.fillRect(110,gnd2-40,240,4);
-    ctx.fillRect(110,gnd2-31,240,4);
+    ctx.fillStyle='rgba(255,255,255,0.92)';ctx.fillRect(x1,y,x2-x1,h);
+    ctx.fillStyle='rgba(0,0,0,0.18)';ctx.fillRect(x1,y+h,x2-x1,1.5);
   } else if(S.livery==='carbon'){
-    // карбоновая текстура (тёмная сетка) на корпусе
-    ctx.fillStyle='rgba(20,20,28,0.55)';
-    ctx.fillRect(110,gnd2-46,250,26);
-    ctx.strokeStyle='rgba(80,80,95,0.4)';ctx.lineWidth=0.6;
-    for(let x=110;x<360;x+=7){ctx.beginPath();ctx.moveTo(x,gnd2-46);ctx.lineTo(x+5,gnd2-20);ctx.stroke();}
+    ctx.save();ctx.beginPath();ctx.rect(x1,y-1,x2-x1,h+2);ctx.clip();
+    ctx.fillStyle='rgba(22,22,30,0.85)';ctx.fillRect(x1,y-1,x2-x1,h+2);
+    ctx.strokeStyle='rgba(130,130,150,0.4)';ctx.lineWidth=0.7;
+    for(let x=x1-6;x<x2;x+=5){ctx.beginPath();ctx.moveTo(x,y+h+1);ctx.lineTo(x+6,y-1);ctx.stroke();}
+    ctx.restore();
   } else if(S.livery==='gold'){
-    // золотое покрытие + блеск
-    const g=ctx.createLinearGradient(110,gnd2-46,360,gnd2-20);
-    g.addColorStop(0,'rgba(255,215,0,0.65)');g.addColorStop(0.5,'rgba(255,240,160,0.85)');g.addColorStop(1,'rgba(200,150,20,0.65)');
-    ctx.fillStyle=g;ctx.fillRect(110,gnd2-46,250,28);
+    const g=ctx.createLinearGradient(x1,y,x2,y);
+    g.addColorStop(0,'rgba(190,140,20,0.95)');g.addColorStop(0.5,'rgba(255,228,140,1)');g.addColorStop(1,'rgba(190,140,20,0.95)');
+    ctx.fillStyle=g;ctx.fillRect(x1,y,x2-x1,h);
+    ctx.fillStyle='rgba(255,255,255,0.35)';ctx.fillRect(x1,y,x2-x1,1);
   }
   ctx.restore();
 }
