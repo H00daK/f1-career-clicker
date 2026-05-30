@@ -284,7 +284,7 @@ body.modal-open{overflow:hidden}
     <div id="active-boosts" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:2px"></div>
     <div class="clicker-wrap">
       <div class="car-btn" id="car-btn" onclick="doClick(event)">
-        <canvas id="car-main" width="440" height="120"></canvas>
+        <canvas id="car-main" width="440" height="145"></canvas>
         <div id="cosmetic-badge" style="position:absolute;top:6px;right:8px;font-size:20px;display:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6))"></div>
       </div>
       <div class="click-hint" id="chint">+1 монета за клик</div>
@@ -1690,7 +1690,7 @@ function renderRace(){
       <div style="display:flex;gap:8px;margin-bottom:12px">
         <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;padding:10px">
           <div style="font-size:10px;color:rgba(255,255,255,0.5)">Твой рекорд</div>
-          <div style="font-size:20px;font-weight:800;color:${t.c2}">${best.toFixed(1)}</div>
+          <div style="font-size:20px;font-weight:800;color:${pickFloatColor(t)}">${best.toFixed(1)}</div>
           <div style="font-size:9px;color:rgba(255,255,255,0.4)">кликов/сек</div>
         </div>
         <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;padding:10px">
@@ -1730,7 +1730,7 @@ function startRace(){
   const el=document.getElementById('race-body');
   // экран отсчёта
   let count=3;
-  el.innerHTML=`<div style="text-align:center;padding:30px 0"><div id="race-count" style="font-size:64px;font-weight:900;color:${t.c2}">${count}</div><div style="font-size:12px;color:rgba(255,255,255,0.5)">Приготовься...</div></div>`;
+  el.innerHTML=`<div style="text-align:center;padding:30px 0"><div id="race-count" style="font-size:64px;font-weight:900;color:${pickFloatColor(t)}">${count}</div><div style="font-size:12px;color:rgba(255,255,255,0.5)">Приготовься...</div></div>`;
   const cd=setInterval(()=>{
     count--;
     const cEl=document.getElementById('race-count');
@@ -1747,7 +1747,7 @@ function runRace(){
     <div style="text-align:center">
       <div style="display:flex;justify-content:space-between;margin-bottom:10px">
         <div><span style="font-size:10px;color:rgba(255,255,255,0.5)">Время</span><div id="race-time" style="font-size:22px;font-weight:800">${RACE_DURATION}.0</div></div>
-        <div><span style="font-size:10px;color:rgba(255,255,255,0.5)">Кликов</span><div id="race-clicks" style="font-size:22px;font-weight:800;color:${t.c2}">0</div></div>
+        <div><span style="font-size:10px;color:rgba(255,255,255,0.5)">Кликов</span><div id="race-clicks" style="font-size:22px;font-weight:800;color:${pickFloatColor(t)}">0</div></div>
         <div><span style="font-size:10px;color:rgba(255,255,255,0.5)">CPS</span><div id="race-cps" style="font-size:22px;font-weight:800">0.0</div></div>
       </div>
       <div style="height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;margin-bottom:14px"><div id="race-bar" style="height:100%;width:100%;background:${t.c1};transition:width .1s"></div></div>
@@ -1788,7 +1788,7 @@ function finishRace(){
       <div style="font-size:44px">${isRecord?'🏆':'🏁'}</div>
       <div style="font-size:18px;font-weight:800;margin:6px 0">${isRecord?'Новый рекорд!':'Заезд завершён'}</div>
       <div style="font-size:13px;color:rgba(255,255,255,0.7);margin-bottom:4px">Средняя скорость клика:</div>
-      <div style="font-size:34px;font-weight:900;color:${t.c2}">${cps.toFixed(1)} <span style="font-size:13px">кл/сек</span></div>
+      <div style="font-size:34px;font-weight:900;color:${pickFloatColor(t)}">${cps.toFixed(1)} <span style="font-size:13px">кл/сек</span></div>
       <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">${_raceState.clicks} кликов за ${RACE_DURATION} сек</div>
       <div id="race-place" style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:10px"></div>
       <button onclick="renderRace()" style="width:100%;padding:12px;border:none;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;background:${t.c1};color:${t.c2};margin-top:14px">Ещё раз</button>
