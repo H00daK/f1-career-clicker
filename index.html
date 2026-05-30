@@ -674,7 +674,7 @@ async function loadLeaderboard(){
 let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:null,tw_ids:[],userId:null,
   daily:{last:0,streak:0},quests:[],shop:[],equipped:null,lastSeen:0,boosts:{},
   referredBy:null,refCount:0,bestStreak:0,refClaimed:false,season:null,seasonTitles:0,
-  sound:true,vibro:true,legacyPoints:0,prestigeCount:0,tutDone:false,did:0};
+  sound:true,vibro:true,legacyPoints:0,prestigeCount:0,tutDone:false,did:0,baseClick:0,baseCps:0};
 let selTeam='redbull';
 let selDriver=0;
 
@@ -693,6 +693,8 @@ function load(){
   if(typeof S.prestigeCount!=='number')S.prestigeCount=0;
   if(typeof S.tutDone!=='boolean')S.tutDone=false;
   if(typeof S.did!=='number'||S.did<0||S.did>1)S.did=0;
+  if(typeof S.baseClick!=='number')S.baseClick=0;
+  if(typeof S.baseCps!=='number')S.baseCps=0;
   if(S.season&&S.season.lvl!==S.cl)S.season=null; // сезон чужого уровня — сброс
   if(S.quests.length===0)initQuests();
 }
@@ -740,9 +742,13 @@ function shopBoost(type){
 }
 // множитель от Очков наследия (+5% за каждое LP), сохраняется между престижами
 function legacyMult(){return 1+(S.legacyPoints||0)*0.05;}
+// множитель карьерного уровня: цены апгрейдов и их доход растут на каждом формульном уровне
+function lvlMult(){return Math.pow(2.4,S.cl);}
 function clickVal(){
   const t=T();let v=C().cm;
   UPGRADES.forEach(u=>v+=u.ka*(S.ul[u.id]||0));
+  v*=lvlMult();                 // доход апгрейдов растёт с уровнем
+  v+=(S.baseClick||0);          // фора, перенесённая с прошлого уровня
   if(t.id==='redbull')v=Math.floor(v*1.2);
   if(t.id==='williams')v=Math.floor(v*0.8);
   v=Math.floor(v*(1+shopBoost('click')));
@@ -752,6 +758,8 @@ function clickVal(){
 }
 function getCPS(){
   let v=0;UPGRADES.forEach(u=>v+=u.ca*(S.ul[u.id]||0));
+  v*=lvlMult();                 // пассив апгрейдов растёт с уровнем
+  v+=(S.baseCps||0);            // фора, перенесённая с прошлого уровня
   const t=T();
   if(t.id==='mercedes')v*=1.1;
   if(t.id==='aston')v*=1.08;
@@ -762,7 +770,7 @@ function getCPS(){
 // фактический пассив с учётом временных бустов (для живого начисления)
 function getEffectiveCPS(){return getCPS()*cpsBoostMult();}
 function upgPrice(u){
-  let p=Math.floor(u.bp*Math.pow(1.7,S.ul[u.id]||0));
+  let p=Math.floor(u.bp*Math.pow(1.7,S.ul[u.id]||0)*lvlMult());
   if(T().id==='audi')p=Math.floor(p*0.94);
   return p;
 }
@@ -799,22 +807,27 @@ function tryPromote(){
   }
 }
 function promote(){
-  // Сохраняем накопленный CPS и клик-значение перед сбросом
-  const prevCps=getCPS();
-  const prevClick=clickVal();
+  // Считаем «чистый» доход апгрейдов на текущем уровне (с множителем уровня + накопленная база)
+  // — без бонусов команды/бустов/легаси, чтобы перенести честный фундамент труда.
+  let rawClick=C().cm, rawCps=0;
+  UPGRADES.forEach(u=>{rawClick+=u.ka*(S.ul[u.id]||0);rawCps+=u.ca*(S.ul[u.id]||0);});
+  rawClick=rawClick*lvlMult()+(S.baseClick||0);
+  rawCps=rawCps*lvlMult()+(S.baseCps||0);
 
   S.cl++;
   S.offer=null;
   S.tw_ids=[]; // сбрасываем победы турниров для нового уровня
   S.season=null; // сезон привязан к уровню — сбрасываем
 
-  // Сбрасываем апгрейды — но монеты и опыт остаются
+  // Сбрасываем апгрейды — но переносим 40% наработанного дохода как стартовую фору
   S.ul={};
+  S.baseClick=Math.floor(rawClick*0.40);
+  S.baseCps=Math.floor(rawCps*0.40*10)/10; // одна десятая точность
 
   const c=C(),t=T();
   const msg=c.id==='f1'
-    ?`${S.pn}, команда ${t.n} подписала контракт! Апгрейды сброшены — новый болид, новые вызовы!`
-    :`${S.pn}, апгрейды сброшены! Прокачивай новый болид с нуля. Монеты и м/сек сохранены.`;
+    ?`${S.pn}, команда ${t.n} подписала контракт! Болид новый, но твой опыт остался: старт +${S.baseClick}/клик, +${S.baseCps}/сек.`
+    :`${S.pn}, новый болид! Апгрейды сброшены, но труд не пропал — старт +${S.baseClick}/клик, +${S.baseCps}/сек. Прокачивай дальше!`;
   if(c.id==='f1')showModal('🏆','Добро пожаловать в Формулу 1!',msg);
   else showModal('🎉',`Повышение: ${c.name}!`,msg);
   checkAch();
@@ -852,7 +865,7 @@ function doPrestige(){
     daily:keep.daily,quests:[],shop:keep.shop,equipped:keep.equipped,lastSeen:Date.now(),boosts:{},
     referredBy:keep.referredBy,refCount:keep.refCount,bestStreak:keep.bestStreak,refClaimed:keep.refClaimed,
     season:null,seasonTitles:keep.seasonTitles,sound:keep.sound,vibro:keep.vibro,
-    legacyPoints:newLP,prestigeCount:newPrestigeCount};
+    legacyPoints:newLP,prestigeCount:newPrestigeCount,baseClick:0,baseCps:0,did:0,tutDone:true};
   initQuests();
   playSound('win');haptic('success');
   showModal('♻️','Новая карьера!',`${S.pn}, ты начал заново как легенда. Очки наследия: ${newLP} (+${gain}). Постоянный бонус к доходу: +${Math.round(newLP*5)}%. Косметика и достижения сохранены!`);
@@ -1837,7 +1850,8 @@ function resetProgress(){
   const uid=S.userId;
   S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:null,tw_ids:[],userId:uid,
     daily:{last:0,streak:0},quests:[],shop:[],equipped:null,lastSeen:0,boosts:{},
-    referredBy:null,refCount:0,bestStreak:0,refClaimed:false,season:null,seasonTitles:0,sound:true,vibro:true};
+    referredBy:null,refCount:0,bestStreak:0,refClaimed:false,season:null,seasonTitles:0,sound:true,vibro:true,
+    legacyPoints:0,prestigeCount:0,tutDone:true,did:0,baseClick:0,baseCps:0};
   initQuests();
   closeSettings();
   document.getElementById('screen-game').classList.add('hidden');
