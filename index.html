@@ -352,27 +352,27 @@ body.modal-open{overflow:hidden}
 // ── ДАННЫЕ ───────────────────────────────────────────────────────────────────
 const TEAMS=[
   {id:'redbull',    n:'Red Bull',     c1:'#1B3A6B',c2:'#FFD700',num:'1',  dr:'VERSTAPPEN',academy:true, aname:'Red Bull Junior',        bonus:'Оффер раньше · +20% монет/клик',
-    drivers:[{dr:'VERSTAPPEN',num:'1', h1:'#13347A',h2:'#E1141A',h3:'#FFFFFF'},{dr:'HADJAR',num:'6',h1:'#1B1B22',h2:'#2E63C6',h3:'#E8E8E8'}]},
+    drivers:[{dr:'VERSTAPPEN',num:'1',nat:'nl', h1:'#13347A',h2:'#E1141A',h3:'#FFFFFF'},{dr:'HADJAR',num:'6',nat:'fr',h1:'#1B1B22',h2:'#2E63C6',h3:'#E8E8E8'}]},
   {id:'ferrari',    n:'Ferrari',      c1:'#CC0000',c2:'#FFD700',num:'16', dr:'LECLERC',   academy:true, aname:'Ferrari Driver Academy', bonus:'Оффер раньше · +15% XP',
-    drivers:[{dr:'LECLERC',num:'16',h1:'#C8102E',h2:'#1B1B22',h3:'#F0C808'},{dr:'HAMILTON',num:'44',h1:'#4B2E83',h2:'#F0C808',h3:'#FFFFFF'}]},
+    drivers:[{dr:'LECLERC',num:'16',nat:'mc',h1:'#C8102E',h2:'#1B1B22',h3:'#F0C808'},{dr:'HAMILTON',num:'44',nat:'gb',h1:'#4B2E83',h2:'#F0C808',h3:'#FFFFFF'}]},
   {id:'mercedes',   n:'Mercedes',     c1:'#00A19C',c2:'#C0C0C0',num:'63', dr:'RUSSELL',   academy:true, aname:'Mercedes Junior',        bonus:'Оффер раньше · +10% пассив',
-    drivers:[{dr:'RUSSELL',num:'63',h1:'#0A1A3F',h2:'#00D2BE',h3:'#FFFFFF'},{dr:'ANTONELLI',num:'12',h1:'#101820',h2:'#00D2BE',h3:'#E8E8E8'}]},
+    drivers:[{dr:'RUSSELL',num:'63',nat:'gb',h1:'#0A1A3F',h2:'#00D2BE',h3:'#FFFFFF'},{dr:'ANTONELLI',num:'12',nat:'it',h1:'#101820',h2:'#00D2BE',h3:'#E8E8E8'}]},
   {id:'mclaren',    n:'McLaren',      c1:'#FF6B00',c2:'#0C1C40',num:'4',  dr:'NORRIS',    academy:false,aname:'',                       bonus:'+10% к наградам турниров',
-    drivers:[{dr:'NORRIS',num:'4',h1:'#FF6B00',h2:'#1B1B6B',h3:'#FFE000'},{dr:'PIASTRI',num:'81',h1:'#0A1A3F',h2:'#FF7A1A',h3:'#5BC2E7'}]},
+    drivers:[{dr:'NORRIS',num:'4',nat:'gb',h1:'#FF6B00',h2:'#1B1B6B',h3:'#FFE000'},{dr:'PIASTRI',num:'81',nat:'au',h1:'#0A1A3F',h2:'#FF7A1A',h3:'#5BC2E7'}]},
   {id:'alpine',     n:'Alpine',       c1:'#0052CC',c2:'#E91E8C',num:'10', dr:'GASLY',     academy:false,aname:'',                       bonus:'Старт +500 монет',
-    drivers:[{dr:'GASLY',num:'10',h1:'#1E3FA0',h2:'#E8E8E8',h3:'#E2231A'},{dr:'COLAPINTO',num:'43',h1:'#0A1A3F',h2:'#6CACE4',h3:'#74C0E0'}]},
+    drivers:[{dr:'GASLY',num:'10',nat:'fr',h1:'#1E3FA0',h2:'#E8E8E8',h3:'#E2231A'},{dr:'COLAPINTO',num:'43',nat:'ar',h1:'#0A1A3F',h2:'#6CACE4',h3:'#74C0E0'}]},
   {id:'aston',      n:'Aston Martin', c1:'#005A4E',c2:'#C9A84C',num:'14', dr:'ALONSO',    academy:false,aname:'',                       bonus:'+8% пассивный доход',
-    drivers:[{dr:'ALONSO',num:'14',h1:'#0A2A6B',h2:'#F0C808',h3:'#E2231A'},{dr:'STROLL',num:'18',h1:'#1B1B22',h2:'#E2231A',h3:'#F0C808'}]},
+    drivers:[{dr:'ALONSO',num:'14',nat:'es',h1:'#0A2A6B',h2:'#F0C808',h3:'#E2231A'},{dr:'STROLL',num:'18',nat:'ca',h1:'#1B1B22',h2:'#E2231A',h3:'#F0C808'}]},
   {id:'williams',   n:'Williams',     c1:'#003E7A',c2:'#E0E8FF',num:'55', dr:'SAINZ',     academy:false,aname:'',                       bonus:'Хардкор: -20% монет +20% XP',
-    drivers:[{dr:'ALBON',num:'23',h1:'#0A1A3F',h2:'#00A3E0',h3:'#E2231A'},{dr:'SAINZ',num:'55',h1:'#E63312',h2:'#1B1B22',h3:'#F0C808'}]},
+    drivers:[{dr:'ALBON',num:'23',nat:'th',h1:'#0A1A3F',h2:'#00A3E0',h3:'#E2231A'},{dr:'SAINZ',num:'55',nat:'es',h1:'#E63312',h2:'#1B1B22',h3:'#F0C808'}]},
   {id:'haas',       n:'Haas',         c1:'#B22222',c2:'#E8E8E8',num:'87', dr:'BEARMAN',   academy:false,aname:'',                       bonus:'+5% шанс победы',
-    drivers:[{dr:'OCON',num:'31',h1:'#101820',h2:'#1B3FA0',h3:'#E8E8E8'},{dr:'BEARMAN',num:'87',h1:'#E8E8E8',h2:'#2AA84A',h3:'#1B1B22'}]},
+    drivers:[{dr:'OCON',num:'31',nat:'fr',h1:'#101820',h2:'#1B3FA0',h3:'#E8E8E8'},{dr:'BEARMAN',num:'87',nat:'gb',h1:'#E8E8E8',h2:'#2AA84A',h3:'#1B1B22'}]},
   {id:'rbulls',     n:'Racing Bulls', c1:'#1C3BA0',c2:'#66B0FF',num:'30', dr:'LAWSON',    academy:false,aname:'',                       bonus:'+5% XP',
-    drivers:[{dr:'LAWSON',num:'30',h1:'#101820',h2:'#E8E8E8',h3:'#2E63C6'},{dr:'LINDBLAD',num:'37',h1:'#1B3FA0',h2:'#E03A3A',h3:'#FFFFFF'}]},
+    drivers:[{dr:'LAWSON',num:'30',nat:'nz',h1:'#101820',h2:'#E8E8E8',h3:'#2E63C6'},{dr:'LINDBLAD',num:'37',nat:'gb',h1:'#1B3FA0',h2:'#E03A3A',h3:'#FFFFFF'}]},
   {id:'audi',       n:'Audi F1',      c1:'#333333',c2:'#CC0000',num:'5',  dr:'BORTOLETO', academy:false,aname:'',                       bonus:'Апгрейды -6% дешевле',
-    drivers:[{dr:'HULKENBERG',num:'27',h1:'#1B1B22',h2:'#2AA84A',h3:'#E8E8E8'},{dr:'BORTOLETO',num:'5',h1:'#F0C808',h2:'#1B7A3E',h3:'#1B1B22'}]},
+    drivers:[{dr:'HULKENBERG',num:'27',nat:'de',h1:'#1B1B22',h2:'#2AA84A',h3:'#E8E8E8'},{dr:'BORTOLETO',num:'5',nat:'br',h1:'#F0C808',h2:'#1B7A3E',h3:'#1B1B22'}]},
   {id:'cadillac',   n:'Cadillac',     c1:'#1A1A2E',c2:'#B8860B',num:'77', dr:'BOTTAS',    academy:false,aname:'',                       bonus:'+8% шанс победы',
-    drivers:[{dr:'PEREZ',num:'11',h1:'#1B1B22',h2:'#E2231A',h3:'#F0C808'},{dr:'BOTTAS',num:'77',h1:'#0A1A3F',h2:'#00B2E3',h3:'#FFFFFF'}]},
+    drivers:[{dr:'PEREZ',num:'11',nat:'mx',h1:'#1B1B22',h2:'#E2231A',h3:'#F0C808'},{dr:'BOTTAS',num:'77',nat:'fi',h1:'#0A1A3F',h2:'#00B2E3',h3:'#FFFFFF'}]},
 ];
 
 const CAREERS=[
@@ -1223,6 +1223,55 @@ function drawHelmet(ctx,cx,cy,s,c1,c2){
   ctx.restore();
 }
 
+// Упрощённый флаг пилота (аккуратный мини-прямоугольник). Сложные флаги — узнаваемое приближение.
+function drawFlag(ctx,x,y,w,h,nat){
+  ctx.save();
+  ctx.beginPath();ctx.roundRect(x,y,w,h,2);ctx.clip();
+  const vert=(cols)=>{const n=cols.length;for(let i=0;i<n;i++){ctx.fillStyle=cols[i];ctx.fillRect(x+w*i/n,y,w/n+0.6,h);}};
+  const horz=(rows)=>{const n=rows.length;for(let i=0;i<n;i++){ctx.fillStyle=rows[i];ctx.fillRect(x,y+h*i/n,w,h/n+0.6);}};
+  switch(nat){
+    case 'nl': horz(['#AE1C28','#FFFFFF','#21468B']);break;
+    case 'fr': vert(['#0055A4','#FFFFFF','#EF4135']);break;
+    case 'it': vert(['#009246','#FFFFFF','#CE2B37']);break;
+    case 'de': horz(['#000000','#DD0000','#FFCE00']);break;
+    case 'es': horz(['#AA151B','#F1BF00','#AA151B']);break;
+    case 'ar': horz(['#74ACDF','#FFFFFF','#74ACDF']);ctx.fillStyle='#F6B40E';ctx.beginPath();ctx.arc(x+w/2,y+h/2,h*0.13,0,Math.PI*2);ctx.fill();break;
+    case 'au':
+      ctx.fillStyle='#00247D';ctx.fillRect(x,y,w,h);
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x+w*0.72,y+h*0.5,h*0.12,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fff';ctx.fillRect(x,y,w*0.42,h*0.42);
+      ctx.strokeStyle='#CF142B';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w*0.42,y+h*0.42);ctx.moveTo(x+w*0.42,y);ctx.lineTo(x,y+h*0.42);ctx.stroke();break;
+    case 'br':
+      ctx.fillStyle='#009C3B';ctx.fillRect(x,y,w,h);
+      ctx.fillStyle='#FFDF00';ctx.beginPath();ctx.moveTo(x+w/2,y+h*0.12);ctx.lineTo(x+w*0.88,y+h/2);ctx.lineTo(x+w/2,y+h*0.88);ctx.lineTo(x+w*0.12,y+h/2);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#002776';ctx.beginPath();ctx.arc(x+w/2,y+h/2,h*0.20,0,Math.PI*2);ctx.fill();break;
+    case 'gb':
+      ctx.fillStyle='#012169';ctx.fillRect(x,y,w,h);
+      ctx.strokeStyle='#fff';ctx.lineWidth=h*0.34;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w,y+h);ctx.moveTo(x+w,y);ctx.lineTo(x,y+h);ctx.stroke();
+      ctx.strokeStyle='#fff';ctx.lineWidth=h*0.38;ctx.beginPath();ctx.moveTo(x+w/2,y);ctx.lineTo(x+w/2,y+h);ctx.moveTo(x,y+h/2);ctx.lineTo(x+w,y+h/2);ctx.stroke();
+      ctx.strokeStyle='#C8102E';ctx.lineWidth=h*0.20;ctx.beginPath();ctx.moveTo(x+w/2,y);ctx.lineTo(x+w/2,y+h);ctx.moveTo(x,y+h/2);ctx.lineTo(x+w,y+h/2);ctx.stroke();break;
+    case 'ca':
+      ctx.fillStyle='#fff';ctx.fillRect(x,y,w,h);ctx.fillStyle='#FF0000';ctx.fillRect(x,y,w*0.27,h);ctx.fillRect(x+w*0.73,y,w*0.27,h);
+      ctx.fillStyle='#FF0000';ctx.beginPath();ctx.arc(x+w/2,y+h/2,h*0.16,0,Math.PI*2);ctx.fill();break;
+    case 'fi':
+      ctx.fillStyle='#fff';ctx.fillRect(x,y,w,h);ctx.fillStyle='#003580';ctx.fillRect(x+w*0.30,y,w*0.18,h);ctx.fillRect(x,y+h*0.38,w,h*0.24);break;
+    case 'mc':
+      horz(['#CE1126','#FFFFFF']);break;
+    case 'th':
+      ctx.fillStyle='#A51931';ctx.fillRect(x,y,w,h);ctx.fillStyle='#fff';ctx.fillRect(x,y+h*0.17,w,h*0.66);ctx.fillStyle='#2D2A4A';ctx.fillRect(x,y+h*0.34,w,h*0.32);break;
+    case 'nz':
+      ctx.fillStyle='#00247D';ctx.fillRect(x,y,w,h);ctx.fillStyle='#fff';ctx.fillRect(x,y,w*0.42,h*0.42);
+      ctx.strokeStyle='#CC142B';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w*0.42,y+h*0.42);ctx.moveTo(x+w*0.42,y);ctx.lineTo(x,y+h*0.42);ctx.stroke();
+      ctx.fillStyle='#CC142B';ctx.beginPath();ctx.arc(x+w*0.74,y+h*0.5,h*0.08,0,Math.PI*2);ctx.fill();break;
+    case 'mx':
+      vert(['#006847','#FFFFFF','#CE1126']);ctx.fillStyle='#8B5A2B';ctx.beginPath();ctx.arc(x+w/2,y+h/2,h*0.12,0,Math.PI*2);ctx.fill();break;
+    default:
+      ctx.fillStyle='#888';ctx.fillRect(x,y,w,h);
+  }
+  ctx.strokeStyle='rgba(0,0,0,0.4)';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(x,y,w,h,2);ctx.stroke();
+  ctx.restore();
+}
+
 // Аватар-шлем для шапки: три зоны цвета по реальной палитре пилота (h1 корпус, h2 полоса/верх, h3 акцент)
 function drawHelmetAvatar(ctx,W,H,teamC1,d){
   ctx.clearRect(0,0,W,H);
@@ -1272,6 +1321,12 @@ function drawHelmetAvatar(ctx,W,H,teamC1,d){
   // нижняя вентиляция/подбородок
   ctx.fillStyle='rgba(0,0,0,0.25)';
   ctx.beginPath();ctx.moveTo(-2,26);ctx.bezierCurveTo(14,34,34,30,44,18);ctx.lineTo(22,30);ctx.bezierCurveTo(8,33,-2,32,-2,26);ctx.closePath();ctx.fill();
+  // флаг национальности на боковине шлема
+  if(d&&d.nat){
+    ctx.save();ctx.rotate(-0.12);
+    drawFlag(ctx,-40,-8,20,13,d.nat);
+    ctx.restore();
+  }
   // обводка
   ctx.strokeStyle='rgba(0,0,0,0.25)';ctx.lineWidth=2;
   ctx.beginPath();
