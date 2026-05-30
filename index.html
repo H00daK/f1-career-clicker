@@ -1015,6 +1015,7 @@ function buyRD(id){
 }
 // ── КЛУБЫ ИГРОКОВ ────────────────────────────────────────────────────────────
 const CLUB_CREATE_COST=1000000; // создание клуба стоит монет
+let _clubView='auto'; // 'mine' | 'list' | 'top'
 async function renderClub(){
   const el=document.getElementById('club-body');if(!el)return;
   const t=T();
@@ -1024,17 +1025,44 @@ async function renderClub(){
   }
   el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.4);padding:10px">Загрузка...</div>';
   // подтягиваем актуальное членство из БД
-  let myClub=null;
   try{
     const me=await sbFetch(`/rest/v1/players?id=eq.${S.userId}&select=club_id`);
     if(me&&me[0]&&me[0].club_id){S.clubId=me[0].club_id;}else{S.clubId=null;}
   }catch(e){}
 
-  if(S.clubId){
-    await renderMyClub(el,t);
-  }else{
-    await renderClubList(el,t);
-  }
+  // режим по умолчанию: если в клубе — «мой клуб», иначе — список/создание
+  let view=_clubView;
+  if(view==='auto')view=S.clubId?'mine':'list';
+  if(view==='mine'&&!S.clubId)view='list';
+
+  // переключатель разделов
+  const tab=(id,label)=>`<div onclick="setClubView('${id}')" style="flex:1;text-align:center;padding:8px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;background:${view===id?t.c1:'rgba(255,255,255,0.06)'};color:${view===id?t.c2:'rgba(255,255,255,0.6)'}">${label}</div>`;
+  const switcher=`<div style="display:flex;gap:6px;margin-bottom:12px">
+    ${S.clubId?tab('mine','Мой клуб'):tab('list','Найти / создать')}
+    ${tab('top','🏆 Топ клубов')}
+  </div>`;
+
+  el.innerHTML=switcher+'<div id="club-view-body"></div>';
+  const body=document.getElementById('club-view-body');
+  if(view==='top'){await renderClubTop(body,t);}
+  else if(view==='mine'){await renderMyClub(body,t);}
+  else{await renderClubList(body,t);}
+}
+function setClubView(v){_clubView=v;renderClub();}
+// Отдельный полноценный ТОП клубов с поиском
+async function renderClubTop(el,t){
+  let standings=[];
+  try{standings=await sbFetch('/rest/v1/club_standings?select=*&order=avg_level.desc,avg_earned.desc&limit=100')||[];}catch(e){}
+  _clubTopCache=standings;
+  const joinable=!S.clubId; // вступать можно, только если ещё не в клубе
+  el.innerHTML=`
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <input id="club-search-input" placeholder="🔍 Поиск клуба по названию" oninput="onClubSearchInput(event)" style="flex:1;padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.25);color:#fff;font-size:12px">
+      <button onclick="searchClubs(event)" style="padding:9px 12px;border-radius:8px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;cursor:pointer">Найти</button>
+    </div>
+    <div id="club-list-title" style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);margin-bottom:6px">🏆 Рейтинг всех клубов${joinable?' — нажми, чтобы вступить':''}</div>
+    <div id="club-list-results">${renderClubStandingsRows(standings,t,joinable)}</div>
+  `;
 }
 // Экран «у меня есть клуб»
 async function renderMyClub(el,t){
@@ -1069,8 +1097,7 @@ async function renderMyClub(el,t){
         </div>`;
       }).join('')||'<div style="font-size:11px;color:rgba(255,255,255,0.4)">Пока только ты</div>'}
     </div>
-    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);margin-bottom:6px">🏆 Рейтинг клубов</div>
-    <div style="margin-bottom:12px">${renderClubStandingsRows(standings,t)}</div>
+    <div onclick="setClubView('top')" style="text-align:center;padding:10px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);font-size:11px;color:rgba(255,255,255,0.7);cursor:pointer;margin-bottom:12px">🏆 Открыть полный рейтинг клубов →</div>
     <button onclick="leaveClub(event)" style="width:100%;padding:11px;border-radius:10px;background:rgba(255,60,50,0.15);border:1px solid rgba(255,60,50,0.4);color:#ff7a6b;font-size:12px;font-weight:600;cursor:pointer">Покинуть клуб</button>
   `;
 }
@@ -1078,6 +1105,7 @@ async function renderMyClub(el,t){
 async function renderClubList(el,t){
   let standings=[];
   try{standings=await sbFetch('/rest/v1/club_standings?select=*&order=avg_level.desc,avg_earned.desc&limit=50')||[];}catch(e){}
+  _clubTopCache=standings; // кэш топа для сброса поиска
   el.innerHTML=`
     <div style="font-size:12px;color:rgba(255,255,255,0.65);line-height:1.5;margin-bottom:12px">
       Вступай в клуб или создай свой! Рейтинг клуба — среднее по уровням участников. Объединяйся с друзьями и поднимайтесь в топе вместе.
@@ -1088,9 +1116,46 @@ async function renderClubList(el,t){
       <button onclick="createClub(event)" style="width:100%;padding:10px;border-radius:8px;background:#7c5aff;border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Создать за ${fmt(CLUB_CREATE_COST)}💰</button>
       <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:5px">У тебя: ${fmt(Math.floor(S.coins))}💰</div>
     </div>
-    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);margin-bottom:6px">🏆 Клубы — нажми, чтобы вступить</div>
-    <div>${renderClubStandingsRows(standings,t,true)}</div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <input id="club-search-input" placeholder="🔍 Поиск клуба по названию" oninput="onClubSearchInput(event)" style="flex:1;padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.25);color:#fff;font-size:12px">
+      <button onclick="searchClubs(event)" style="padding:9px 12px;border-radius:8px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:12px;cursor:pointer">Найти</button>
+    </div>
+    <div id="club-list-title" style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);margin-bottom:6px">🏆 Топ клубов — нажми, чтобы вступить</div>
+    <div id="club-list-results">${renderClubStandingsRows(standings,t,true)}</div>
   `;
+}
+// Поиск клубов по названию (через PostgREST ilike). При пустом запросе — возвращаем топ.
+let _clubTopCache=[];
+let _clubSearchTimer=null;
+function onClubSearchInput(ev){
+  // живой поиск с небольшой задержкой, чтобы не спамить запросами
+  clearTimeout(_clubSearchTimer);
+  _clubSearchTimer=setTimeout(()=>searchClubs(),350);
+}
+async function searchClubs(ev){
+  const inp=document.getElementById('club-search-input');
+  const q=inp?inp.value.trim():'';
+  const box=document.getElementById('club-list-results');
+  const title=document.getElementById('club-list-title');
+  const t=T();
+  if(!q){
+    if(title)title.textContent='🏆 Топ клубов — нажми, чтобы вступить';
+    if(box)box.innerHTML=renderClubStandingsRows(_clubTopCache,t,true);
+    return;
+  }
+  if(title)title.textContent='🔍 Результаты поиска';
+  if(box)box.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,0.4);padding:6px 0">Поиск...</div>';
+  try{
+    // ищем в view по названию (регистронезависимо), сортируем по рейтингу
+    const enc=encodeURIComponent('*'+q+'*');
+    const res=await sbFetch(`/rest/v1/club_standings?club_name=ilike.${enc}&order=avg_level.desc&limit=30`)||[];
+    if(box){
+      if(!res.length)box.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,0.4);padding:6px 0">Клубов с таким названием не найдено</div>';
+      else box.innerHTML=renderClubStandingsRows(res,t,true);
+    }
+  }catch(e){
+    if(box)box.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,0.4);padding:6px 0">Ошибка поиска</div>';
+  }
 }
 function renderClubStandingsRows(standings,t,joinable){
   if(!standings||!standings.length)return '<div style="font-size:11px;color:rgba(255,255,255,0.4)">Пока нет клубов. Создай первый!</div>';
