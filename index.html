@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>F1 Career Clicker</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -2172,7 +2175,7 @@ function openSettings(){
       <div style="font-size:9px;color:rgba(255,255,255,0.4)">Прогресс привязан к твоему Telegram. «Загрузить» подтянет сейв с другого устройства.</div>
       <div style="font-size:9px;color:${S.userId?'rgba(120,200,160,0.8)':'rgba(255,140,120,0.9)'}">${S.userId?('🆔 Твой ID: '+S.userId+' (синхронизация активна)'):'⚠️ ID не получен от Telegram'}</div>
       ${!S.userId?`<div style="font-size:8px;color:rgba(255,255,255,0.45);line-height:1.5;margin-top:2px">Диагностика: ${tgDiag()}</div>`:''}
-      <div style="font-size:8px;color:rgba(255,255,255,0.3);margin-top:2px">версия sync-v3</div>
+      <div style="font-size:8px;color:rgba(255,255,255,0.3);margin-top:2px">версия sync-v4</div>
     </div>
     ${isAdmin()?`
     <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px;border:1px solid rgba(120,90,255,0.4);border-radius:10px;padding:10px;background:rgba(120,90,255,0.08)">
