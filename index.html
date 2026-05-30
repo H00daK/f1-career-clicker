@@ -2175,7 +2175,7 @@ function openSettings(){
       <div style="font-size:9px;color:rgba(255,255,255,0.4)">Прогресс привязан к твоему Telegram. «Загрузить» подтянет сейв с другого устройства.</div>
       <div style="font-size:9px;color:${S.userId?'rgba(120,200,160,0.8)':'rgba(255,140,120,0.9)'}">${S.userId?('🆔 Твой ID: '+S.userId+' (синхронизация активна)'):'⚠️ ID не получен от Telegram'}</div>
       ${!S.userId?`<div style="font-size:8px;color:rgba(255,255,255,0.45);line-height:1.5;margin-top:2px">Диагностика: ${tgDiag()}</div>`:''}
-      <div style="font-size:8px;color:rgba(255,255,255,0.3);margin-top:2px">версия sync-v4</div>
+      <div style="font-size:8px;color:rgba(255,255,255,0.3);margin-top:2px">версия sync-v5</div>
     </div>
     ${isAdmin()?`
     <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px;border:1px solid rgba(120,90,255,0.4);border-radius:10px;padding:10px;background:rgba(120,90,255,0.08)">
@@ -2901,12 +2901,14 @@ setInterval(()=>{
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 let _pendingReferrer=null;
-// Ждём, пока подгрузится telegram-web-app.js (он даёт user ID). Короткое ожидание.
-function waitForTelegram(maxMs=1500){
+// Ждём появления данных Telegram: либо WebApp-скрипт, либо данные в URL (hash заполняется не сразу).
+function waitForTelegram(maxMs=4000){
   return new Promise(resolve=>{
     const start=Date.now();
     (function check(){
-      if(typeof Telegram!=='undefined'&&Telegram.WebApp){resolve(true);return;}
+      const hasScript=typeof Telegram!=='undefined'&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user;
+      const hasUrl=getTgUserFromURL();
+      if(hasScript||hasUrl){resolve(true);return;}
       if(Date.now()-start>=maxMs){resolve(false);return;}
       setTimeout(check,80);
     })();
