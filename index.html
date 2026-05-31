@@ -717,6 +717,7 @@ async function cloudSave(){
     coins_earned:Math.floor(S.tce),
     best_streak:Math.max(S.bestStreak||0,(S.daily&&S.daily.streak)||0),
     race_best:Math.floor((S.raceBest||0)*10)/10,
+    playtime:Math.floor(S.playtime||0),
     updated_at:new Date().toISOString()
   };
   await sbFetch('/rest/v1/players','POST',payload);
@@ -746,6 +747,21 @@ async function fetchRecentOnline(limit=20){
     if(Array.isArray(r))return r;
   }catch(e){}
   return [];
+}
+// аналитика: график онлайна за неделю
+async function fetchOnlineWeek(){
+  try{const r=await sbFetch('/rest/v1/rpc/get_online_week','POST',{});if(Array.isArray(r))return r;}catch(e){}
+  return [];
+}
+// аналитика: воронка по карьерным уровням
+async function fetchCareerFunnel(){
+  try{const r=await sbFetch('/rest/v1/rpc/get_career_funnel','POST',{});if(Array.isArray(r))return r;}catch(e){}
+  return [];
+}
+// аналитика: ретеншн D1/D7 + средний онлайн-тайм
+async function fetchRetention(){
+  try{const r=await sbFetch('/rest/v1/rpc/get_retention','POST',{});if(Array.isArray(r)&&r.length>0)return r[0];if(r&&typeof r==='object')return r;}catch(e){}
+  return null;
 }
 
 // Реферальный бонус: вызывается один раз для нового игрока, пришедшего по ссылке
@@ -1035,8 +1051,18 @@ function doClick(e){
   const v=clickVal();
   let coins=v;
   if(T().id==='williams')coins=Math.floor(coins*0.8);
+  // Погода: активный клик-доход снижается, но возможен «скользкий» джекпот.
+  const w=weatherData();
+  coins=Math.max(1,Math.floor(coins*(w.income||1)));
+  let jackpot=false;
+  if(w.jpChance>0&&Math.random()<w.jpChance){
+    coins=Math.floor(coins*(w.jpMult||1));
+    jackpot=true;
+  }
   S.coins+=coins;S.tce+=coins;S.tc++;
-  addXP(1+S.cl);checkOffer();floatNum('+'+coins,e.clientX,e.clientY);
+  addXP(1+S.cl);checkOffer();
+  if(jackpot){floatNum('💥 +'+fmt(coins),e.clientX,e.clientY);haptic('success');}
+  else floatNum('+'+coins,e.clientX,e.clientY);
   playSound('click');haptic('light');spawnExhaust(e);
   // разгон болида от клика
   _carSpeed=Math.min(1,(_carSpeed||0)+0.13);
@@ -1047,10 +1073,10 @@ function doClick(e){
 // ── ПОГОДА НА ТРАССЕ ─────────────────────────────────────────────────────────
 // Меняется со временем; влияет на риск и награды турниров/сезона.
 const WEATHER={
-  clear: {emoji:'☀️', name:'Ясно',  desc:'Идеальные условия',           chance:0,     reward:1.0,  click:1.0},
-  rain:  {emoji:'🌧️', name:'Дождь', desc:'Скользко: риск выше, но и куш больше', chance:-0.10, reward:1.4,  click:1.0},
-  fog:   {emoji:'🌫️', name:'Туман', desc:'Плохая видимость, выше риск', chance:-0.07, reward:1.2,  click:1.0},
-  wind:  {emoji:'💨', name:'Ветер', desc:'Порывы мешают, но бодрят',     chance:-0.03, reward:1.1,  click:1.05},
+  clear: {emoji:'☀️', name:'Ясно',  desc:'Идеальные условия',           chance:0,     reward:1.0,  click:1.0, income:1.00, jpChance:0,    jpMult:1},
+  rain:  {emoji:'🌧️', name:'Дождь', desc:'Скользко: риск выше, но и куш больше', chance:-0.10, reward:1.4,  click:1.0, income:0.82, jpChance:0.12, jpMult:6},
+  fog:   {emoji:'🌫️', name:'Туман', desc:'Плохая видимость, выше риск', chance:-0.07, reward:1.2,  click:1.0, income:0.92, jpChance:0.08, jpMult:4},
+  wind:  {emoji:'💨', name:'Ветер', desc:'Порывы мешают, но бодрят',     chance:-0.03, reward:1.1,  click:1.05,income:1.00, jpChance:0.05, jpMult:3},
 };
 const WEATHER_KEYS=['clear','clear','clear','rain','fog','wind']; // ясно чаще
 // Текущая погода зависит от 15-минутных интервалов реального времени (одинаково для логики)
@@ -1063,9 +1089,18 @@ function currentWeather(){
 function weatherData(){return WEATHER[currentWeather()]||WEATHER.clear;}
 function showWeatherInfo(){
   const w=weatherData();
-  const rewTxt=w.reward>1?`награда турниров +${Math.round((w.reward-1)*100)}%`:'награда обычная';
+  const rewTxt=w.reward>1?`награда турниров +${Math.round((w.reward-1)*100)}%`:'награда турниров обычная';
   const riskTxt=w.chance<0?`риск выше (шанс −${Math.round(-w.chance*100)}%)`:'риск обычный';
-  showModal(w.emoji,`Погода: ${w.name}`,`${w.desc}.\n\nСейчас на трассе: ${rewTxt}, ${riskTxt}. Погода меняется со временем — лови дождь для крупного куша, если уверен в болиде!`);
+  let lines=`${w.desc}.\n\nТурниры: ${rewTxt}, ${riskTxt}.`;
+  if((w.income||1)<1){
+    lines+=`\nКлик: доход −${Math.round((1-w.income)*100)}%`;
+  }
+  if(w.jpChance>0){
+    lines+=`\nДжекпот: ${Math.round(w.jpChance*100)}% шанс клика ×${w.jpMult} 💥`;
+  }
+  if((w.income||1)>=1&&!w.jpChance){lines+=`\nКлик-доход обычный.`;}
+  lines+=`\n\nПогода меняется со временем. Дождь рискованнее, но может сорвать крупный куш — кликай активнее!`;
+  showModal(w.emoji,`Погода: ${w.name}`,lines);
 }
 
 // ── РАЗВИТИЕ КОМАНДЫ (R&D) ───────────────────────────────────────────────────
@@ -2234,7 +2269,33 @@ async function renderAdmin(){
         </div>
       </div>
       <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:8px" id="adm-peak-at"></div>
-      <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Сейчас онлайн</div>
+
+      <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 6px">Удержание</div>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;padding:9px;text-align:center">
+          <div style="font-size:19px;font-weight:700;color:#fff" id="adm-d1">—</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.5)">D1 ретеншн</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;padding:9px;text-align:center">
+          <div style="font-size:19px;font-weight:700;color:#fff" id="adm-d7">—</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.5)">D7 ретеншн</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;padding:9px;text-align:center">
+          <div style="font-size:19px;font-weight:700;color:#fff" id="adm-playtime">—</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.5)">Ср. время</div>
+        </div>
+      </div>
+      <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:4px" id="adm-ret-note"></div>
+
+      <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px">Онлайн за неделю (пик/день)</div>
+      <div id="adm-week" style="display:flex;align-items:flex-end;gap:4px;height:90px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+        <div style="font-size:12px;color:rgba(255,255,255,0.4)">Загрузка...</div>
+      </div>
+
+      <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px">Воронка по уровням</div>
+      <div id="adm-funnel"><div style="font-size:12px;color:rgba(255,255,255,0.4)">Загрузка...</div></div>
+
+      <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px">Сейчас онлайн</div>
       <div id="adm-recent"><div style="font-size:12px;color:rgba(255,255,255,0.4)">Загрузка...</div></div>
       <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:10px">Обновляется автоматически каждые 15 сек. Окно «онлайн» — активность за 2 мин.</div>
     `;
@@ -2282,6 +2343,58 @@ async function refreshAdminStats(){
       }).join('');
     }
   }
+  // ── аналитика ──
+  try{
+    const ret=await fetchRetention();
+    if(ret){
+      setT('adm-d1',(ret.d1_pct??0)+'%');
+      setT('adm-d7',(ret.d7_pct??0)+'%');
+      const pm=ret.avg_playtime_min??0;
+      setT('adm-playtime', pm>=60?(Math.floor(pm/60)+'ч '+Math.round(pm%60)+'м'):(Math.round(pm)+' мин'));
+      const note=document.getElementById('adm-ret-note');
+      if(note)note.textContent=`Когорты: D1 — ${ret.d1_cohort||0} игроков, D7 — ${ret.d7_cohort||0}.`;
+    }
+  }catch(e){}
+  try{
+    const week=await fetchOnlineWeek();
+    const wk=document.getElementById('adm-week');
+    if(wk){
+      if(!week||week.length===0){wk.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.4)">Пока нет данных.</div>';}
+      else{
+        const maxP=Math.max(1,...week.map(d=>d.peak||0));
+        const days=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+        wk.innerHTML=week.map(d=>{
+          const h=Math.round((d.peak||0)/maxP*78)+2;
+          const dt=new Date(d.day+'T00:00:00');
+          const lbl=days[dt.getDay()];
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">
+            <div style="font-size:9px;color:rgba(255,255,255,0.55);margin-bottom:2px">${d.peak||0}</div>
+            <div style="width:100%;max-width:26px;height:${h}px;background:rgba(95,209,122,0.55);border-radius:4px 4px 0 0"></div>
+            <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:3px">${lbl}</div>
+          </div>`;
+        }).join('');
+      }
+    }
+  }catch(e){}
+  try{
+    const funnel=await fetchCareerFunnel();
+    const fn=document.getElementById('adm-funnel');
+    if(fn){
+      if(!funnel||funnel.length===0){fn.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.4)">Нет данных.</div>';}
+      else{
+        const names=['Картинг','Формула 4','Формула 3','Формула 2','Формула 1'];
+        const maxN=Math.max(1,...funnel.map(f=>f.players||0));
+        fn.innerHTML=funnel.map(f=>{
+          const w=Math.round((f.players||0)/maxN*100);
+          const nm=names[f.career_level]||('Уровень '+f.career_level);
+          return `<div style="margin-bottom:5px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:2px"><span>${nm}</span><span>${f.players}</span></div>
+            <div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden"><div style="height:100%;width:${w}%;background:rgba(120,160,255,0.6)"></div></div>
+          </div>`;
+        }).join('');
+      }
+    }
+  }catch(e){}
 }
 
 
