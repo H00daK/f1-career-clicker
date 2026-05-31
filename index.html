@@ -1868,6 +1868,17 @@ function drawCar(ctx,W,H,c1,c2,num,dr,carType,drv){
   const cs=CAR_SCALE[carType]||1;
   try{drawLivery(ctx,W,H,carType,cs);}catch(e){}
   try{drawUpgradeParts(ctx,W,H,c1,c2,cs,carType);}catch(e){}
+  // Номерной бейдж рисуем ПОСЛЕ ливреи, чтобы полоса проходила за ним, а не поверх.
+  try{
+    const b=S._badge;
+    if(b){
+      ctx.save();ctx.scale(b.sc,b.sc);
+      if(b.cs&&b.cs!==1){ctx.translate(250,b.gnd2);ctx.scale(b.cs,b.cs);ctx.translate(-250,-b.gnd2);}
+      if(b.size!==undefined)numBadge(ctx,b.x,b.y,b.num,b.c1,b.c2,b.size);
+      else numBadge(ctx,b.x,b.y,b.num,b.c1,b.c2);
+      ctx.restore();
+    }
+  }catch(e){}
 }
 // Косметические ливреи поверх корпуса
 function drawLivery(ctx,W,H,carType,cs){
@@ -1978,7 +1989,7 @@ function drawKart(ctx,W,H,c1,c2,num,dr,drv){
   const cL=rWx+28,cR=fWx-58,cT=gnd2-68;
   const hs=0.44,hx=cL+42,hy=cT+3-32*hs;
   drawHelmet(ctx,hx,hy,hs,c1,c2,drv);
-  numBadge(ctx,(bx1+bx2)/2-10,gnd2-42,num,c1,c2,36);
+  S._badge={x:(bx1+bx2)/2-10,y:gnd2-42,num,c1,c2,size:36,sc,cs:0.62,gnd2};
   wheel(ctx,rWx,rWy,RR,RI,c2,5,undefined,'#2a2a2a');wheel(ctx,fWx,fWy,FR,RI-4,c2,5,undefined,'#2a2a2a');
   ctx.restore();
 }
@@ -2086,7 +2097,7 @@ function drawFormula(ctx,W,H,c1,c2,num,drv,opt){
   const hs=0.42,hx=headX-4,hy=G-50-32*hs+4;
   drawHelmet(ctx,hx,hy,hs,c1,c2,drv);
   // компактный номер
-  numBadge(ctx,headX+44,G-29,num,c1,c2);
+  S._badge={x:headX+44,y:G-29,num,c1,c2,size:undefined,sc,cs,gnd2};
   // колёса
   wheel(ctx,rWx,G-RR,RR,RI,c2,7);
   wheel(ctx,fWx,G-FR,FR,RI-4,c2,7);
