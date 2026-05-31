@@ -335,6 +335,9 @@ body.modal-open{overflow:hidden}
       <div class="tab" onclick="switchTab('rd')">🏗️ Команда</div>
       <div class="tab" onclick="switchTab('club')">👥 Клуб</div>
     </div>
+    <div class="tabs row2" id="admin-tab-row" style="display:none">
+      <div class="tab" onclick="switchTab('admin')" style="border-color:rgba(255,180,60,0.5)">🛡️ Админ</div>
+    </div>
 
     <div class="panel" id="panel-upgrades"><div class="panel-title">Запчасти</div><div id="upg-list"></div></div>
     <div class="panel hidden" id="panel-tournaments"><div class="panel-title">Турниры</div><div id="tourn-list"></div></div>
@@ -354,6 +357,7 @@ body.modal-open{overflow:hidden}
     <div class="panel hidden" id="panel-race"><div class="panel-title">🏁 Заезд на время</div><div id="race-body"></div></div>
     <div class="panel hidden" id="panel-rd"><div class="panel-title">🏗️ Развитие команды</div><div id="rd-body"></div></div>
     <div class="panel hidden" id="panel-club"><div class="panel-title">👥 Клуб</div><div id="club-body"></div></div>
+    <div class="panel hidden" id="panel-admin"><div class="panel-title" style="color:#ffb43c">🛡️ Админ · онлайн-статистика</div><div id="admin-body"></div></div>
 
     <div class="disclaimer">Fan game · Not affiliated with Formula One Group</div>
   </div>
@@ -706,6 +710,30 @@ async function cloudSave(){
   await sbFetch('/rest/v1/players','POST',payload);
   // если уже есть — обновляем
   await sbFetch(`/rest/v1/players?id=eq.${S.userId}`,'PATCH',payload);
+}
+
+// ── ОНЛАЙН-PRESENCE (для админ-статистики) ──────────────────────────────────
+// heartbeat: отмечаем игрока активным. Вызывается раз в ~30 сек, пока игра открыта.
+async function sendHeartbeat(){
+  if(!S.userId)return;
+  try{await sbFetch('/rest/v1/rpc/heartbeat','POST',{p_user_id:Number(S.userId),p_name:S.pn||null});}catch(e){}
+}
+// сводная статистика онлайна (пишет снапшот на сервере и возвращает онлайн+пик)
+async function fetchOnlineStats(){
+  try{
+    const r=await sbFetch('/rest/v1/rpc/get_online_stats','POST',{});
+    if(Array.isArray(r)&&r.length>0)return r[0];
+    if(r&&typeof r==='object')return r;
+  }catch(e){}
+  return null;
+}
+// список недавно активных игроков
+async function fetchRecentOnline(limit=20){
+  try{
+    const r=await sbFetch('/rest/v1/rpc/get_recent_online','POST',{p_limit:limit});
+    if(Array.isArray(r))return r;
+  }catch(e){}
+  return [];
 }
 
 // Реферальный бонус: вызывается один раз для нового игрока, пришедшего по ссылке
@@ -2109,8 +2137,9 @@ function drawF1(ctx,W,H,c1,c2,num,dr,drv){
 }
 
 // ── UI ───────────────────────────────────────────────────────────────────────
-const ALL_TABS=['upgrades','tournaments','season','contracts','garage','achievements','leaderboard','race','rd','club'];
+const ALL_TABS=['upgrades','tournaments','season','contracts','garage','achievements','leaderboard','race','rd','club','admin'];
 function switchTab(name){
+  if(name==='admin'&&!isAdmin())return; // защита: не-админ не откроет
   document.querySelectorAll('.tab').forEach(t=>{
     const tn=(t.getAttribute('onclick').match(/'([^']+)'/)||[])[1];
     t.classList.toggle('active',tn===name);
@@ -2121,9 +2150,80 @@ function switchTab(name){
   if(name==='race')renderRace();
   if(name==='rd')renderRD();
   if(name==='club')renderClub();
+  if(name==='admin')renderAdmin();
 }
 
-// ── ЗАЕЗД НА ВРЕМЯ (соревновательный, асинхронный) ──────────────────────────
+// ── АДМИН-РАЗДЕЛ: онлайн-статистика ─────────────────────────────────────────
+let _adminTimer=null;
+async function renderAdmin(){
+  const el=document.getElementById('admin-body');if(!el)return;
+  if(!isAdmin()){el.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.5)">Раздел доступен только администраторам.</div>';return;}
+  if(!el.dataset.init){
+    el.innerHTML=`
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div style="flex:1;background:rgba(80,200,120,0.12);border:1px solid rgba(80,200,120,0.3);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#5fd17a" id="adm-online">—</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:2px">Сейчас в сети</div>
+        </div>
+        <div style="flex:1;background:rgba(255,180,60,0.12);border:1px solid rgba(255,180,60,0.3);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#ffb43c" id="adm-peak">—</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:2px">Пик за сегодня</div>
+        </div>
+        <div style="flex:1;background:rgba(120,160,255,0.12);border:1px solid rgba(120,160,255,0.3);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#7aa0ff" id="adm-total">—</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:2px">Всего игроков</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:8px" id="adm-peak-at"></div>
+      <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Сейчас онлайн</div>
+      <div id="adm-recent"><div style="font-size:12px;color:rgba(255,255,255,0.4)">Загрузка...</div></div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:10px">Обновляется автоматически каждые 15 сек. Окно «онлайн» — активность за 2 мин.</div>
+    `;
+    el.dataset.init='1';
+  }
+  await refreshAdminStats();
+  // автообновление, пока открыт раздел
+  if(_adminTimer)clearInterval(_adminTimer);
+  _adminTimer=setInterval(()=>{
+    const open=!document.getElementById('panel-admin').classList.contains('hidden');
+    if(!open){clearInterval(_adminTimer);_adminTimer=null;return;}
+    refreshAdminStats();
+  },15000);
+}
+async function refreshAdminStats(){
+  const stats=await fetchOnlineStats();
+  const setT=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  if(stats){
+    setT('adm-online',stats.online_now??'—');
+    setT('adm-peak',stats.peak_today??'—');
+    setT('adm-total',stats.total_players??'—');
+    const at=document.getElementById('adm-peak-at');
+    if(at&&stats.peak_today_at){
+      const d=new Date(stats.peak_today_at);
+      at.textContent='Пик зафиксирован в '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+    }else if(at)at.textContent='';
+  }else{
+    setT('adm-online','н/д');setT('adm-peak','н/д');setT('adm-total','н/д');
+  }
+  const list=await fetchRecentOnline(30);
+  const rec=document.getElementById('adm-recent');
+  if(rec){
+    if(!list||list.length===0){
+      rec.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.4)">Никого сейчас нет в сети.</div>';
+    }else{
+      rec.innerHTML=list.map(p=>{
+        const nm=(p.name||'Гонщик').replace(/[<>&]/g,'');
+        const secs=Math.max(0,Math.floor((Date.now()-new Date(p.last_seen).getTime())/1000));
+        const ago=secs<60?secs+' сек назад':Math.floor(secs/60)+' мин назад';
+        const me=Number(p.user_id)===Number(S.userId)?' style="color:#5fd17a"':'';
+        return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px">
+          <span${me}>${nm}</span><span style="color:rgba(255,255,255,0.4)">${ago}</span></div>`;
+      }).join('');
+    }
+  }
+}
+
+
 const RACE_DURATION=30; // секунд
 let _raceState=null;    // {clicks,timeLeft,running}
 function renderRace(){
@@ -2870,6 +2970,8 @@ function renderOfferBanner(){
 function render(){
   try{
   const c=C(),t=T();
+  // показываем вкладку «Админ» только администраторам
+  try{const ar=document.getElementById('admin-tab-row');if(ar)ar.style.display=isAdmin()?'':'none';}catch(e){}
   // canvas — в отдельном try
   try{
     const d=curDriver();
@@ -3227,6 +3329,10 @@ setInterval(()=>{
   if(now-_lastFullRender>2000){_lastFullRender=now;render();}
 },50);
 setInterval(()=>{if(S.pn){S.playtime=(S.playtime||0)+4000;}save();},4000);
+
+// presence heartbeat — отмечаем себя онлайн раз в 30 сек (и сразу при старте)
+setInterval(()=>{sendHeartbeat();},30000);
+try{sendHeartbeat();}catch(e){}
 
 // ── АНИМАЦИЯ ДВИЖЕНИЯ БОЛИДА ──
 let _carSpeed=0;      // 0..1 текущая скорость
