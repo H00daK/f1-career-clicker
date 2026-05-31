@@ -199,6 +199,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .mode-lbl{font-size:9px;margin-top:1px}
 
 .tabs.row2{margin-top:-4px}
+.cat-btn{font-weight:600}
+.cat-btn.active{background:rgba(255,255,255,0.16);color:#fff;border-color:rgba(255,255,255,0.28)}
+.tabs.subrow{margin-top:-1px;animation:subOpen .18s ease}
+@keyframes subOpen{0%{opacity:0;transform:translateY(-4px)}100%{opacity:1;transform:translateY(0)}}
 
 .hidden{display:none!important}
 body.modal-open{overflow:hidden}
@@ -319,20 +323,28 @@ body.modal-open{overflow:hidden}
       <div id="prestige-body" style="font-size:12px;color:rgba(255,255,255,0.7);line-height:1.6"></div>
     </div>
 
-    <div class="tabs">
+    <div class="tabs cat-row">
+      <div class="tab cat-btn active" data-cat="car" onclick="toggleCat('car')">🏎️ Болид</div>
+      <div class="tab cat-btn" data-cat="race" onclick="toggleCat('race')">🏆 Гонки</div>
+      <div class="tab cat-btn" data-cat="career" onclick="toggleCat('career')">📋 Карьера<span class="tab-dot" id="cat-career-dot"></span></div>
+      <div class="tab cat-btn" data-cat="social" onclick="toggleCat('social')">🌐 Сообщество</div>
+    </div>
+    <div class="tabs subrow" id="sub-car">
       <div class="tab active" onclick="switchTab('upgrades')">⚙️ Апгрейды</div>
+      <div class="tab" onclick="switchTab('garage')">🔧 Гараж</div>
+      <div class="tab" onclick="switchTab('rd')">🏗️ Команда</div>
+    </div>
+    <div class="tabs subrow hidden" id="sub-race">
       <div class="tab" onclick="switchTab('tournaments')">🏎️ Турниры</div>
       <div class="tab" onclick="switchTab('season')">🏆 Сезон</div>
-      <div class="tab" onclick="switchTab('contracts')">📋 Контр.<span class="tab-dot" id="contracts-dot"></span></div>
-    </div>
-    <div class="tabs row2">
-      <div class="tab" onclick="switchTab('garage')">🔧 Гараж</div>
-      <div class="tab" onclick="switchTab('achievements')">🎖️ Достижения</div>
-      <div class="tab" onclick="switchTab('leaderboard')">📊 Топ</div>
-    </div>
-    <div class="tabs row2">
       <div class="tab" onclick="switchTab('race')">🏁 Заезд</div>
-      <div class="tab" onclick="switchTab('rd')">🏗️ Команда</div>
+    </div>
+    <div class="tabs subrow hidden" id="sub-career">
+      <div class="tab" onclick="switchTab('contracts')">📋 Контр.<span class="tab-dot" id="contracts-dot"></span></div>
+      <div class="tab" onclick="switchTab('achievements')">🎖️ Достижения</div>
+    </div>
+    <div class="tabs subrow hidden" id="sub-social">
+      <div class="tab" onclick="switchTab('leaderboard')">📊 Топ</div>
       <div class="tab" onclick="switchTab('club')">👥 Клуб</div>
     </div>
     <div class="tabs row2" id="admin-tab-row" style="display:none">
@@ -1523,11 +1535,18 @@ function claimableQuests(){
   return S.quests.filter(q=>!q.claimed&&questProgress(q).done).length;
 }
 function updateContractsBadge(){
-  const dot=document.getElementById('contracts-dot');
-  if(!dot)return;
   const n=claimableQuests();
-  if(n>0){dot.textContent=n;dot.classList.add('show');}
-  else dot.classList.remove('show');
+  const dot=document.getElementById('contracts-dot');
+  if(dot){
+    if(n>0){dot.textContent=n;dot.classList.add('show');}
+    else dot.classList.remove('show');
+  }
+  // дублируем индикатор на категорию «Карьера» (подкатегория может быть свёрнута)
+  const cdot=document.getElementById('cat-career-dot');
+  if(cdot){
+    if(n>0){cdot.textContent=n;cdot.classList.add('show');}
+    else cdot.classList.remove('show');
+  }
 }
 function claimQuest(id){
   const q=S.quests.find(x=>x.id===id);if(!q)return;
@@ -2138,9 +2157,39 @@ function drawF1(ctx,W,H,c1,c2,num,dr,drv){
 
 // ── UI ───────────────────────────────────────────────────────────────────────
 const ALL_TABS=['upgrades','tournaments','season','contracts','garage','achievements','leaderboard','race','rd','club','admin'];
+// раздел -> категория (для аккордеона навигации)
+const CAT_MAP={upgrades:'car',garage:'car',rd:'car',tournaments:'race',season:'race',race:'race',contracts:'career',achievements:'career',leaderboard:'social',club:'social'};
+const CATS_LIST=['car','race','career','social'];
+let _openCat='car'; // какая категория сейчас раскрыта (по умолчанию — Болид)
+
+function openCat(cat){
+  _openCat=cat;
+  CATS_LIST.forEach(c=>{
+    const sub=document.getElementById('sub-'+c);
+    if(sub)sub.classList.toggle('hidden',c!==cat);
+  });
+  document.querySelectorAll('.cat-btn').forEach(b=>{
+    b.classList.toggle('active',b.getAttribute('data-cat')===cat);
+  });
+}
+function toggleCat(cat){
+  if(_openCat===cat){
+    // повторный тап — схлопываем
+    _openCat=null;
+    const sub=document.getElementById('sub-'+cat);if(sub)sub.classList.add('hidden');
+    document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+    return;
+  }
+  openCat(cat);
+}
+
 function switchTab(name){
   if(name==='admin'&&!isAdmin())return; // защита: не-админ не откроет
-  document.querySelectorAll('.tab').forEach(t=>{
+  // держим раскрытой категорию выбранного раздела и подсвечиваем её
+  const cat=CAT_MAP[name];
+  if(cat)openCat(cat);
+  // подсветка активного раздела внутри подрядов
+  document.querySelectorAll('.subrow .tab, #admin-tab-row .tab').forEach(t=>{
     const tn=(t.getAttribute('onclick').match(/'([^']+)'/)||[])[1];
     t.classList.toggle('active',tn===name);
   });
