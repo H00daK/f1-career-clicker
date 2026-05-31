@@ -128,9 +128,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 @keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-50px)}}
 
 /* EXHAUST PARTICLES */
-.exhaust-smoke{position:fixed;width:10px;height:10px;border-radius:50%;background:rgba(180,180,190,0.5);pointer-events:none;z-index:399;animation:smokeOut .65s ease-out forwards}
-@keyframes smokeOut{0%{opacity:0.55;transform:translate(0,0) scale(0.6)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(2.2)}}
-.exhaust-spark{position:fixed;width:4px;height:4px;border-radius:50%;pointer-events:none;z-index:401;box-shadow:0 0 4px currentColor;animation:sparkOut .5s ease-out forwards}
+.exhaust-smoke{position:fixed;width:7px;height:7px;border-radius:50%;background:rgba(170,170,180,0.38);pointer-events:none;z-index:399;animation:smokeOut .6s ease-out forwards}
+@keyframes smokeOut{0%{opacity:0.4;transform:translate(0,0) scale(0.45)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.5)}}
+.exhaust-spark{position:fixed;width:3px;height:3px;border-radius:50%;pointer-events:none;z-index:401;box-shadow:0 0 4px currentColor;animation:sparkOut .5s ease-out forwards}
 @keyframes sparkOut{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0.2)}}
 
 .disclaimer{font-size:9px;color:rgba(255,255,255,0.2);text-align:center;padding:4px 8px}
@@ -419,33 +419,33 @@ const UPGRADES=[
 const TOURNAMENTS_BY_LEVEL=[
   // 0 — Картинг
   [
-    {id:'kart_cup',   name:'Кубок картодрома',    fee:80,    xpr:30,   cr:200,    wb:0.58},
-    {id:'kart_city',  name:'Городской чемпионат', fee:300,   xpr:90,   cr:700,    wb:0.50},
-    {id:'kart_open',  name:'Открытый турнир',      fee:800,   xpr:200,  cr:1800,   wb:0.44},
+    {id:'kart_cup',   name:'Кубок картодрома',    fee:80,    xpr:30,   cr:200,    wb:0.74},
+    {id:'kart_city',  name:'Городской чемпионат', fee:300,   xpr:90,   cr:700,    wb:0.66},
+    {id:'kart_open',  name:'Открытый турнир',      fee:800,   xpr:200,  cr:1800,   wb:0.60},
   ],
   // 1 — Формула 4
   [
-    {id:'f4_sprint',  name:'Спринт Ф4',            fee:2000,  xpr:120,  cr:4000,   wb:0.52},
-    {id:'f4_regional',name:'Региональная Ф4',      fee:6000,  xpr:300,  cr:12000,  wb:0.46},
-    {id:'f4_masters', name:'Мастерс Ф4',           fee:15000, xpr:700,  cr:30000,  wb:0.40},
+    {id:'f4_sprint',  name:'Спринт Ф4',            fee:2000,  xpr:120,  cr:4000,   wb:0.68},
+    {id:'f4_regional',name:'Региональная Ф4',      fee:6000,  xpr:300,  cr:12000,  wb:0.62},
+    {id:'f4_masters', name:'Мастерс Ф4',           fee:15000, xpr:700,  cr:34000,  wb:0.56},
   ],
   // 2 — Формула 3
   [
-    {id:'f3_sprint',  name:'Гран-при Ф3',          fee:10000, xpr:400,  cr:22000,  wb:0.48},
-    {id:'f3_euro',    name:'Евросерия Ф3',         fee:28000, xpr:900,  cr:60000,  wb:0.42},
-    {id:'f3_world',   name:'Кубок мира Ф3',        fee:70000, xpr:2000, cr:150000, wb:0.36},
+    {id:'f3_sprint',  name:'Гран-при Ф3',          fee:10000, xpr:400,  cr:22000,  wb:0.64},
+    {id:'f3_euro',    name:'Евросерия Ф3',         fee:28000, xpr:900,  cr:61000,  wb:0.58},
+    {id:'f3_world',   name:'Кубок мира Ф3',        fee:70000, xpr:2000, cr:170000, wb:0.52},
   ],
   // 3 — Формула 2
   [
-    {id:'f2_feature', name:'Основная гонка Ф2',    fee:50000, xpr:1200, cr:120000, wb:0.44},
-    {id:'f2_champ',   name:'Чемпионат Ф2',         fee:150000,xpr:3000, cr:350000, wb:0.38},
-    {id:'f2_super',   name:'Суперфинал Ф2',        fee:400000,xpr:7000, cr:900000, wb:0.32},
+    {id:'f2_feature', name:'Основная гонка Ф2',    fee:50000, xpr:1200, cr:120000, wb:0.60},
+    {id:'f2_champ',   name:'Чемпионат Ф2',         fee:150000,xpr:3000, cr:351000, wb:0.54},
+    {id:'f2_super',   name:'Суперфинал Ф2',        fee:400000,xpr:7000, cr:1051000, wb:0.48},
   ],
   // 4 — Формула 1
   [
-    {id:'f1_gp',      name:'Гран-при Ф1',          fee:200000,xpr:2000, cr:500000, wb:0.35},
-    {id:'f1_sprint',  name:'Спринт Ф1',            fee:500000,xpr:5000, cr:1200000,wb:0.30},
-    {id:'f1_wdc',     name:'Борьба за титул WDC',  fee:1500000,xpr:12000,cr:4000000,wb:0.25},
+    {id:'f1_gp',      name:'Гран-при Ф1',          fee:200000,xpr:2000, cr:500000, wb:0.51},
+    {id:'f1_sprint',  name:'Спринт Ф1',            fee:500000,xpr:5000, cr:1368000,wb:0.46},
+    {id:'f1_wdc',     name:'Борьба за титул WDC',  fee:1500000,xpr:12000,cr:4588000,wb:0.41},
   ],
 ];
 
@@ -546,11 +546,45 @@ const QUEST_POOL=[
 // ── УТИЛИТЫ ──────────────────────────────────────────────────────────────────
 const lc=(h,a)=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`rgb(${Math.min(255,r+a)},${Math.min(255,g+a)},${Math.min(255,b+a)})`;};
 const dc=(h,a)=>{const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`rgb(${Math.max(0,r-a)},${Math.max(0,g-a)},${Math.max(0,b-a)})`;};
-function fmt(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return Math.floor(n).toString();}
+function fmt(n){
+  if(!isFinite(n))return '∞';
+  const neg=n<0;n=Math.abs(n);
+  let r;
+  if(n>=1e18)r=(n/1e18).toFixed(1)+'Qi';
+  else if(n>=1e15)r=(n/1e15).toFixed(1)+'Qa';
+  else if(n>=1e12)r=(n/1e12).toFixed(1)+'T';
+  else if(n>=1e9)r=(n/1e9).toFixed(1)+'B';
+  else if(n>=1e6)r=(n/1e6).toFixed(1)+'M';
+  else if(n>=1e3)r=(n/1e3).toFixed(1)+'K';
+  else r=Math.floor(n).toString();
+  return neg?'-'+r:r;
+}
 // м/сек — показываем дробные числа
-function fmtCps(n){if(n>=1000)return(n/1000).toFixed(1)+'K';if(n>=1)return n.toFixed(1);if(n>0)return n.toFixed(2);return '0';}
+function fmtCps(n){
+  if(!isFinite(n))return '∞';
+  if(n>=1e12)return(n/1e12).toFixed(1)+'T';
+  if(n>=1e9)return(n/1e9).toFixed(1)+'B';
+  if(n>=1e6)return(n/1e6).toFixed(1)+'M';
+  if(n>=1000)return(n/1000).toFixed(1)+'K';
+  if(n>=1)return n.toFixed(1);
+  if(n>0)return n.toFixed(2);
+  return '0';
+}
 // баланс монет — с копейками на малых значениях, K/M на больших
-function fmtCoins(n){if(n>=1e6)return(n/1e6).toFixed(2)+'M';if(n>=1e4)return(n/1e3).toFixed(1)+'K';if(n>=100)return n.toFixed(1);return n.toFixed(2);}
+function fmtCoins(n){
+  if(!isFinite(n))return '∞';
+  const neg=n<0;n=Math.abs(n);
+  let r;
+  if(n>=1e18)r=(n/1e18).toFixed(2)+'Qi';
+  else if(n>=1e15)r=(n/1e15).toFixed(2)+'Qa';
+  else if(n>=1e12)r=(n/1e12).toFixed(2)+'T';
+  else if(n>=1e9)r=(n/1e9).toFixed(2)+'B';
+  else if(n>=1e6)r=(n/1e6).toFixed(2)+'M';
+  else if(n>=1e4)r=(n/1e3).toFixed(1)+'K';
+  else if(n>=100)r=n.toFixed(1);
+  else r=n.toFixed(2);
+  return neg?'-'+r:r;
+}
 
 // ── ЗВУК И ВИБРАЦИЯ ───────────────────────────────────────────────────────────
 // Тактильная отдача через Telegram (типы: light/medium/heavy/success/error/warning)
@@ -1433,8 +1467,11 @@ function genQuest(poolItem){
   // масштаб цели и награды от уровня карьеры
   const lvlMul=Math.pow(3,S.cl); // картинг x1 ... ф1 x81
   const target=Math.ceil(poolItem.base*(poolItem.metric==='tw'||poolItem.metric==='upg'?(1+S.cl):lvlMul));
-  // награда: ~разумная доля от цены апгрейдов уровня
-  const coinR=Math.floor((poolItem.metric==='tce'?target*0.4:target*40)*(1+S.cl*0.5))+ 300*(S.cl+1);
+  // Награда привязана к масштабу экономики уровня (lvlMul), одинаково ощутима для ВСЕХ типов квестов.
+  // Базовая награда уровня — доля, сравнимая с ценой апгрейдов; редкие квесты (победы/апгрейды) ценим выше за единицу.
+  const base=12000*lvlMul; // базовый «бюджет» награды на уровень
+  const weight={tc:1.0, tce:1.1, tw:1.3, upg:1.2}[poolItem.metric]||1.0; // победы/апгрейды — труднее, платим больше
+  const coinR=Math.floor(base*weight)+500*(S.cl+1);
   const xpR=Math.floor(C().xp*0.04*(1+S.cl*0.2))+20;
   return {
     id:poolItem.id, emoji:poolItem.emoji, name:poolItem.name,
@@ -1547,7 +1584,7 @@ function renderActiveBoosts(){
 }
 
 // ── РИСОВАНИЕ БОЛИДОВ ─────────────────────────────────────────────────────────
-function wheel(ctx,x,y,ro,ri,c2,sp=5,rot){
+function wheel(ctx,x,y,ro,ri,c2,sp=5,rot,hub){
   if(rot===undefined)rot=_wheelRot||0;
   ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x,y,ro,0,Math.PI*2);ctx.fill();
   ctx.strokeStyle='#2a2a2a';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,ro-3,0,Math.PI*2);ctx.stroke();
@@ -1558,7 +1595,7 @@ function wheel(ctx,x,y,ro,ri,c2,sp=5,rot){
     ctx.fillStyle='#484848';ctx.beginPath();ctx.moveTo(-2,0);ctx.lineTo(2,0);ctx.lineTo(1.5,-(ri-4));ctx.lineTo(-1.5,-(ri-4));ctx.closePath();ctx.fill();
     ctx.restore();
   }
-  ctx.fillStyle=c2;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=hub||c2;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();
 }
 
@@ -1577,9 +1614,14 @@ function drawFlag(ctx,x,y,w,h,nat){
     case 'ar': horz(['#74ACDF','#FFFFFF','#74ACDF']);ctx.fillStyle='#F6B40E';ctx.beginPath();ctx.arc(x+w/2,y+h/2,h*0.13,0,Math.PI*2);ctx.fill();break;
     case 'au':
       ctx.fillStyle='#00247D';ctx.fillRect(x,y,w,h);
-      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x+w*0.72,y+h*0.5,h*0.12,0,Math.PI*2);ctx.fill();
       ctx.fillStyle='#fff';ctx.fillRect(x,y,w*0.42,h*0.42);
-      ctx.strokeStyle='#CF142B';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w*0.42,y+h*0.42);ctx.moveTo(x+w*0.42,y);ctx.lineTo(x,y+h*0.42);ctx.stroke();break;
+      ctx.strokeStyle='#CF142B';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w*0.42,y+h*0.42);ctx.moveTo(x+w*0.42,y);ctx.lineTo(x,y+h*0.42);ctx.stroke();
+      // Звезда Содружества под Юнион Джеком
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x+w*0.21,y+h*0.72,h*0.08,0,Math.PI*2);ctx.fill();
+      // Южный Крест справа
+      [[0.68,0.30],[0.60,0.56],[0.78,0.58],[0.69,0.82]].forEach(p=>{
+        ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x+w*p[0],y+h*p[1],h*0.055,0,Math.PI*2);ctx.fill();
+      });break;
     case 'br':
       ctx.fillStyle='#009C3B';ctx.fillRect(x,y,w,h);
       ctx.fillStyle='#FFDF00';ctx.beginPath();ctx.moveTo(x+w/2,y+h*0.12);ctx.lineTo(x+w*0.88,y+h/2);ctx.lineTo(x+w/2,y+h*0.88);ctx.lineTo(x+w*0.12,y+h/2);ctx.closePath();ctx.fill();
@@ -1591,7 +1633,23 @@ function drawFlag(ctx,x,y,w,h,nat){
       ctx.strokeStyle='#C8102E';ctx.lineWidth=h*0.20;ctx.beginPath();ctx.moveTo(x+w/2,y);ctx.lineTo(x+w/2,y+h);ctx.moveTo(x,y+h/2);ctx.lineTo(x+w,y+h/2);ctx.stroke();break;
     case 'ca':
       ctx.fillStyle='#fff';ctx.fillRect(x,y,w,h);ctx.fillStyle='#FF0000';ctx.fillRect(x,y,w*0.27,h);ctx.fillRect(x+w*0.73,y,w*0.27,h);
-      ctx.fillStyle='#FF0000';ctx.beginPath();ctx.arc(x+w/2,y+h/2,h*0.16,0,Math.PI*2);ctx.fill();break;
+      // упрощённый кленовый лист
+      ctx.fillStyle='#FF0000';ctx.beginPath();
+      const mlx=x+w/2,mly=y+h/2,ms=h*0.34;
+      ctx.moveTo(mlx,mly-ms);
+      ctx.lineTo(mlx+ms*0.28,mly-ms*0.30);
+      ctx.lineTo(mlx+ms*0.62,mly-ms*0.42);
+      ctx.lineTo(mlx+ms*0.42,mly+ms*0.05);
+      ctx.lineTo(mlx+ms*0.70,mly+ms*0.30);
+      ctx.lineTo(mlx+ms*0.22,mly+ms*0.22);
+      ctx.lineTo(mlx+ms*0.10,mly+ms*0.66);
+      ctx.lineTo(mlx-ms*0.10,mly+ms*0.66);
+      ctx.lineTo(mlx-ms*0.22,mly+ms*0.22);
+      ctx.lineTo(mlx-ms*0.70,mly+ms*0.30);
+      ctx.lineTo(mlx-ms*0.42,mly+ms*0.05);
+      ctx.lineTo(mlx-ms*0.62,mly-ms*0.42);
+      ctx.lineTo(mlx-ms*0.28,mly-ms*0.30);
+      ctx.closePath();ctx.fill();break;
     case 'fi':
       ctx.fillStyle='#fff';ctx.fillRect(x,y,w,h);ctx.fillStyle='#003580';ctx.fillRect(x+w*0.30,y,w*0.18,h);ctx.fillRect(x,y+h*0.38,w,h*0.24);break;
     case 'mc':
@@ -1601,7 +1659,10 @@ function drawFlag(ctx,x,y,w,h,nat){
     case 'nz':
       ctx.fillStyle='#00247D';ctx.fillRect(x,y,w,h);ctx.fillStyle='#fff';ctx.fillRect(x,y,w*0.42,h*0.42);
       ctx.strokeStyle='#CC142B';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w*0.42,y+h*0.42);ctx.moveTo(x+w*0.42,y);ctx.lineTo(x,y+h*0.42);ctx.stroke();
-      ctx.fillStyle='#CC142B';ctx.beginPath();ctx.arc(x+w*0.74,y+h*0.5,h*0.08,0,Math.PI*2);ctx.fill();break;
+      // Южный Крест — 4 звезды
+      [[0.72,0.26],[0.62,0.54],[0.80,0.56],[0.71,0.80]].forEach(p=>{
+        ctx.fillStyle='#CC142B';ctx.beginPath();ctx.arc(x+w*p[0],y+h*p[1],h*0.06,0,Math.PI*2);ctx.fill();
+      });break;
     case 'mx':
       vert(['#006847','#FFFFFF','#CE1126']);ctx.fillStyle='#8B5A2B';ctx.beginPath();ctx.arc(x+w/2,y+h/2,h*0.12,0,Math.PI*2);ctx.fill();break;
     default:
@@ -1636,7 +1697,7 @@ function drawHelmet(ctx,cx,cy,s,c1,c2,d){
   ctx.fillStyle='rgba(255,255,255,0.5)';ctx.beginPath();ctx.ellipse(19,-12,5,3,-0.3,0,Math.PI*2);ctx.fill();
   ctx.fillStyle='rgba(0,0,0,0.22)';for(let i=0;i<3;i++){ctx.save();ctx.translate(-12+i*12,-42);ctx.rotate(0.08);ctx.beginPath();ctx.roundRect(-3,0,6,10,2);ctx.fill();ctx.restore();}
   // флаг на затылочной части шлема
-  if(d&&d.nat){ctx.save();ctx.rotate(-0.05);drawFlag(ctx,-42,-4,26,17,d.nat);ctx.restore();}
+  if(d&&d.nat){ctx.save();ctx.rotate(-0.05);ctx.fillStyle='#f2f2f2';ctx.beginPath();ctx.roundRect(-44,-6,30,21,3);ctx.fill();drawFlag(ctx,-42,-4,26,17,d.nat);ctx.restore();}
   else{ctx.fillStyle='#444';ctx.beginPath();ctx.roundRect(-48,-2,10,16,3);ctx.fill();ctx.fillStyle='#1a1a1a';ctx.beginPath();ctx.roundRect(-46,0,6,12,2);ctx.fill();}
   ctx.strokeStyle='rgba(0,0,0,0.15)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-42,20);ctx.bezierCurveTo(-46,-12,-30,-50,2,-52);ctx.bezierCurveTo(30,-52,50,-26,50,4);ctx.bezierCurveTo(50,20,36,32,18,32);ctx.bezierCurveTo(0,36,-28,30,-42,20);ctx.closePath();ctx.stroke();
   ctx.restore();
@@ -1692,7 +1753,7 @@ function drawHelmetAvatar(ctx,W,H,teamC1,d){
   ctx.fillStyle='rgba(0,0,0,0.25)';
   ctx.beginPath();ctx.moveTo(-2,26);ctx.bezierCurveTo(14,34,34,30,44,18);ctx.lineTo(22,30);ctx.bezierCurveTo(8,33,-2,32,-2,26);ctx.closePath();ctx.fill();
   // флаг национальности (крупно, на боковине)
-  if(d&&d.nat){ctx.save();ctx.rotate(-0.06);drawFlag(ctx,-42,-6,30,20,d.nat);ctx.restore();}
+  if(d&&d.nat){ctx.save();ctx.rotate(-0.06);ctx.fillStyle='#f2f2f2';ctx.beginPath();ctx.roundRect(-44,-8,34,24,3);ctx.fill();drawFlag(ctx,-42,-6,30,20,d.nat);ctx.restore();}
   // обводка
   ctx.strokeStyle='rgba(0,0,0,0.25)';ctx.lineWidth=2;
   ctx.beginPath();
@@ -1705,6 +1766,24 @@ function drawHelmetAvatar(ctx,W,H,teamC1,d){
   ctx.restore();
 }
 
+// Компактный боковой номер (как на реальных болидах) — маленький щиток с крупной цифрой
+function numBadge(ctx,cx,cy,num,c1,c2,size){
+  const s=size||22; // размер щитка
+  const x=cx-s/2,y=cy-s/2,r=Math.max(4,s*0.23);
+  // белая окантовка (отделяет от любого цвета корпуса)
+  ctx.fillStyle='#ffffff';ctx.beginPath();ctx.roundRect(x-1.5,y-1.5,s+3,s+3,r+1);ctx.fill();
+  // цветная основа (цвет команды c1), чтобы вписывался в ливрею
+  ctx.fillStyle='#fafafa';ctx.beginPath();ctx.roundRect(x,y,s,s,r);ctx.fill();
+  // номер — крупная тёмная цифра по центру
+  ctx.fillStyle='#15151e';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  let fs=Math.round(s*0.68);ctx.font='800 '+fs+'px Arial, sans-serif';
+  while(ctx.measureText(String(num)).width>s-5&&fs>9){fs-=1;ctx.font='800 '+fs+'px Arial, sans-serif';}
+  ctx.fillText(String(num),cx,cy+0.5);
+  // тонкая рамка
+  ctx.strokeStyle='rgba(0,0,0,0.15)';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(x,y,s,s,r);ctx.stroke();
+  ctx.textBaseline='alphabetic';ctx.textAlign='left';
+}
 function numPlate(ctx,cx,cy,num,dr,c1,c2){
   const pw=64,ph=31,px=cx-pw/2,py=cy-ph/2,r=5;
   // тень
@@ -1776,6 +1855,8 @@ function drawHalo(ctx,cx,cT,c1){
   ctx.strokeStyle=lc(c1,16);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-hw+4,cT+1);ctx.bezierCurveTo(cx-hw+14,cT-ht+6,cx+hw-14,cT-ht+6,cx+hw-4,cT+1);ctx.stroke();
 }
 
+// Единый масштаб болида по категории (картинг самый мелкий → Ф1 самый крупный).
+const CAR_SCALE=[0.62,0.74,0.82,0.91,1.0];
 function drawCar(ctx,W,H,c1,c2,num,dr,carType,drv){
   ctx.clearRect(0,0,W,H);
   if(carType===0)drawKart(ctx,W,H,c1,c2,num,dr,drv);
@@ -1783,25 +1864,26 @@ function drawCar(ctx,W,H,c1,c2,num,dr,carType,drv){
   else if(carType===2)drawF3(ctx,W,H,c1,c2,num,dr,drv);
   else if(carType===3)drawF2(ctx,W,H,c1,c2,num,dr,drv);
   else drawF1(ctx,W,H,c1,c2,num,dr,drv);
-  // ливрея (косметическое покрытие корпуса)
-  try{drawLivery(ctx,W,H,carType);}catch(e){}
-  // детали, отражающие прокачку болида
-  try{drawUpgradeParts(ctx,W,H,c1,c2);}catch(e){}
+  // ливрея и апгрейд-детали — с тем же масштабом категории, что и болид (иначе разъезжаются)
+  const cs=CAR_SCALE[carType]||1;
+  try{drawLivery(ctx,W,H,carType,cs);}catch(e){}
+  try{drawUpgradeParts(ctx,W,H,c1,c2,cs,carType);}catch(e){}
 }
 // Косметические ливреи поверх корпуса
-function drawLivery(ctx,W,H,carType){
+function drawLivery(ctx,W,H,carType,cs){
   if(!S.livery)return;
-  const sc=W/500,gnd=Math.floor(H*0.78),gnd2=gnd/sc;
+  const sc=W/500,gnd=Math.floor(H*0.80),gnd2=gnd/sc;
   ctx.save();ctx.scale(sc,sc);
+  if(cs&&cs!==1){ctx.translate(250,gnd2);ctx.scale(cs,cs);ctx.translate(-250,-gnd2);}
   // У каждого болида своя нижняя кромка борта — подбираем высоту и ширину полосы под форму.
   // [x1, x2, y(от земли вверх)]
   const cfg=[
-    [128,332,30], // картинг — узкий кузов, полоса по нижнему борту под табличкой
-    [120,352,28], // Ф4
-    [118,356,28], // Ф3
-    [116,360,28], // Ф2
-    [112,366,30], // Ф1
-  ][carType||0]||[120,352,28];
+    [132,334,26], // картинг — между задним колесом (rWx+RR≈128) и передним (fWx-FR≈338)
+    [126,332,26], // Ф4 — между задним (rWx+RR≈122) и передним (fWx-FR≈336)
+    [126,332,26], // Ф3
+    [126,332,26], // Ф2
+    [126,332,26], // Ф1
+  ][carType||0]||[126,332,26];
   const x1=cfg[0],x2=cfg[1],y=gnd2-cfg[2],h=4;
   if(S.livery==='stripe'){
     ctx.fillStyle='rgba(255,255,255,0.92)';ctx.fillRect(x1,y,x2-x1,h);
@@ -1821,30 +1903,36 @@ function drawLivery(ctx,W,H,carType){
   ctx.restore();
 }
 // Визуальные апгрейды: чем выше прокачка, тем больше деталей на болиде
-function drawUpgradeParts(ctx,W,H,c1,c2){
+function drawUpgradeParts(ctx,W,H,c1,c2,cs,carType){
   const prog=upgradeProgress(); // 0..1
   if(prog<=0)return;
-  const sc=W/500,gnd=Math.floor(H*0.78),gnd2=gnd/sc;
+  const sc=W/500,gnd=Math.floor(H*0.80),gnd2=gnd/sc;
   ctx.save();ctx.scale(sc,sc);
-  const rWx=100; // зад болида (у всех drawXX заднее колесо в районе x=100)
-  const fWx=360; // перёд
-  // >25% — задний спойлер (антикрыло) растёт
-  if(prog>=0.25){
-    const wing=Math.min(1,(prog-0.25)/0.5); // 0..1 рост
-    const wy=gnd2-58-wing*10;
-    ctx.fillStyle=c1;ctx.fillRect(rWx-30,wy,6,18+wing*8);            // стойка
-    ctx.fillStyle=c2;ctx.fillRect(rWx-40,wy-3,26,5+wing*3);          // плоскость крыла
-    ctx.fillStyle=dc(c1,15);ctx.fillRect(rWx-40,wy+2+wing*3,26,2);   // нижний элемент
+  if(cs&&cs!==1){ctx.translate(250,gnd2);ctx.scale(cs,cs);ctx.translate(-250,-gnd2);}
+  const G=gnd2;
+  if(carType===0){
+    // КАРТИНГ: открытая рама — нет заднего антикрыла и боковых дефлекторов.
+    // Единственная апгрейд-деталь — накладка на носовом обтекателе.
+    const fWx=360;
+    if(prog>=0.85){
+      ctx.fillStyle=lc(c1,18);ctx.fillRect(fWx+34,G-19,12,3);
+    }
+    ctx.restore();return;
   }
-  // >55% — боковые winglets у переднего колеса
-  if(prog>=0.55){
+  const rWx=95,fWx=358,noseTip=fWx+40;
+  // >40% — дополнительная закрылка на заднем крыле (надстройка над базовым крылом болида)
+  if(prog>=0.40){
+    const gr=Math.min(1,(prog-0.40)/0.4);
+    ctx.fillStyle=c2;ctx.fillRect(rWx-54,G-86-gr*4,4,10+gr*4); // боковой торец крыла (Gurney flap)
+  }
+  // >60% — боковые дефлекторы у переднего колеса
+  if(prog>=0.60){
     ctx.fillStyle=c2;
-    ctx.beginPath();ctx.moveTo(fWx-6,gnd2-30);ctx.lineTo(fWx+14,gnd2-34);ctx.lineTo(fWx+14,gnd2-29);ctx.lineTo(fWx-6,gnd2-26);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(fWx-2,G-30);ctx.lineTo(fWx+16,G-33);ctx.lineTo(fWx+16,G-29);ctx.lineTo(fWx-2,G-27);ctx.closePath();ctx.fill();
   }
-  // >80% — передний сплиттер/крыло
-  if(prog>=0.80){
-    ctx.fillStyle=lc(c1,20);ctx.fillRect(fWx+30,gnd2-12,22,4);
-    ctx.fillStyle=c2;ctx.fillRect(fWx+44,gnd2-16,4,8);
+  // >85% — дополнительный элемент переднего крыла
+  if(prog>=0.85){
+    ctx.fillStyle=lc(c1,18);ctx.fillRect(noseTip-2,G-13,10,3);
   }
   ctx.restore();
 }
@@ -1872,190 +1960,141 @@ function drawBgSmall(ctx,W,H,gnd){
 }
 
 function drawKart(ctx,W,H,c1,c2,num,dr,drv){
-  const sc=W/500,gnd=Math.floor(H*0.78);
+  const sc=W/500,gnd=Math.floor(H*0.80);
   ctx.save();ctx.scale(sc,sc);
   const W2=500,gnd2=gnd/sc;
   drawBgSmall(ctx,W2,H/sc,gnd2);
+  // картинг — самый мелкий из всех. Масштабируем вокруг центра и линии земли.
+  const cs=0.62;ctx.translate(250,gnd2);ctx.scale(cs,cs);ctx.translate(-250,-gnd2);
   const RR=28,RI=16,FR=22,rWx=100,rWy=gnd2-RR,fWx=360,fWy=gnd2-FR;
   const bx1=rWx+14,bx2=fWx-8;
   ctx.fillStyle=dc(c1,25);ctx.beginPath();ctx.moveTo(rWx+8,gnd2-8);ctx.lineTo(rWx+8,gnd2-24);ctx.lineTo(fWx-8,gnd2-24);ctx.lineTo(fWx-8,gnd2-8);ctx.closePath();ctx.fill();
   ctx.fillStyle=c1;ctx.beginPath();ctx.moveTo(bx1,gnd2-24);ctx.lineTo(rWx+18,gnd2-54);ctx.lineTo(rWx+54,gnd2-58);ctx.quadraticCurveTo(rWx+100,gnd2-70,rWx+114,gnd2-68);ctx.lineTo(fWx-64,gnd2-50);ctx.quadraticCurveTo(fWx-22,gnd2-36,bx2,gnd2-24);ctx.closePath();ctx.fill();
   ctx.fillStyle=lc(c1,28);ctx.beginPath();ctx.moveTo(rWx+22,gnd2-52);ctx.lineTo(rWx+58,gnd2-62);ctx.quadraticCurveTo(rWx+102,gnd2-69,rWx+118,gnd2-67);ctx.lineTo(fWx-62,gnd2-49);ctx.lineTo(rWx+22,gnd2-42);ctx.closePath();ctx.fill();
   ctx.fillStyle=dc(c1,12);ctx.beginPath();ctx.moveTo(bx2,gnd2-24);ctx.quadraticCurveTo(fWx+20,gnd2-22,fWx+42,gnd2-19);ctx.lineTo(fWx+42,gnd2-15);ctx.quadraticCurveTo(fWx+20,gnd2-17,fWx-7,gnd2-20);ctx.closePath();ctx.fill();
-  ctx.fillStyle=c2;ctx.beginPath();ctx.arc(fWx+42,gnd2-17,3.5,0,Math.PI*2);ctx.fill();
   ctx.fillStyle=dc(c1,8);ctx.beginPath();ctx.moveTo(fWx+18,gnd2-13);ctx.lineTo(fWx+54,gnd2-11);ctx.lineTo(fWx+54,gnd2-8);ctx.lineTo(fWx+18,gnd2-10);ctx.closePath();ctx.fill();
-  ctx.fillStyle=c2;ctx.fillRect(fWx+52,gnd2-14,3,7);
   ctx.fillStyle=c2;ctx.fillRect(rWx-22,gnd2-22,7,18);
   ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(rWx-22,gnd2-10);ctx.lineTo(rWx+13,gnd2-10);ctx.lineTo(rWx+13,gnd2-6);ctx.lineTo(rWx-22,gnd2-6);ctx.closePath();ctx.fill();
   const cL=rWx+28,cR=fWx-58,cT=gnd2-68;
   const hs=0.44,hx=cL+42,hy=cT+3-32*hs;
   drawHelmet(ctx,hx,hy,hs,c1,c2,drv);
-  numPlate(ctx,(bx1+bx2)/2-16,gnd2-46,num,dr,c1,c2);
-  wheel(ctx,rWx,rWy,RR,RI,c2);wheel(ctx,fWx,fWy,FR,RI-4,c2);
+  numBadge(ctx,(bx1+bx2)/2-10,gnd2-42,num,c1,c2,36);
+  wheel(ctx,rWx,rWy,RR,RI,c2,5,undefined,'#2a2a2a');wheel(ctx,fWx,fWy,FR,RI-4,c2,5,undefined,'#2a2a2a');
   ctx.restore();
 }
 
 function drawF4(ctx,W,H,c1,c2,num,dr,drv){
-  const sc=W/500,gnd2=Math.floor(H*0.78/sc);
-  ctx.save();ctx.scale(sc,sc);
-  drawBgSmall(ctx,500,H/sc,gnd2);
-  const RR=26,RI=14,FR=20,rWx=85,fWx=390,bx1=rWx+18,bx2=fWx-18;
-  ctx.fillStyle=dc(c1,18);ctx.beginPath();ctx.moveTo(rWx+20,gnd2-20);ctx.lineTo(rWx+20,gnd2-44);ctx.lineTo(rWx+80,gnd2-50);ctx.lineTo(rWx+80,gnd2-20);ctx.closePath();ctx.fill();
-  ctx.beginPath();ctx.moveTo(fWx-80,gnd2-20);ctx.lineTo(fWx-80,gnd2-44);ctx.lineTo(fWx-30,gnd2-38);ctx.lineTo(fWx-30,gnd2-20);ctx.closePath();ctx.fill();
-  ctx.fillStyle=c1;ctx.beginPath();ctx.moveTo(bx1,gnd2-20);ctx.lineTo(rWx+22,gnd2-50);ctx.bezierCurveTo(rWx+50,gnd2-62,rWx+90,gnd2-64,rWx+130,gnd2-62);ctx.lineTo(fWx-100,gnd2-58);ctx.bezierCurveTo(fWx-70,gnd2-56,fWx-40,gnd2-50,bx2,gnd2-20);ctx.closePath();ctx.fill();
-  ctx.fillStyle=lc(c1,25);ctx.beginPath();ctx.moveTo(rWx+26,gnd2-48);ctx.bezierCurveTo(rWx+54,gnd2-60,rWx+92,gnd2-62,rWx+132,gnd2-60);ctx.lineTo(fWx-98,gnd2-56);ctx.lineTo(rWx+26,gnd2-38);ctx.closePath();ctx.fill();
-  ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(rWx+22,gnd2-28);ctx.lineTo(fWx-20,gnd2-26);ctx.lineTo(fWx-21,gnd2-22);ctx.lineTo(rWx+22,gnd2-24);ctx.closePath();ctx.fill();
-  rearWing(ctx,rWx,gnd2,gnd2-50,gnd2-60,22,c1,c2);
-  drawNose(ctx,bx2,gnd2-28,gnd2-16,56,c1,c2);
-  frontWing(ctx,bx2+56,gnd2-28,12,c1,c2);
-  const cL=rWx+80,cR=fWx-100,cT=gnd2-72;
-  cockpitRim(ctx,cL,cR,cT,c1);headrest(ctx,cL-2,cT-14,18,14,c1);
-  ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-12,gnd2-40,9,6,0.5,0,Math.PI*2);ctx.stroke();
-  ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-21,gnd2-40);ctx.lineTo(cR-3,gnd2-40);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-12,gnd2-47);ctx.lineTo(cR-12,gnd2-33);ctx.stroke();
-  const hs=0.44,hx=cL+38,hy=cT+4-32*hs;
-  drawHelmet(ctx,hx,hy,hs,c1,c2,drv);
-  numPlate(ctx,(bx1+bx2)/2,gnd2-36,num,dr,c1,c2);
-  wheel(ctx,rWx,gnd2-RR,RR,RI,c2,5);wheel(ctx,fWx,gnd2-FR,FR,RI-3,c2,5);
-  ctx.restore();
+  drawFormula(ctx,W,H,c1,c2,num,drv,{ground:0.80,rWx:95,fWx:358,RR:27,RI:15,FR:22,halo:false,airboxLong:false,wing:0.72,carScale:0.74});
 }
 
 function drawF3(ctx,W,H,c1,c2,num,dr,drv){
-  const sc=W/500,gnd2=Math.floor(H*0.78/sc);
-  ctx.save();ctx.scale(sc,sc);
-  drawBgSmall(ctx,500,H/sc,gnd2);
-  const RR=27,RI=15,FR=21,rWx=82,fWx=400,bx1=rWx+20,bx2=fWx-20;
-  ctx.fillStyle=dc(c1,15);ctx.beginPath();ctx.moveTo(rWx+22,gnd2-18);ctx.lineTo(rWx+24,gnd2-48);ctx.lineTo(rWx+86,gnd2-56);ctx.lineTo(rWx+88,gnd2-18);ctx.closePath();ctx.fill();
-  ctx.beginPath();ctx.moveTo(fWx-86,gnd2-18);ctx.lineTo(fWx-84,gnd2-50);ctx.lineTo(fWx-32,gnd2-42);ctx.lineTo(fWx-30,gnd2-18);ctx.closePath();ctx.fill();
-  ctx.fillStyle=c1;ctx.beginPath();ctx.moveTo(bx1,gnd2-18);ctx.lineTo(rWx+26,gnd2-54);ctx.bezierCurveTo(rWx+60,gnd2-68,rWx+110,gnd2-70,rWx+150,gnd2-68);ctx.lineTo(fWx-110,gnd2-62);ctx.bezierCurveTo(fWx-70,gnd2-58,fWx-40,gnd2-48,bx2,gnd2-18);ctx.closePath();ctx.fill();
-  ctx.fillStyle=lc(c1,25);ctx.beginPath();ctx.moveTo(rWx+30,gnd2-52);ctx.bezierCurveTo(rWx+64,gnd2-66,rWx+112,gnd2-68,rWx+152,gnd2-66);ctx.lineTo(fWx-108,gnd2-60);ctx.lineTo(rWx+30,gnd2-40);ctx.closePath();ctx.fill();
-  ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(rWx+24,gnd2-26);ctx.lineTo(fWx-22,gnd2-24);ctx.lineTo(fWx-23,gnd2-20);ctx.lineTo(rWx+24,gnd2-22);ctx.closePath();ctx.fill();
-  rearWing(ctx,rWx,gnd2,gnd2-56,gnd2-74,26,c1,c2);
-  drawNose(ctx,bx2,gnd2-32,gnd2-18,62,c1,c2);
-  frontWing(ctx,bx2+62,gnd2-32,14,c1,c2);
-  const cL=rWx+86,cR=fWx-110,cT=gnd2-76;
-  cockpitRim(ctx,cL,cR,cT,c1);headrest(ctx,cL-2,cT-16,20,16,c1);
-  ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-12,gnd2-38,9,6,0.5,0,Math.PI*2);ctx.stroke();
-  ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-21,gnd2-38);ctx.lineTo(cR-3,gnd2-38);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-12,gnd2-45);ctx.lineTo(cR-12,gnd2-31);ctx.stroke();
-  const hs=0.44,hx=cL+36,hy=cT+4-32*hs;
-  drawHelmet(ctx,hx,hy,hs,c1,c2,drv);
-  numPlate(ctx,(bx1+bx2)/2,gnd2-34,num,dr,c1,c2);
-  wheel(ctx,rWx,gnd2-RR,RR,RI,c2,6);wheel(ctx,fWx,gnd2-FR,FR,RI-3,c2,6);
-  ctx.restore();
+  drawFormula(ctx,W,H,c1,c2,num,drv,{ground:0.80,rWx:95,fWx:358,RR:27,RI:15,FR:22,halo:false,airboxLong:false,wing:0.8,carScale:0.82});
 }
 
 function drawF2(ctx,W,H,c1,c2,num,dr,drv){
-  const sc=W/500,gnd2=Math.floor(H*0.78/sc);
+  drawFormula(ctx,W,H,c1,c2,num,drv,{ground:0.80,rWx:95,fWx:358,RR:27,RI:15,FR:22,halo:true,airboxLong:true,wing:0.9,carScale:0.91});
+}
+
+// ── ЕДИНЫЙ КОНСТРУКТОР ФОРМУЛЬНОГО БОЛИДА (эталон — F1) ──
+// opt: {ground, fWx, halo, airboxLong, wing} управляет категорией (F1→F4)
+function drawFormula(ctx,W,H,c1,c2,num,drv,opt){
+  opt=opt||{};
+  const ground=opt.ground||0.80;
+  const sc=W/500,gnd2=Math.floor(H*ground/sc);
   ctx.save();ctx.scale(sc,sc);
   drawBgSmall(ctx,500,H/sc,gnd2);
-  const RR=28,RI=16,FR=22,rWx=76,fWx=408,bx1=rWx+22,bx2=fWx-22;
-  ctx.fillStyle=dc(c1,12);ctx.beginPath();ctx.moveTo(rWx+24,gnd2-18);ctx.lineTo(rWx+26,gnd2-52);ctx.lineTo(rWx+96,gnd2-62);ctx.lineTo(rWx+98,gnd2-18);ctx.closePath();ctx.fill();
-  ctx.beginPath();ctx.moveTo(fWx-96,gnd2-18);ctx.lineTo(fWx-94,gnd2-56);ctx.lineTo(fWx-28,gnd2-44);ctx.lineTo(fWx-26,gnd2-18);ctx.closePath();ctx.fill();
-  ctx.fillStyle=dc(c1,35);ctx.beginPath();ctx.roundRect(rWx+32,gnd2-50,14,10,2);ctx.fill();ctx.beginPath();ctx.roundRect(fWx-80,gnd2-50,14,10,2);ctx.fill();
-  ctx.fillStyle=c1;ctx.beginPath();ctx.moveTo(bx1,gnd2-18);ctx.lineTo(rWx+28,gnd2-58);ctx.bezierCurveTo(rWx+70,gnd2-74,rWx+130,gnd2-76,rWx+180,gnd2-74);ctx.lineTo(fWx-130,gnd2-66);ctx.bezierCurveTo(fWx-80,gnd2-60,fWx-44,gnd2-50,bx2,gnd2-18);ctx.closePath();ctx.fill();
-  ctx.fillStyle=lc(c1,22);ctx.beginPath();ctx.moveTo(rWx+32,gnd2-56);ctx.bezierCurveTo(rWx+72,gnd2-72,rWx+132,gnd2-74,rWx+182,gnd2-72);ctx.lineTo(fWx-128,gnd2-64);ctx.lineTo(rWx+32,gnd2-44);ctx.closePath();ctx.fill();
-  ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(rWx+26,gnd2-28);ctx.lineTo(fWx-24,gnd2-26);ctx.lineTo(fWx-25,gnd2-22);ctx.lineTo(rWx+26,gnd2-24);ctx.closePath();ctx.fill();
-  ctx.fillStyle=dc(c1,20);ctx.beginPath();ctx.moveTo(rWx-2,gnd2-18);ctx.lineTo(rWx+26,gnd2-18);ctx.lineTo(rWx+22,gnd2-6);ctx.lineTo(rWx-6,gnd2-6);ctx.closePath();ctx.fill();
-  rearWing(ctx,rWx,gnd2,gnd2-62,gnd2-86,30,c1,c2);
-  drawNose(ctx,bx2,gnd2-36,gnd2-22,68,c1,c2);
-  frontWing(ctx,bx2+68,gnd2-36,16,c1,c2);
-  const cL=rWx+96,cR=fWx-128,cT=gnd2-80;
-  cockpitRim(ctx,cL,cR,cT,c1);headrest(ctx,cL-2,cT-18,22,18,c1);
-  ctx.strokeStyle=dc(c1,30);ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(cR-12,gnd2-36,9,6,0.5,0,Math.PI*2);ctx.stroke();
-  ctx.strokeStyle=dc(c1,10);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cR-21,gnd2-36);ctx.lineTo(cR-3,gnd2-36);ctx.stroke();ctx.beginPath();ctx.moveTo(cR-12,gnd2-43);ctx.lineTo(cR-12,gnd2-29);ctx.stroke();
-  const hs=0.44,hx=cL+34,hy=cT+4-32*hs;
+  // общий масштаб болида для градации размеров между категориями (F1=1.0, младше — меньше).
+  // Масштабируем вокруг центра по X и вокруг линии земли по Y, чтобы болид стоял на дороге.
+  const cs=opt.carScale||1;
+  if(cs!==1){ctx.translate(250,gnd2);ctx.scale(cs,cs);ctx.translate(-250,-gnd2);}
+  const RR=opt.RR||27,RI=opt.RI||15,FR=opt.FR||22,rWx=opt.rWx||95,fWx=opt.fWx||358;
+  const G=gnd2,floorY=G-14,noseTip=fWx+40,tailX=rWx-44;
+  const W_=(opt.wing===undefined?1:opt.wing); // масштаб крыльев (1=F1, меньше=младше)
+  const rwTop=Math.round(82*W_+(1-W_)*70); // высота заднего крыла
+
+  // заднее крыло на пилоне
+  ctx.fillStyle=dc(c1,12);ctx.fillRect(tailX+2,G-74,4,56);
+  ctx.fillStyle=c2;
+  const rww=Math.round(26*W_); // ширина крыла
+  ctx.beginPath();ctx.moveTo(tailX-rww+16,G-82);ctx.lineTo(tailX+16,G-82);ctx.lineTo(tailX+14,G-70);ctx.lineTo(tailX-rww+16,G-70);ctx.closePath();ctx.fill();
+  ctx.fillStyle=dc(c1,18);ctx.fillRect(tailX-rww+16,G-68,rww-2,4);
+
+  // цельный корпус
+  ctx.fillStyle=c1;
+  ctx.beginPath();
+  ctx.moveTo(tailX+10,G-60);
+  ctx.lineTo(rWx-6,G-58);
+  ctx.quadraticCurveTo(rWx+14,G-60,rWx+30,G-40);
+  ctx.lineTo(rWx+128,G-40);
+  ctx.quadraticCurveTo(rWx+165,G-40,rWx+188,G-44);
+  ctx.quadraticCurveTo(fWx-30,G-46,fWx-6,G-40);
+  ctx.quadraticCurveTo(noseTip-10,G-38,noseTip,G-34);
+  ctx.lineTo(noseTip,G-24);
+  ctx.quadraticCurveTo(fWx-20,G-22,rWx+40,floorY);
+  ctx.lineTo(rWx-10,floorY);
+  ctx.lineTo(tailX+10,floorY);
+  ctx.closePath();ctx.fill();
+
+  // верхняя подсветка
+  ctx.fillStyle=lc(c1,18);
+  ctx.beginPath();
+  ctx.moveTo(rWx+30,G-40);ctx.lineTo(rWx+128,G-40);
+  ctx.quadraticCurveTo(rWx+165,G-40,rWx+188,G-44);
+  ctx.quadraticCurveTo(fWx-30,G-46,fWx-6,G-41);
+  ctx.lineTo(fWx-6,G-37);ctx.lineTo(rWx+30,G-36);ctx.closePath();ctx.fill();
+
+  // боковой понтон
+  ctx.fillStyle=dc(c1,16);
+  ctx.beginPath();ctx.moveTo(rWx+34,G-38);ctx.lineTo(rWx+120,G-38);ctx.lineTo(rWx+120,floorY-1);ctx.lineTo(rWx+44,floorY-1);ctx.closePath();ctx.fill();
+  ctx.fillStyle=dc(c1,30);ctx.beginPath();ctx.moveTo(rWx+34,G-38);ctx.lineTo(rWx+50,G-38);ctx.lineTo(rWx+44,G-24);ctx.lineTo(rWx+30,G-24);ctx.closePath();ctx.fill();
+
+  // акцентная полоса
+  ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(rWx+40,G-30);ctx.lineTo(fWx-4,G-28);ctx.lineTo(fWx-4,G-25);ctx.lineTo(rWx+40,G-27);ctx.closePath();ctx.fill();
+
+  // переднее крыло слитно с носом
+  ctx.fillStyle=c2;
+  ctx.beginPath();ctx.moveTo(noseTip-6,G-24);ctx.lineTo(noseTip+14,G-22);ctx.lineTo(noseTip+14,G-16);ctx.lineTo(noseTip-6,G-17);ctx.closePath();ctx.fill();
+  ctx.fillStyle=dc(c1,10);
+  ctx.beginPath();ctx.moveTo(noseTip-8,G-15);ctx.lineTo(noseTip+16,G-15);ctx.lineTo(noseTip+16,G-11);ctx.lineTo(noseTip-8,G-11);ctx.closePath();ctx.fill();
+  ctx.fillStyle=dc(c1,4);ctx.fillRect(noseTip+12,G-22,3,11);
+
+  // ── ВОЗДУХОЗАБОРНИК-КОЗЫРЁК ЗА ГОЛОВОЙ ──
+  const cL=rWx+50;
+  const headX=cL+72;
+  const airX=headX-36;
+  const back=opt.airboxLong?46:34; // длина козырька назад
+  ctx.fillStyle=c1;
+  ctx.beginPath();
+  ctx.moveTo(airX-back,G-40);
+  ctx.quadraticCurveTo(airX-16,G-76,airX+4,G-78);
+  ctx.quadraticCurveTo(airX+16,G-78,airX+18,G-56);
+  ctx.lineTo(airX+18,G-42);ctx.lineTo(airX-back,G-40);ctx.closePath();ctx.fill();
+  ctx.fillStyle=lc(c1,16);
+  ctx.beginPath();
+  ctx.moveTo(airX-(back-12),G-44);ctx.quadraticCurveTo(airX-10,G-72,airX+4,G-74);
+  ctx.quadraticCurveTo(airX+8,G-66,airX+8,G-56);ctx.lineTo(airX-(back-12),G-44);ctx.closePath();ctx.fill();
+  ctx.fillStyle=dc(c1,42);ctx.beginPath();ctx.ellipse(airX+3,G-68,5,7.5,0.1,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=dc(c1,58);ctx.beginPath();ctx.ellipse(airX+3,G-68,3,5,0.1,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=dc(c1,6);
+  ctx.beginPath();ctx.moveTo(airX-back,G-42);ctx.quadraticCurveTo(rWx-2,G-50,tailX+12,G-50);ctx.lineTo(tailX+12,G-40);ctx.lineTo(airX-back,G-40);ctx.closePath();ctx.fill();
+
+  // кокпит-вырез
+  ctx.fillStyle=dc(c1,26);ctx.beginPath();ctx.ellipse(headX,G-42,15,7,0,0,Math.PI*2);ctx.fill();
+  // halo (для старших категорий)
+  if(opt.halo!==false){try{drawHalo(ctx,headX,G-50,c1);}catch(e){}}
+  // шлем
+  const hs=0.42,hx=headX-4,hy=G-50-32*hs+4;
   drawHelmet(ctx,hx,hy,hs,c1,c2,drv);
-  numPlate(ctx,(bx1+bx2)/2,gnd2-34,num,dr,c1,c2);
-  wheel(ctx,rWx,gnd2-RR,RR,RI,c2,6);wheel(ctx,fWx,gnd2-FR,FR,RI-4,c2,6);
+  // компактный номер
+  numBadge(ctx,headX+44,G-29,num,c1,c2);
+  // колёса
+  wheel(ctx,rWx,G-RR,RR,RI,c2,7);
+  wheel(ctx,fWx,G-FR,FR,RI-4,c2,7);
   ctx.restore();
 }
 
 function drawF1(ctx,W,H,c1,c2,num,dr,drv){
-  const sc=W/500,gnd2=Math.floor(H*0.80/sc);
-  ctx.save();ctx.scale(sc,sc);
-  drawBgSmall(ctx,500,H/sc,gnd2);
-  // Колёса сведены ближе и болид ниже — компактный силуэт сбоку
-  const RR=27,RI=15,FR=22,rWx=95,fWx=395;
-  const G=gnd2;            // уровень земли (низ колёс)
-  const floorY=G-14;       // днище болида
-  const bodyTop=G-44;      // верх корпуса (капот)
-  const noseTip=fWx+40;    // кончик носа
-  const tailX=rWx-44;      // хвост за задним колесом
-
-  // ── ЗАДНЕЕ КРЫЛО на центральном пилоне (позади заднего колеса, не над ним) ──
-  ctx.fillStyle=dc(c1,12);
-  ctx.fillRect(tailX+2,G-74,4,56);              // вертикальный пилон
-  ctx.fillStyle=c2;
-  ctx.beginPath();ctx.moveTo(tailX-10,G-82);ctx.lineTo(tailX+16,G-82);ctx.lineTo(tailX+14,G-70);ctx.lineTo(tailX-10,G-70);ctx.closePath();ctx.fill(); // верхняя плоскость крыла
-  ctx.fillStyle=dc(c1,18);ctx.fillRect(tailX-10,G-68,24,4); // нижний элемент крыла
-
-  // ── ЦЕЛЬНЫЙ КОРПУС: хвост → понтон → нос, одним контуром ──
-  ctx.fillStyle=c1;
-  ctx.beginPath();
-  ctx.moveTo(tailX+10,G-60);                                  // у основания заднего крыла
-  ctx.lineTo(rWx-6,G-58);                                     // моторный отсек
-  ctx.quadraticCurveTo(rWx+14,G-60,rWx+30,G-40);              // спад к понтону
-  ctx.lineTo(rWx+150,G-40);                                   // верх понтона (ровная линия — сиденье/борт)
-  ctx.quadraticCurveTo(rWx+200,G-40,rWx+230,G-44);            // подъём к носовому обтекателю
-  ctx.quadraticCurveTo(fWx-40,G-46,fWx-6,G-40);               // длинный нос
-  ctx.quadraticCurveTo(noseTip-10,G-38,noseTip,G-34);         // кончик носа
-  ctx.lineTo(noseTip,G-24);                                   // низ кончика носа
-  ctx.quadraticCurveTo(fWx-20,G-22,rWx+40,floorY);            // днище вперёд
-  ctx.lineTo(rWx-10,floorY);                                  // плоское днище
-  ctx.lineTo(tailX+10,floorY);                                // к хвосту
-  ctx.closePath();ctx.fill();
-
-  // верхняя подсветка корпуса (объём)
-  ctx.fillStyle=lc(c1,18);
-  ctx.beginPath();
-  ctx.moveTo(rWx+30,G-40);
-  ctx.lineTo(rWx+150,G-40);
-  ctx.quadraticCurveTo(rWx+200,G-40,rWx+230,G-44);
-  ctx.quadraticCurveTo(fWx-40,G-46,fWx-6,G-41);
-  ctx.lineTo(fWx-6,G-37);
-  ctx.lineTo(rWx+30,G-36);
-  ctx.closePath();ctx.fill();
-
-  // боковой понтон-воздухозаборник (характерная деталь F1)
-  ctx.fillStyle=dc(c1,16);
-  ctx.beginPath();
-  ctx.moveTo(rWx+34,G-38);ctx.lineTo(rWx+120,G-38);ctx.lineTo(rWx+120,floorY-1);ctx.lineTo(rWx+44,floorY-1);ctx.closePath();ctx.fill();
-  ctx.fillStyle=dc(c1,30);ctx.beginPath();ctx.moveTo(rWx+34,G-38);ctx.lineTo(rWx+50,G-38);ctx.lineTo(rWx+44,G-24);ctx.lineTo(rWx+30,G-24);ctx.closePath();ctx.fill(); // тёмный вход воздухозаборника
-
-  // акцентная полоса c2 по борту
-  ctx.fillStyle=c2;
-  ctx.beginPath();ctx.moveTo(rWx+40,G-30);ctx.lineTo(fWx-4,G-28);ctx.lineTo(fWx-4,G-25);ctx.lineTo(rWx+40,G-27);ctx.closePath();ctx.fill();
-
-  // ── ПЕРЕДНЕЕ КРЫЛО, слитно с носом ──
-  ctx.fillStyle=c2;
-  ctx.beginPath();ctx.moveTo(noseTip-6,G-24);ctx.lineTo(noseTip+14,G-22);ctx.lineTo(noseTip+14,G-16);ctx.lineTo(noseTip-6,G-17);ctx.closePath();ctx.fill(); // верхний элемент
-  ctx.fillStyle=dc(c1,10);
-  ctx.beginPath();ctx.moveTo(noseTip-8,G-15);ctx.lineTo(noseTip+16,G-15);ctx.lineTo(noseTip+16,G-11);ctx.lineTo(noseTip-8,G-11);ctx.closePath();ctx.fill(); // нижний элемент
-  ctx.fillStyle=dc(c1,4);ctx.fillRect(noseTip+12,G-22,3,11); // законцовка
-
-  // ── ВОЗДУХОЗАБОРНИК НАД ГОЛОВОЙ (airbox) ──
-  const cL=rWx+50,cR=rWx+150,cT=G-58;
-  ctx.fillStyle=dc(c1,8);
-  ctx.beginPath();ctx.moveTo(cL+6,G-44);ctx.lineTo(cL+14,cT);ctx.lineTo(cL+30,cT);ctx.lineTo(cL+34,G-44);ctx.closePath();ctx.fill();
-
-  // кокпит-вырез
-  ctx.fillStyle=dc(c1,26);
-  ctx.beginPath();ctx.ellipse(cL+48,G-42,16,7,0,0,Math.PI*2);ctx.fill();
-
-  // halo (дуга безопасности)
-  try{drawHalo(ctx,cL+48,G-50,c1);}catch(e){}
-
-  // шлем пилота в кокпите
-  const hs=0.42,hx=cL+40,hy=G-50-32*hs+4;
-  drawHelmet(ctx,hx,hy,hs,c1,c2,drv);
-
-  // номер на борту
-  numPlate(ctx,(rWx+fWx)/2-6,G-34,num,dr,c1,c2);
-
-  // колёса (широкие слики F1)
-  wheel(ctx,rWx,G-RR,RR,RI,c2,7);
-  wheel(ctx,fWx,G-FR,FR,RI-4,c2,7);
-
-  ctx.restore();
+  drawFormula(ctx,W,H,c1,c2,num,drv,{ground:0.80,rWx:95,fWx:358,RR:27,RI:15,FR:22,halo:true,airboxLong:true,wing:1});
 }
 
 // ── UI ───────────────────────────────────────────────────────────────────────
@@ -2702,43 +2741,68 @@ function pickFloatColor(t){
   return '#ffffff';                  // фолбэк — белый
 }
 
-// Выхлоп и искры при клике — частицы вылетают из правой части болида
+// Выхлоп и искры при клике — частицы вылетают из выхлопной трубы (сзади болида)
 function spawnExhaust(e){
-  const btn=document.getElementById('car-btn');
-  if(!btn)return;
-  const r=btn.getBoundingClientRect();
-  // точка выхлопа — левый нижний угол болида (где сзади труба)
-  const ox=r.left+r.width*0.18;
-  const oy=r.top+r.height*0.62;
+  const cv=document.getElementById('car-main');
+  if(!cv)return;
+  const r=cv.getBoundingClientRect();
+  // Позиция трубы в игровых координатах canvas (500×H-логических), затем в экранные.
+  // Болид смотрит вправо → труба сзади, у нижней кромки за задним колесом.
+  const W=cv.width||440,H=cv.height||145;
+  const ct=(C()||{}).ct||0;
+  // координата трубы в "логической" системе (до scale sc): зависит от категории
+  // картинг: заднее колесо rWx=100, труба чуть позади (x≈78, y у земли)
+  // формулы: заднее колесо rWx=95, выхлоп позади колеса у самой кромки
+  let tubeX, tubeY;
+  if(ct===0){
+    const sc=W/500, gnd2=Math.floor(H*0.80)/sc;
+    const cs=0.62; // картинг масштабируется вокруг (250,gnd2)
+    let gx=78, gy=gnd2-12;                 // в системе после cs
+    tubeX = 250 + (gx-250)*cs;             // снимаем cs
+    tubeY = gnd2 + (gy-gnd2)*cs;
+    tubeX*=sc; tubeY*=sc;
+  }else{
+    const sc=W/500, gnd2=Math.floor(H*0.80/sc);
+    const cs=CAR_SCALE[ct]||1;
+    let gx=87, gy=gnd2-7;                   // сразу за задним колесом (rWx=95), у земли
+    tubeX = 250 + (gx-250)*cs;
+    tubeY = gnd2 + (gy-gnd2)*cs;
+    tubeX*=sc; tubeY*=sc;
+  }
+  // в экранные координаты
+  const ox = r.left + tubeX;
+  const oy = r.top  + tubeY;
   const frag=document.createDocumentFragment();
-  // дым (3-4 серых клуба)
+  // дым — мелкие полупрозрачные клубы, дрейфуют назад-вверх (влево-вверх)
   const smokeN=3+Math.floor(Math.random()*2);
   for(let i=0;i<smokeN;i++){
     const p=document.createElement('div');
     p.className='exhaust-smoke';
-    const dx=-(15+Math.random()*30), dy=-(Math.random()*20-6);
-    p.style.left=ox+'px';p.style.top=oy+'px';
+    const dx=-(10+Math.random()*16);          // назад
+    const dy=-(4+Math.random()*12);            // слегка вверх
+    const jx=(Math.random()*4-2), jy=(Math.random()*4-2); // микро-разброс старта
+    p.style.left=(ox+jx)+'px';p.style.top=(oy+jy)+'px';
     p.style.setProperty('--dx',dx+'px');
     p.style.setProperty('--dy',dy+'px');
-    p.style.animationDelay=(i*20)+'ms';
+    p.style.animationDelay=(i*30)+'ms';
     frag.appendChild(p);
   }
-  // искры (4-6 ярких)
+  // искры — короткий веер назад-вниз от трубы
   const t=T();
-  const sparkN=4+Math.floor(Math.random()*3);
+  const sparkN=3+Math.floor(Math.random()*3);
   for(let i=0;i<sparkN;i++){
     const p=document.createElement('div');
     p.className='exhaust-spark';
-    const ang=Math.PI*(0.8+Math.random()*0.6); // влево-вниз веером
-    const dist=20+Math.random()*35;
+    const ang=Math.PI*(0.85+Math.random()*0.4); // влево, слегка вниз
+    const dist=12+Math.random()*20;
     p.style.left=ox+'px';p.style.top=oy+'px';
     p.style.setProperty('--dx',(Math.cos(ang)*dist)+'px');
-    p.style.setProperty('--dy',(Math.sin(ang)*dist*0.6)+'px');
-    p.style.background=Math.random()<0.5?'#ffd54a':(t.c2||'#fff');
+    p.style.setProperty('--dy',(Math.sin(ang)*dist*0.5)+'px');
+    p.style.color=Math.random()<0.5?'#ffd54a':(t.c2||'#fff');
+    p.style.background='currentColor';
     frag.appendChild(p);
   }
   document.body.appendChild(frag);
-  // каждая частица удаляется по завершении своей анимации
   document.querySelectorAll('.exhaust-smoke:not([data-k]),.exhaust-spark:not([data-k])').forEach(el=>{
     el.setAttribute('data-k','1');
     setTimeout(()=>el.remove(),700);
