@@ -747,10 +747,36 @@ function fmtPlaytime(ms){
   return `${s} сек`;
 }
 
-async function sbFetch(path,method='GET',body=null){
+async function sbFetch(path,method='GET',body=null,opts2={}){
+  const timeoutMs=opts2.timeout||7000; // не висим дольше 7с на одном запросе
+  const retries=opts2.retries!=null?opts2.retries:1; // один повтор по умолчанию
   const opts={method,headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'}};
   if(body)opts.body=JSON.stringify(body);
-  try{const r=await fetch(SB_URL+path,opts);return await r.json();}catch(e){return null;}
+  for(let attempt=0;attempt<=retries;attempt++){
+    let timer=null;
+    try{
+      const ctrl=(typeof AbortController!=='undefined')?new AbortController():null;
+      if(ctrl){opts.signal=ctrl.signal;timer=setTimeout(()=>{try{ctrl.abort();}catch(_){}}, timeoutMs);}
+      const r=await fetch(SB_URL+path,opts);
+      if(timer)clearTimeout(timer);
+      if(!r.ok){
+        // 4xx/5xx — не ретраим клиентские ошибки, ретраим серверные/сетевые
+        if(r.status>=400&&r.status<500)return null;
+        if(attempt<retries)continue;
+        return null;
+      }
+      // тело может быть пустым (например, у RPC возвращающих void)
+      const txt=await r.text();
+      if(!txt)return null;
+      try{return JSON.parse(txt);}catch(_){return null;}
+    }catch(e){
+      if(timer)clearTimeout(timer);
+      // таймаут/сетевой сбой — пробуем ещё раз, если остались попытки
+      if(attempt<retries)continue;
+      return null;
+    }
+  }
+  return null;
 }
 
 async function cloudLoad(userId){
@@ -3984,15 +4010,31 @@ async function init(){
   try{refreshStuckQuests();}catch(e){}
   const hadLocalSave=!!S.pn; // был ли прогресс на этом устройстве
 
-  // Грузим из облака. Если локального сейва НЕТ (новое устройство) — ждём облако дольше,
-  // чтобы не показать чистый старт вместо реального прогресса. Если локальный есть — короткий таймаут.
+  // Грузим из облака. sbFetch теперь сам не висит (таймаут+ретрай), поэтому внешний
+  // лимит можно держать коротким. Если локального сейва нет — ждём чуть дольше, чтобы
+  // не показать пустой старт вместо реального прогресса.
   if(S.userId){
+    let cloudOk=false;
     try{
-      const ms=hadLocalSave?6000:15000; // без локального — ждём до 15с
+      const ms=hadLocalSave?5000:9000;
       const timeout=new Promise(res=>setTimeout(()=>res('timeout'),ms));
-      await Promise.race([cloudLoad(S.userId).catch(()=>'error'),timeout]);
+      const result=await Promise.race([cloudLoad(S.userId).then(()=>'ok').catch(()=>'error'),timeout]);
+      cloudOk=(result==='ok');
     }catch(e){}
     try{refreshStuckQuests();}catch(e){}
+    // Если облако не успело, но есть локальный прогресс — дольём из облака в фоне,
+    // чтобы не задерживать показ игры и не потерять реальный прогресс.
+    if(!cloudOk&&S.userId){
+      setTimeout(async()=>{
+        try{
+          const before=Math.floor(S.coins||0);
+          await cloudLoad(S.userId);
+          // если облако дало более свежие данные — перерисуем
+          if(Math.floor(S.coins||0)!==before){try{render();}catch(e){}}
+          try{save();}catch(e){}
+        }catch(e){}
+      },1200);
+    }
   }
 
   // Скрываем экран загрузки и показываем нужный экран — только теперь, без мелькания регистрации
