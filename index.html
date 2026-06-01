@@ -1078,6 +1078,8 @@ function load(){
   if(!S.rd||typeof S.rd!=='object')S.rd={engine:0,aero:0,reliability:0};
   ['engine','aero','reliability'].forEach(k=>{if(typeof S.rd[k]!=='number')S.rd[k]=0;});
   if(S.season&&S.season.lvl!==S.cl)S.season=null; // сезон чужого уровня — сброс
+  // Санитайз ключевых чисел: если в сейве оказался null/NaN/Infinity — чиним, иначе ломается отображение и JSON.
+  ['coins','xp','tce','cl','tc','tw'].forEach(k=>{if(typeof S[k]!=='number'||!isFinite(S[k]))S[k]=0;});
   if(S.quests.length===0)initQuests();
 }
 function save(){
@@ -1180,6 +1182,7 @@ function winChance(t){
   return Math.max(0.05,Math.min(b,0.92));
 }
 function addXP(a){
+  if(a==null||!isFinite(a))return; // защита: не даём S.xp стать Infinity/NaN (ломает JSON и отображение)
   const t=T();
   if(t.id==='ferrari')a*=1.15;
   if(t.id==='rbulls')a*=1.05;
@@ -1841,7 +1844,9 @@ function genQuest(poolItem){
   const secByMetric={tc:240, tce:300, tw:480, upg:360}[poolItem.metric]||240; // сколько секунд дохода стоит контракт
   const incomeBase=Math.max(cps*secByMetric, clickVal()*secByMetric*0.2, 200*(S.cl+1));
   const coinR=Math.floor(incomeBase);
-  const xpR=Math.floor(C().xp*0.04*(1+S.cl*0.2))+20;
+  // XP-порог уровня; на последнем уровне он Infinity → берём конечную базу, иначе xpR станет null после JSON.
+  const xpBase=isFinite(C().xp)?C().xp:35000;
+  const xpR=Math.floor(xpBase*0.04*(1+S.cl*0.2))+20;
   return {
     id:poolItem.id, emoji:poolItem.emoji, name:poolItem.name,
     verb:poolItem.verb, unit:poolItem.unit, metric:poolItem.metric,
@@ -1880,6 +1885,12 @@ function refreshStuckQuests(){
       const secByMetric={tc:240, tce:300, tw:480, upg:360}[q.metric]||240;
       const fresh=Math.floor(Math.max(cps*secByMetric, clickVal()*secByMetric*0.2, 200*(S.cl+1)));
       if(fresh>(q.coinR||0)){q.coinR=fresh;changed=true;}
+      // Чиним битый xpR (null/NaN/Infinity — например, сохранённый Infinity на Ф1 стал null после JSON).
+      if(q.xpR==null||!isFinite(q.xpR)){
+        const xpBase=isFinite(C().xp)?C().xp:35000;
+        q.xpR=Math.floor(xpBase*0.04*(1+S.cl*0.2))+20;
+        changed=true;
+      }
     }
   });
   if(changed)save();
@@ -3359,7 +3370,7 @@ function adminLevelUp(){if(!isAdmin())return;if(S.cl<4){S.cl++;S.ul={};S.baseCli
 function adminSetLevel(n){if(!isAdmin())return;n=Math.max(0,Math.min(4,n|0));S.cl=n;S.ul={};S.baseClick=0;S.baseCps=0;S.season=null;S.tw_ids=[];toast(`Уровень: ${C().name}`);haptic('success');save();render();openSettings();}
 function adminMaxUpg(){if(!isAdmin())return;UPGRADES.forEach(u=>S.ul[u.id]=u.ml);toast('Болид прокачан 100%');haptic('success');save();render();openSettings();}
 function adminAddLP(n){if(!isAdmin())return;S.legacyPoints=(S.legacyPoints||0)+n;toast(`+${n} Очков наследия`);haptic('success');save();render();openSettings();}
-function adminAddXP(){if(!isAdmin())return;S.xp+=C().xp;toast('+XP уровня');haptic('success');save();render();openSettings();}
+function adminAddXP(){if(!isAdmin())return;S.xp+=isFinite(C().xp)?C().xp:35000;toast('+XP уровня');haptic('success');save();render();openSettings();}
 
 // ── ТУТОРИАЛ ──────────────────────────────────────────────────────────────────
 const TUT_STEPS=[
