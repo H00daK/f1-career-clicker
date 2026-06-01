@@ -7,6 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>F1 Career Clicker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏎️</text></svg>">
 <script>
 // РАННИЙ перехват ошибок — ДО загрузки внешних скриптов, чтобы поймать и их сбои.
 (function(){
@@ -3944,6 +3945,10 @@ let _pendingReferrer=null;
 // Ждём появления данных Telegram: либо WebApp-скрипт, либо данные в URL (hash заполняется не сразу).
 function waitForTelegram(maxMs=4000){
   return new Promise(resolve=>{
+    // Признак, что мы ВНУТРИ Telegram: в URL есть tgWebAppData (Telegram кладёт его в hash/query).
+    const insideTelegram=/tgWebApp/.test((location.hash||'')+(location.search||''));
+    // Вне Telegram ждать нечего — сразу выходим (игра работает и без него).
+    if(!insideTelegram && !(typeof Telegram!=='undefined'&&Telegram.WebApp)){resolve(false);return;}
     const start=Date.now();
     (function check(){
       const hasScript=typeof Telegram!=='undefined'&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user;
@@ -3997,10 +4002,11 @@ function loadTelegramScript(timeoutMs=2500){
   });
 }
 async function init(){
-  // Подгружаем Telegram-скрипт динамически (не блокирует страницу). Внутри Telegram —
-  // быстро; в обычном браузере упадёт по таймауту, но в фоне, и игра стартует через URL/локально.
-  loadTelegramScript(2500);
-  // Дожидаемся данных Telegram (коротко): скрипт ИЛИ данные в URL. Иначе — играем без него.
+  // Грузим Telegram-скрипт ТОЛЬКО если мы реально внутри Telegram (есть tgWebAppData в URL).
+  // В обычном браузере telegram.org часто недоступен/висит — не трогаем его вовсе.
+  const insideTelegram=/tgWebApp/.test((location.hash||'')+(location.search||''));
+  if(insideTelegram)loadTelegramScript(2500);
+  // Ждём данные Telegram только внутри Telegram; иначе waitForTelegram вернётся сразу.
   await waitForTelegram(1500);
   // Получаем Telegram User ID
   try{
