@@ -1189,11 +1189,29 @@ function load(){
   ['coins','xp','tce','cl','tc','tw'].forEach(k=>{if(typeof S[k]!=='number'||!isFinite(S[k]))S[k]=0;});
   if(S.quests.length===0)initQuests();
 }
+let _lastCloudSave=0;
+let _cloudSaveTimer=null;
 function save(){
   S.lastSeen=Date.now();
   try{localStorage.setItem('f1_v6',JSON.stringify(S));}catch(e){}
-  // облачное сохранение если есть userId
-  if(S.userId)cloudSave();
+  // Облачное сохранение троттлим: локальный сейв мгновенный и частый, а в облако пишем
+  // не чаще раза в 12 сек (плюс отложенная дозапись), чтобы не долбить сеть на каждый клик.
+  if(S.userId)scheduleCloudSave();
+}
+// Троттлинг облачного сохранения. force=true — записать немедленно (важные события).
+function scheduleCloudSave(force){
+  if(!S.userId)return;
+  const now=Date.now();
+  const MIN_GAP=12000; // минимум 12 сек между облачными записями
+  if(force||now-_lastCloudSave>=MIN_GAP){
+    _lastCloudSave=now;
+    if(_cloudSaveTimer){clearTimeout(_cloudSaveTimer);_cloudSaveTimer=null;}
+    cloudSave();
+  }else if(!_cloudSaveTimer){
+    // запланировать дозапись на конец окна, чтобы последние изменения точно ушли
+    const wait=MIN_GAP-(now-_lastCloudSave);
+    _cloudSaveTimer=setTimeout(()=>{_cloudSaveTimer=null;_lastCloudSave=Date.now();cloudSave();},wait);
+  }
 }
 function T(){return TEAMS.find(x=>x.id===S.tid)||TEAMS[0];}
 // текущий пилот (имя + номер) с фолбэком на дефолтные dr/num команды
@@ -4359,6 +4377,18 @@ if(document.readyState==='loading'){
 }else{
   _safeInit();
 }
+// При сворачивании/закрытии приложения форсим облачное сохранение — чтобы троттлинг
+// не привёл к потере последних изменений (повышение уровня, покупка и т.п.).
+function _flushSaveOnExit(){
+  try{
+    if(!S.userId)return;
+    try{localStorage.setItem('f1_v6',JSON.stringify(S));}catch(e){}
+    scheduleCloudSave(true); // немедленная запись в облако
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')_flushSaveOnExit();});
+window.addEventListener('pagehide',_flushSaveOnExit);
+window.addEventListener('blur',_flushSaveOnExit);
 // Страховка: если init по какой-то причине не снял экран загрузки за 16с — снимаем принудительно
 setTimeout(()=>{
   try{
