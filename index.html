@@ -8,6 +8,46 @@
 <meta http-equiv="Expires" content="0">
 <title>F1 Career Clicker</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+// Глобальный перехват ошибок: вместо белого экрана показываем, что упало.
+// Помогает диагностировать сбои на конкретных устройствах (iOS Safari и т.п.).
+(function(){
+  function showErr(msg){
+    try{
+      var box=document.getElementById('fatal-err');
+      if(!box){
+        box=document.createElement('div');
+        box.id='fatal-err';
+        box.style.cssText='position:fixed;inset:0;z-index:9999;background:#140a0a;color:#ffb4b4;font:12px/1.5 monospace;padding:18px;overflow:auto;white-space:pre-wrap;-webkit-user-select:text;user-select:text';
+        var add=function(){document.body?document.body.appendChild(box):setTimeout(add,50);};
+        add();
+      }
+      box.textContent='⚠️ Ошибка запуска игры\n\n'+msg+'\n\nСделай скриншот и отправь разработчику.';
+    }catch(_){}
+  }
+  window.addEventListener('error',function(e){
+    var m=(e&&e.message)||'unknown';
+    var src=(e&&e.filename)?(' @ '+e.filename.split('/').pop()+':'+e.lineno+':'+e.colno):'';
+    showErr(m+src);
+  });
+  window.addEventListener('unhandledrejection',function(e){
+    var r=e&&e.reason;showErr('Promise: '+((r&&r.message)||r||'unknown'));
+  });
+  // Независимая страховка: снять экран загрузки через 18с, даже если основной скрипт не выполнился.
+  setTimeout(function(){
+    try{
+      var l=document.getElementById('screen-loading');
+      if(l&&l.style.display!=='none'){
+        var g=document.getElementById('screen-game'),o=document.getElementById('screen-onboard');
+        // если игра так и не показалась и нет панели ошибки — сообщаем
+        if((!g||g.classList.contains('hidden'))&&(!o||o.classList.contains('hidden'))&&!document.getElementById('fatal-err')){
+          showErr('Игра не загрузилась за 18 секунд. Возможна проблема с сетью или скриптом. Перезапусти приложение.');
+        }
+      }
+    }catch(_){}
+  },18000);
+})();
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{min-height:100vh}
@@ -3961,10 +4001,19 @@ async function init(){
 }
 
 // Запускаем после полной загрузки DOM (на iOS скрипт может выполниться до готовности элементов)
+function _safeInit(){
+  try{
+    const p=init();
+    if(p&&p.catch)p.catch(err=>{console.log('init rejected',err);try{document.getElementById('screen-loading').style.display='none';buildOnboard();document.getElementById('screen-onboard').classList.remove('hidden');}catch(e){}});
+  }catch(err){
+    console.log('init threw',err);
+    try{document.getElementById('screen-loading').style.display='none';buildOnboard();document.getElementById('screen-onboard').classList.remove('hidden');}catch(e){}
+  }
+}
 if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded',init);
+  document.addEventListener('DOMContentLoaded',_safeInit);
 }else{
-  init();
+  _safeInit();
 }
 // Страховка: если init по какой-то причине не снял экран загрузки за 16с — снимаем принудительно
 setTimeout(()=>{
