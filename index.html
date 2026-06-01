@@ -554,9 +554,9 @@ function ICON(name,size=20){
     'cos-rocket':`<path d="M16 3 C21 7 23 13 23 18 L19 22 H13 L9 18 C9 13 11 7 16 3 Z" fill="#e8e8ef"/><circle cx="16" cy="13" r="2.5" fill="#2e86de"/><path d="M13 22 L11 28 L14 25 M19 22 L21 28 L18 25" fill="#e0392b"/>`,
     'cos-rainbow':`<path d="M4 24 a12 12 0 0 1 24 0 h-3 a9 9 0 0 0 -18 0 z" fill="#e0392b"/><path d="M7 24 a9 9 0 0 1 18 0 h-3 a6 6 0 0 0 -12 0 z" fill="#f5c518"/><path d="M10 24 a6 6 0 0 1 12 0 h-3 a3 3 0 0 0 -6 0 z" fill="#27ae60"/>`,
     // ── Гараж: ливреи ──
-    'liv-stripe':`<rect x="4" y="10" width="24" height="12" rx="2" fill="#3a4252"/><rect x="4" y="13" width="24" height="2.5" fill="#e0392b"/><rect x="4" y="17" width="24" height="2.5" fill="#f5c518"/>`,
-    'liv-carbon':`<rect x="4" y="8" width="24" height="16" rx="2" fill="#1c1c20"/><g fill="#3a3a42"><rect x="6" y="10" width="4" height="4"/><rect x="14" y="10" width="4" height="4"/><rect x="22" y="10" width="4" height="4"/><rect x="10" y="14" width="4" height="4"/><rect x="18" y="14" width="4" height="4"/><rect x="6" y="18" width="4" height="4"/><rect x="14" y="18" width="4" height="4"/><rect x="22" y="18" width="4" height="4"/></g>`,
-    'liv-gold':`<rect x="4" y="10" width="24" height="12" rx="2" fill="#f5c518"/><rect x="4" y="10" width="24" height="5" rx="2" fill="#ffe98a"/>`,
+    'liv-stripe':`<rect x="3" y="11" width="26" height="11" rx="3" fill="#3a4252"/><rect x="3" y="14" width="26" height="2" fill="#e8e8ef"/><rect x="3" y="18" width="26" height="2" fill="#e8e8ef"/><circle cx="9" cy="22" r="2.5" fill="#1c1c20"/><circle cx="23" cy="22" r="2.5" fill="#1c1c20"/>`,
+    'liv-carbon':`<rect x="3" y="11" width="26" height="11" rx="3" fill="#16161e"/><g stroke="#4a4a55" stroke-width="1"><line x1="5" y1="22" x2="11" y2="11"/><line x1="10" y1="22" x2="16" y2="11"/><line x1="15" y1="22" x2="21" y2="11"/><line x1="20" y1="22" x2="26" y2="11"/><line x1="25" y1="22" x2="29" y2="14"/></g><circle cx="9" cy="22" r="2.5" fill="#0a0a0e"/><circle cx="23" cy="22" r="2.5" fill="#0a0a0e"/>`,
+    'liv-gold':`<rect x="3" y="11" width="26" height="11" rx="3" fill="#3a4252"/><rect x="3" y="15" width="26" height="3.5" fill="#f5c518"/><rect x="3" y="15" width="26" height="1.4" fill="#ffe98a"/><circle cx="9" cy="22" r="2.5" fill="#1c1c20"/><circle cx="23" cy="22" r="2.5" fill="#1c1c20"/>`,
     // ── Бусты-расходники ──
     'boost-turbo':`<path d="M16 3 C21 7 23 13 23 18 L19 22 H13 L9 18 C9 13 11 7 16 3 Z" fill="#2e86de"/><circle cx="16" cy="13" r="2.5" fill="#fff"/><path d="M13 22 L11 28 L14 25 M19 22 L21 28 L18 25 M16 22 L16 29" fill="#e0392b" stroke="#e0392b" stroke-width="1"/>`,
     'boost-nitro':`<path d="M18 3 L8 17 H15 L13 29 L24 13 H16 Z" fill="#e0392b"/><path d="M18 3 L8 17 H15 z" fill="#f5a623" opacity="0.7"/>`,
@@ -2423,8 +2423,12 @@ function drawLivery(ctx,W,H,carType,cs){
   ][carType||0]||[126,332,26];
   const x1=cfg[0],x2=cfg[1],y=gnd2-cfg[2],h=4;
   if(S.livery==='stripe'){
-    ctx.fillStyle='rgba(255,255,255,0.92)';ctx.fillRect(x1,y,x2-x1,h);
-    ctx.fillStyle='rgba(0,0,0,0.18)';ctx.fillRect(x1,y+h,x2-x1,1.5);
+    // Две гоночные полосы вдоль корпуса (совпадает с иконкой и описанием)
+    ctx.fillStyle='rgba(245,245,250,0.95)';
+    ctx.fillRect(x1,y-2,x2-x1,1.6);
+    ctx.fillRect(x1,y+1.5,x2-x1,1.6);
+    ctx.fillStyle='rgba(0,0,0,0.15)';
+    ctx.fillRect(x1,y+3.1,x2-x1,0.8);
   } else if(S.livery==='carbon'){
     ctx.save();ctx.beginPath();ctx.rect(x1,y-1,x2-x1,h+2);ctx.clip();
     ctx.fillStyle='rgba(22,22,30,0.85)';ctx.fillRect(x1,y-1,x2-x1,h+2);
