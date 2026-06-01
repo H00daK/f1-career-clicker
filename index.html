@@ -511,6 +511,27 @@ const TOURNAMENTS_BY_LEVEL=[
 
 // Получаем турниры текущего уровня
 function getTournaments(){return TOURNAMENTS_BY_LEVEL[S.cl]||[];}
+// Динамическая экономика турнира: взнос и приз масштабируются от РЕАЛЬНОГО дохода игрока,
+// сохраняя баланс «риск/награда» (приз > взноса с учётом шанса). idx 0/1/2 = лёгкий/средний/сложный.
+function tournEconomy(t){
+  const list=getTournaments();
+  const idx=Math.max(0,list.findIndex(x=>x.id===t.id));
+  const cps=getCPS();
+  const clk=clickVal();
+  // доход в секунду «как ощущается»: пассив + вклад активных кликов (грубо)
+  const incPerSec=Math.max(cps, clk*0.5, 50);
+  // взнос = доход за N минут (лёгкий 1.5 / средний 4 / сложный 10)
+  const feeMin=[1.5,4,10][idx]||1.5;
+  let fee=Math.floor(incPerSec*60*feeMin);
+  // приз = взнос × множитель, тем выше, чем ниже базовый шанс (компенсация риска)
+  const wb=t.wb||0.6;
+  const mult=1.6+(1-wb)*2.2; // wb 0.74→~2.2x ; wb 0.41→~3.0x
+  let cr=Math.floor(fee*mult);
+  // нижний флор, чтобы на голом старте не было нуля
+  fee=Math.max(fee, t.fee||50);
+  cr=Math.max(cr, t.cr||100);
+  return {fee,cr};
+}
 // Совместимость — для winChance и enterTournament
 const TOURNAMENTS=TOURNAMENTS_BY_LEVEL.flat();
 
@@ -542,22 +563,29 @@ const SEASON_REWARD=[
 function seasonRivals(){return SEASON_RIVALS[S.cl]||SEASON_RIVALS[0];}
 
 const ACHIEVEMENTS=[
-  {id:'c1',  name:'Первый клик',  desc:'Нажми на машину',     emoji:'👆',r:100,    chk:s=>s.tc>=1},
-  {id:'c100',name:'100 кликов',   desc:'Не останавливайся',   emoji:'💪',r:500,    chk:s=>s.tc>=100},
-  {id:'u1',  name:'Механик',      desc:'Купи первый апгрейд', emoji:'🔧',r:300,    chk:s=>Object.values(s.ul).some(v=>v>0)},
-  {id:'w1',  name:'Первая победа',desc:'Выиграй турнир',       emoji:'🥇',r:1000,   chk:s=>s.tw>=1},
-  {id:'w10', name:'10 побед',     desc:'Настоящий гонщик',     emoji:'🏆',r:5000,   chk:s=>s.tw>=10},
-  {id:'f1',  name:'Формула 1!',   desc:'Достигни вершины',     emoji:'🏎️',r:100000, chk:s=>s.cl>=4},
-  {id:'10k', name:'Богач трассы', desc:'Накопи 10 000 монет',  emoji:'💰',r:2000,   chk:s=>s.tce>=10000},
-  {id:'all', name:'Полный болид', desc:'Все апгрейды куплены', emoji:'🌟',r:10000,  chk:s=>UPGRADES.every(u=>(s.ul[u.id]||0)>0)},
-  {id:'streak3',name:'Постоянство', desc:'Стрик входа 3 дня',     emoji:'📅',r:2000,  chk:s=>s.daily&&s.daily.streak>=3},
-  {id:'streak7',name:'Железная воля',desc:'Стрик входа 7 дней',    emoji:'🔥',r:8000,  chk:s=>s.daily&&s.daily.streak>=7},
-  {id:'shop1', name:'Тюнинг',       desc:'Купи предмет в гараже',  emoji:'🛍️',r:1500, chk:s=>s.shop&&s.shop.length>=1},
-  {id:'boost1',name:'Форсаж',       desc:'Активируй буст',         emoji:'🚀',r:1500, chk:s=>s.boosts&&Object.keys(s.boosts).length>=1},
-  {id:'champ1',name:'Чемпион',      desc:'Выиграй чемпионат сезона',emoji:'🏆',r:15000,chk:s=>(s.seasonTitles||0)>=1},
-  {id:'prestige1',name:'Легенда',    desc:'Начни новую карьеру',     emoji:'♻️',r:50000, chk:s=>(s.prestigeCount||0)>=1},
-  {id:'legacy10',name:'Наследие',    desc:'Накопи 10 Очков наследия', emoji:'⭐',r:200000,chk:s=>(s.legacyPoints||0)>=10},
+  {id:'c1',  name:'Первый клик',  desc:'Нажми на машину',     emoji:'👆',r:100,    w:0.2, chk:s=>s.tc>=1},
+  {id:'c100',name:'100 кликов',   desc:'Не останавливайся',   emoji:'💪',r:500,    w:1,   chk:s=>s.tc>=100},
+  {id:'u1',  name:'Механик',      desc:'Купи первый апгрейд', emoji:'🔧',r:300,    w:1,   chk:s=>Object.values(s.ul).some(v=>v>0)},
+  {id:'w1',  name:'Первая победа',desc:'Выиграй турнир',       emoji:'🥇',r:1000,   w:3,   chk:s=>s.tw>=1},
+  {id:'w10', name:'10 побед',     desc:'Настоящий гонщик',     emoji:'🏆',r:5000,   w:10,  chk:s=>s.tw>=10},
+  {id:'f1',  name:'Формула 1!',   desc:'Достигни вершины',     emoji:'🏎️',r:100000, w:20,  chk:s=>s.cl>=4},
+  {id:'10k', name:'Богач трассы', desc:'Накопи 10 000 монет',  emoji:'💰',r:2000,   w:3,   chk:s=>s.tce>=10000},
+  {id:'all', name:'Полный болид', desc:'Все апгрейды куплены', emoji:'🌟',r:10000,  w:15,  chk:s=>UPGRADES.every(u=>(s.ul[u.id]||0)>0)},
+  {id:'streak3',name:'Постоянство', desc:'Стрик входа 3 дня',     emoji:'📅',r:2000,  w:8,   chk:s=>s.daily&&s.daily.streak>=3},
+  {id:'streak7',name:'Железная воля',desc:'Стрик входа 7 дней',    emoji:'🔥',r:8000,  w:15,  chk:s=>s.daily&&s.daily.streak>=7},
+  {id:'shop1', name:'Тюнинг',       desc:'Купи предмет в гараже',  emoji:'🛍️',r:1500, w:3,   chk:s=>s.shop&&s.shop.length>=1},
+  {id:'boost1',name:'Форсаж',       desc:'Активируй буст',         emoji:'🚀',r:1500, w:3,   chk:s=>s.boosts&&Object.keys(s.boosts).length>=1},
+  {id:'champ1',name:'Чемпион',      desc:'Выиграй чемпионат сезона',emoji:'🏆',r:15000,w:18,  chk:s=>(s.seasonTitles||0)>=1},
+  {id:'prestige1',name:'Легенда',    desc:'Начни новую карьеру',     emoji:'♻️',r:50000, w:25,  chk:s=>(s.prestigeCount||0)>=1},
+  {id:'legacy10',name:'Наследие',    desc:'Накопи 10 Очков наследия', emoji:'⭐',r:200000,w:30,  chk:s=>(s.legacyPoints||0)>=10},
 ];
+// Динамическая награда достижения: доход за w минут, но не меньше фикс-минимума r.
+function achReward(a){
+  const cps=getCPS();
+  const clk=clickVal();
+  const incPerMin=Math.max(cps*60, clk*30, 1000);
+  return Math.max(Math.floor(incPerMin*(a.w||1)), a.r||0);
+}
 
 // ── ГАРАЖ: косметика и буст-предметы ─────────────────────────────────────────
 // type:'click' (+% к клику), 'cps' (+% к пассиву), 'cosmetic' (только вид)
@@ -1602,10 +1630,11 @@ function enterTournament(id){
   const t=getTournaments().find(x=>x.id===id);if(!t)return;
   const mode=TOURN_MODES[tournMode[id]||'std'];
   const w=weatherData();
-  const fee=Math.floor(t.fee*mode.fee);
+  const eco=tournEconomy(t);
+  const fee=Math.floor(eco.fee*mode.fee);
   if(S.coins<fee)return;
   S.coins-=fee;
-  let reward=Math.floor(t.cr*mode.reward*w.reward); // погода влияет на куш
+  let reward=Math.floor(eco.cr*mode.reward*w.reward); // погода влияет на куш
   if(T().id==='mclaren')reward=Math.floor(reward*1.1);
   const chance=Math.max(0.05,Math.min(0.95,winChance(t)+mode.chance+w.chance+rdAeroBonus())); // и на риск
   const won=Math.random()<chance;
@@ -1713,7 +1742,7 @@ function checkAch(){
   ACHIEVEMENTS.forEach(a=>{
     if(!S.ua.includes(a.id)&&a.chk(S)){
       S.ua.push(a.id);
-      const reward=a.r||0;
+      const reward=achReward(a);
       if(reward>0){S.coins+=reward;S.tce+=reward;}
       toast(`🎖️ ${a.name} · +${fmt(reward)}💰`);
       haptic('success');
@@ -3736,8 +3765,9 @@ function renderLists(){
   curTournaments.forEach(t2=>{
     const cm=tournMode[t2.id]||'std';
     const mode=TOURN_MODES[cm];
-    const fee=Math.floor(t2.fee*mode.fee);
-    const reward=Math.floor(t2.cr*mode.reward);
+    const eco=tournEconomy(t2);
+    const fee=Math.floor(eco.fee*mode.fee);
+    const reward=Math.floor(eco.cr*mode.reward);
     const chance=Math.round(Math.max(0.05,Math.min(0.95,winChance(t2)+mode.chance))*100);
     const can=S.coins>=fee;
     const won=S.tw_ids.includes(t2.id);
@@ -3761,7 +3791,7 @@ function renderLists(){
     const done=S.ua.includes(a.id);
     al.innerHTML+=`<div class="ach-item ${done?'':'locked'}">
       <div class="ach-icon">${a.emoji}</div>
-      <div style="flex:1"><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc} · 🎁 +${fmt(a.r||0)}💰</div></div>
+      <div style="flex:1"><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc} · 🎁 +${fmt(achReward(a))}💰</div></div>
       ${done?'<span style="font-size:13px;margin-left:auto">✅</span>':''}
     </div>`;
   });
