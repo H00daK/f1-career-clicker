@@ -763,6 +763,16 @@ async function fetchRetention(){
   try{const r=await sbFetch('/rest/v1/rpc/get_retention','POST',{});if(Array.isArray(r)&&r.length>0)return r[0];if(r&&typeof r==='object')return r;}catch(e){}
   return null;
 }
+// аналитика: общая экономика
+async function fetchEconomy(){
+  try{const r=await sbFetch('/rest/v1/rpc/get_economy_stats','POST',{});if(Array.isArray(r)&&r.length>0)return r[0];if(r&&typeof r==='object')return r;}catch(e){}
+  return null;
+}
+// аналитика: экономика по уровням + конверсия
+async function fetchLevelEconomy(){
+  try{const r=await sbFetch('/rest/v1/rpc/get_level_economy','POST',{});if(Array.isArray(r))return r;}catch(e){}
+  return [];
+}
 
 // Реферальный бонус: вызывается один раз для нового игрока, пришедшего по ссылке
 // Награда за реферала масштабируется: ~20 минут дохода на текущем уровне игрока,
@@ -2295,6 +2305,35 @@ async function renderAdmin(){
       <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px">Воронка по уровням</div>
       <div id="adm-funnel"><div style="font-size:12px;color:rgba(255,255,255,0.4)">Загрузка...</div></div>
 
+      <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px">Экономика</div>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <div style="flex:1;background:rgba(255,215,90,0.1);border-radius:10px;padding:9px;text-align:center">
+          <div style="font-size:15px;font-weight:700;color:#ffd75a" id="adm-eco-mass">—</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.5)">Монет в обороте</div>
+        </div>
+        <div style="flex:1;background:rgba(255,215,90,0.1);border-radius:10px;padding:9px;text-align:center">
+          <div style="font-size:15px;font-weight:700;color:#ffd75a" id="adm-eco-earned">—</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.5)">Всего заработано</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:14px;font-weight:700;color:#fff" id="adm-eco-med">—</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.5)">Медиана банка</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:14px;font-weight:700;color:#fff" id="adm-eco-avg">—</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.5)">Средний банк</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:10px;padding:8px;text-align:center">
+          <div style="font-size:14px;font-weight:700;color:#ff8a8a" id="adm-eco-top1">—</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.5)">У топ-1%</div>
+        </div>
+      </div>
+      <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-bottom:4px" id="adm-eco-extra"></div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.4);margin:6px 0 4px">Средний банк / заработок и конверсия по уровням:</div>
+      <div id="adm-eco-levels"><div style="font-size:12px;color:rgba(255,255,255,0.4)">Загрузка...</div></div>
+
       <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px">Сейчас онлайн</div>
       <div id="adm-recent"><div style="font-size:12px;color:rgba(255,255,255,0.4)">Загрузка...</div></div>
       <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:10px">Обновляется автоматически каждые 15 сек. Окно «онлайн» — активность за 2 мин.</div>
@@ -2392,6 +2431,40 @@ async function refreshAdminStats(){
             <div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden"><div style="height:100%;width:${w}%;background:rgba(120,160,255,0.6)"></div></div>
           </div>`;
         }).join('');
+      }
+    }
+  }catch(e){}
+  // ── экономика ──
+  try{
+    const eco=await fetchEconomy();
+    if(eco){
+      setT('adm-eco-mass',fmt(eco.total_coins||0));
+      setT('adm-eco-earned',fmt(eco.total_earned||0));
+      setT('adm-eco-med',fmt(eco.median_coins||0));
+      setT('adm-eco-avg',fmt(eco.avg_coins||0));
+      setT('adm-eco-top1',(eco.top1_share||0)+'%');
+      const ex=document.getElementById('adm-eco-extra');
+      if(ex)ex.textContent=`Ср. побед: ${eco.avg_wins||0} · ср. стрик: ${eco.avg_streak||0} · медиана заработка: ${fmt(eco.median_earned||0)}`;
+    }
+  }catch(e){}
+  try{
+    const lv=await fetchLevelEconomy();
+    const le=document.getElementById('adm-eco-levels');
+    if(le){
+      if(!lv||lv.length===0){le.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.4)">Нет данных.</div>';}
+      else{
+        const names=['Картинг','Ф4','Ф3','Ф2','Ф1'];
+        le.innerHTML=`<div style="display:flex;font-size:9px;color:rgba(255,255,255,0.4);padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+          <span style="flex:1.3">Уровень</span><span style="flex:1;text-align:right">Банк</span><span style="flex:1;text-align:right">Заработок</span><span style="flex:1;text-align:right">→ дальше</span></div>`+
+          lv.map(r=>{
+            const nm=names[r.career_level]||('Ур.'+r.career_level);
+            const conv=r.reached_next==null?'—':r.reached_next+'%';
+            return `<div style="display:flex;font-size:11px;color:rgba(255,255,255,0.75);padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+              <span style="flex:1.3">${nm} <span style="color:rgba(255,255,255,0.4)">(${r.players})</span></span>
+              <span style="flex:1;text-align:right">${fmt(r.avg_coins||0)}</span>
+              <span style="flex:1;text-align:right">${fmt(r.avg_earned||0)}</span>
+              <span style="flex:1;text-align:right;color:#7aa0ff">${conv}</span></div>`;
+          }).join('');
       }
     }
   }catch(e){}
