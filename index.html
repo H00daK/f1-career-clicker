@@ -669,6 +669,32 @@ const MAIN_ADMIN=ADMIN_IDS[0]; // главный админ — первый в 
 function isAdmin(){return S.userId&&ADMIN_IDS.includes(Number(S.userId));}
 function isMainAdmin(){return S.userId&&Number(S.userId)===Number(MAIN_ADMIN);}
 
+// ── A/B ТЕСТЫ ────────────────────────────────────────────────────────────────
+// Детерминированное деление по userId (один игрок — всегда одна группа).
+// Реестр тестов: split — доля группы B (0..1); values — параметры по группам.
+const AB_TESTS={
+  offline:{ split:0.5, A:{mult:1.0}, B:{mult:1.4} }, // множитель оффлайн-дохода
+};
+// стабильный хэш числа -> [0,1)
+function _abHash(id,salt){
+  let h=2166136261>>>0;
+  const s=String(id)+'|'+salt;
+  for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}
+  return (h>>>0)/4294967296;
+}
+// группа игрока в тесте: 'A' | 'B'
+function abGroup(test){
+  const t=AB_TESTS[test];if(!t)return 'A';
+  if(!S.userId)return 'A';
+  return _abHash(S.userId,test) < t.split ? 'B' : 'A';
+}
+// значение параметра для группы игрока
+function abValue(test,key){
+  const t=AB_TESTS[test];if(!t)return undefined;
+  const g=abGroup(test);
+  return (t[g]&&t[g][key]!==undefined)?t[g][key]:(t.A&&t.A[key]);
+}
+
 // форматирование времени в игре
 function fmtPlaytime(ms){
   const s=Math.floor((ms||0)/1000);
@@ -718,6 +744,7 @@ async function cloudSave(){
     best_streak:Math.max(S.bestStreak||0,(S.daily&&S.daily.streak)||0),
     race_best:Math.floor((S.raceBest||0)*10)/10,
     playtime:Math.floor(S.playtime||0),
+    ab_offline:abGroup('offline'),
     updated_at:new Date().toISOString()
   };
   await sbFetch('/rest/v1/players','POST',payload);
@@ -771,6 +798,11 @@ async function fetchEconomy(){
 // аналитика: экономика по уровням + конверсия
 async function fetchLevelEconomy(){
   try{const r=await sbFetch('/rest/v1/rpc/get_level_economy','POST',{});if(Array.isArray(r))return r;}catch(e){}
+  return [];
+}
+// аналитика: сравнение A/B теста оффлайн-дохода
+async function fetchAbOffline(){
+  try{const r=await sbFetch('/rest/v1/rpc/get_ab_offline','POST',{});if(Array.isArray(r))return r;}catch(e){}
   return [];
 }
 
@@ -1496,7 +1528,8 @@ function claimOffline(){
   const cps=getCPS();
   if(cps<=0)return; // нет пассивного дохода — нечего копить
   const capped=Math.min(elapsed,OFFLINE_CAP_SEC);
-  const earned=Math.floor(cps*OFFLINE_RATE*capped);
+  const abMult=abValue('offline','mult')||1;
+  const earned=Math.floor(cps*OFFLINE_RATE*capped*abMult);
   if(earned<1)return;
   S.coins+=earned;S.tce+=earned;
   const h=Math.floor(capped/3600),m=Math.floor((capped%3600)/60);
@@ -2334,6 +2367,9 @@ async function renderAdmin(){
       <div style="font-size:10px;color:rgba(255,255,255,0.4);margin:6px 0 4px">Средний банк / заработок и конверсия по уровням:</div>
       <div id="adm-eco-levels"><div style="font-size:12px;color:rgba(255,255,255,0.4)">Загрузка...</div></div>
 
+      <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px">A/B: оффлайн-доход <span style="color:rgba(255,255,255,0.3);text-transform:none;font-weight:400">(A ×1.0 · B ×1.4)</span></div>
+      <div id="adm-ab"><div style="font-size:12px;color:rgba(255,255,255,0.4)">Загрузка...</div></div>
+
       <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px">Сейчас онлайн</div>
       <div id="adm-recent"><div style="font-size:12px;color:rgba(255,255,255,0.4)">Загрузка...</div></div>
       <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:10px">Обновляется автоматически каждые 15 сек. Окно «онлайн» — активность за 2 мин.</div>
@@ -2465,6 +2501,36 @@ async function refreshAdminStats(){
               <span style="flex:1;text-align:right">${fmt(r.avg_earned||0)}</span>
               <span style="flex:1;text-align:right;color:#7aa0ff">${conv}</span></div>`;
           }).join('');
+      }
+    }
+  }catch(e){}
+  // ── A/B оффлайн-доход ──
+  try{
+    const ab=await fetchAbOffline();
+    const abEl=document.getElementById('adm-ab');
+    if(abEl){
+      if(!ab||ab.length===0){abEl.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.4)">Нет данных.</div>';}
+      else{
+        const byG={};ab.forEach(r=>{byG[r.grp]=r;});
+        const A=byG.A||{},B=byG.B||{};
+        const row=(label,a,b,better)=>{
+          const aBetter=better==='a',bBetter=better==='b';
+          return `<div style="display:flex;font-size:12px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+            <span style="flex:1.2;color:rgba(255,255,255,0.6)">${label}</span>
+            <span style="flex:1;text-align:right;color:${aBetter?'#5fd17a':'#fff'}">${a}</span>
+            <span style="flex:1;text-align:right;color:${bBetter?'#5fd17a':'#fff'}">${b}</span></div>`;
+        };
+        const earnedBetter=(B.avg_earned||0)>(A.avg_earned||0)?'b':'a';
+        const d1Better=(B.d1_pct||0)>(A.d1_pct||0)?'b':'a';
+        abEl.innerHTML=`
+          <div style="display:flex;font-size:10px;color:rgba(255,255,255,0.4);padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+            <span style="flex:1.2">Метрика</span><span style="flex:1;text-align:right">Группа A</span><span style="flex:1;text-align:right">Группа B</span></div>
+          ${row('Игроков',A.players||0,B.players||0,'')}
+          ${row('Ср. заработок',fmt(A.avg_earned||0),fmt(B.avg_earned||0),earnedBetter)}
+          ${row('Ср. банк',fmt(A.avg_coins||0),fmt(B.avg_coins||0),'')}
+          ${row('D1 ретеншн',(A.d1_pct||0)+'%',(B.d1_pct||0)+'%',d1Better)}
+          <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:5px">D1-когорты: A — ${A.d1_cohort||0}, B — ${B.d1_cohort||0}. Зелёным — лучшая группа. Нужна выборка, чтобы выводы были значимы.</div>
+        `;
       }
     }
   }catch(e){}
