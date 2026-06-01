@@ -1806,10 +1806,12 @@ function genQuest(poolItem){
     // экономические метрики (клики/монеты) — масштаб экономики уровня
     target=Math.ceil(poolItem.base*lvlMul);
   }
-  // Награда привязана к масштабу экономики уровня (lvlMul), одинаково ощутима для ВСЕХ типов квестов.
-  const base=12000*lvlMul; // базовый «бюджет» награды на уровень
-  const weight={tc:1.0, tce:1.1, tw:1.3, upg:1.2}[poolItem.metric]||1.0;
-  const coinR=Math.floor(base*weight)+500*(S.cl+1);
+  // Награда привязана к РЕАЛЬНОМУ доходу игрока (как ежедневный бонус), а не к фикс-лесенке уровня.
+  // База = доход за N секунд: max(пассив, флор от клика). Тяжёлые контракты (победы/апгрейды) ценнее.
+  const cps=getCPS();
+  const secByMetric={tc:240, tce:300, tw:480, upg:360}[poolItem.metric]||240; // сколько секунд дохода стоит контракт
+  const incomeBase=Math.max(cps*secByMetric, clickVal()*secByMetric*0.2, 200*(S.cl+1));
+  const coinR=Math.floor(incomeBase);
   const xpR=Math.floor(C().xp*0.04*(1+S.cl*0.2))+20;
   return {
     id:poolItem.id, emoji:poolItem.emoji, name:poolItem.name,
@@ -1843,6 +1845,12 @@ function refreshStuckQuests(){
       if(cand.length===0)cand=QUEST_POOL.filter(x=>x.metric==='tc'||x.metric==='tce');
       S.quests[i]=genQuest(cand[Math.floor(Math.random()*cand.length)]);
       changed=true;
+    }else if(!questProgress(q).done){
+      // Пересчитываем награду активного контракта под текущий доход (если она устарела/занижена).
+      const cps=getCPS();
+      const secByMetric={tc:240, tce:300, tw:480, upg:360}[q.metric]||240;
+      const fresh=Math.floor(Math.max(cps*secByMetric, clickVal()*secByMetric*0.2, 200*(S.cl+1)));
+      if(fresh>(q.coinR||0)){q.coinR=fresh;changed=true;}
     }
   });
   if(changed)save();
