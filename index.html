@@ -1165,8 +1165,29 @@ let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:n
 let selTeam='redbull';
 let selDriver=0;
 
+// Версия принудительного сброса. Увеличь это число, чтобы при следующем заходе
+// у ВСЕХ игроков локальный сейв обнулился (чистый старт). Используется перед релизом.
+const WIPE_VERSION=1;
 function load(){
-  try{const d=localStorage.getItem('f1_v6');if(d)S={...S,...JSON.parse(d)};}catch(e){}
+  try{
+    const d=localStorage.getItem('f1_v6');
+    if(d){
+      const parsed=JSON.parse(d);
+      // Принудительный сброс: если у игрока версия вайпа ниже текущей — стираем прогресс.
+      if((parsed.wipe||0)<WIPE_VERSION){
+        try{localStorage.removeItem('f1_v6');}catch(e){}
+        // userId сохраним, чтобы привязка к Telegram осталась, но прогресс — с нуля
+        const keepId=parsed.userId||S.userId;
+        S.wipe=WIPE_VERSION;
+        if(keepId)S.userId=keepId;
+      }else{
+        S={...S,...parsed};
+        S.wipe=WIPE_VERSION;
+      }
+    }else{
+      S.wipe=WIPE_VERSION;
+    }
+  }catch(e){}
   // защита от старых сейвов без новых полей
   if(!S.daily||typeof S.daily!=='object')S.daily={last:0,streak:0};
   if(!Array.isArray(S.quests))S.quests=[];
@@ -4460,4 +4481,3 @@ setTimeout(()=>{
 </script>
 </body>
 </html>
- 
