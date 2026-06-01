@@ -294,6 +294,7 @@ body.modal-open{overflow:hidden}
         <div style="display:flex;align-items:center;gap:6px">
           <div class="career-badge" id="cbadge">Картинг</div>
           <span id="weather-badge" onclick="showWeatherInfo()" style="font-size:10px;padding:2px 7px;border-radius:8px;background:rgba(255,255,255,0.08);cursor:pointer;white-space:nowrap"></span>
+          <span id="sync-badge" onclick="showSyncInfo()" style="font-size:11px;cursor:pointer;display:none"></span>
         </div>
         <div class="career-name" id="cname">—</div>
         <div class="career-sub" id="csub">—</div>
@@ -803,6 +804,8 @@ async function cloudLoad(userId){
   return false;
 }
 
+let _syncState='unknown'; // 'ok' | 'fail' | 'unknown'
+let _lastSyncOk=0;
 async function cloudSave(){
   if(!S.userId)return;
   const payload={
@@ -818,9 +821,48 @@ async function cloudSave(){
     division:(typeof S.division==='number'?S.division:0),
     updated_at:new Date().toISOString()
   };
-  await sbFetch('/rest/v1/players','POST',payload);
-  // если уже есть — обновляем
-  await sbFetch(`/rest/v1/players?id=eq.${S.userId}`,'PATCH',payload);
+  // PATCH существующей записи; если её нет — POST. Отслеживаем успех для индикатора синка.
+  let ok=false;
+  try{
+    const patched=await sbFetch(`/rest/v1/players?id=eq.${S.userId}`,'PATCH',payload);
+    if(Array.isArray(patched)&&patched.length>0){ok=true;}
+    else{
+      // записи ещё нет — создаём
+      const posted=await sbFetch('/rest/v1/players','POST',payload);
+      if(posted!==null)ok=true;
+    }
+  }catch(e){}
+  _syncState=ok?'ok':'fail';
+  if(ok)_lastSyncOk=Date.now();
+  try{updateSyncIndicator();}catch(e){}
+}
+// Индикатор синхронизации в шапке: показываем только при проблеме (☁️⚠️).
+function updateSyncIndicator(){
+  const el=document.getElementById('sync-badge');if(!el)return;
+  if(!S.userId){el.style.display='none';return;}
+  if(_syncState==='fail'){
+    el.textContent='☁️⚠️';
+    el.title='Прогресс не синхронизируется';
+    el.style.display='';
+  }else{
+    el.style.display='none'; // всё ок — не отвлекаем
+  }
+}
+function showSyncInfo(){
+  let when='ещё ни разу за эту сессию';
+  if(_lastSyncOk){
+    const sec=Math.floor((Date.now()-_lastSyncOk)/1000);
+    when=sec<60?(sec+' сек назад'):(Math.floor(sec/60)+' мин назад');
+  }
+  if(_syncState==='fail'){
+    showModal('☁️⚠️','Синхронизация не работает',
+      `Твой прогресс сейчас сохраняется только на этом устройстве и НЕ уходит в облако.\n\n`+
+      `Это значит, что на другом устройстве прогресс не подтянется, а при переустановке может потеряться.\n\n`+
+      `Последняя успешная синхронизация: ${when}.\n\n`+
+      `Причина обычно — нет соединения с сервером. Проверь интернет. Игра продолжит работать, прогресс сохранён локально и догонит облако, как только связь восстановится.`);
+  }else{
+    showModal('☁️✅','Синхронизация работает',`Прогресс сохраняется в облако и доступен на других устройствах.\n\nПоследняя синхронизация: ${when}.`);
+  }
 }
 
 // ── ОНЛАЙН-PRESENCE (для админ-статистики) ──────────────────────────────────
@@ -3982,19 +4024,31 @@ function getTgUserFromURL(){
   }catch(e){}
   return null;
 }
+// Надёжно сообщаем Telegram, что приложение готово (гасит системный спиннер загрузки).
+let _tgReadyDone=false;
+function tgReady(){
+  if(_tgReadyDone)return;
+  try{
+    if(typeof Telegram!=='undefined'&&Telegram.WebApp){
+      Telegram.WebApp.ready();
+      try{Telegram.WebApp.expand();}catch(e){}
+      _tgReadyDone=true;
+    }
+  }catch(e){}
+}
 // Динамическая загрузка Telegram WebApp скрипта с собственным таймаутом.
 // Не блокирует страницу: если не загрузится за timeoutMs — продолжаем без него (внутри Telegram данные есть в URL).
 function loadTelegramScript(timeoutMs=2500){
   return new Promise(resolve=>{
     // уже загружен?
-    if(typeof Telegram!=='undefined'&&Telegram.WebApp){resolve(true);return;}
+    if(typeof Telegram!=='undefined'&&Telegram.WebApp){tgReady();resolve(true);return;}
     let done=false;
-    const finish=(ok)=>{if(done)return;done=true;resolve(ok);};
+    const finish=(ok)=>{if(done)return;done=true;if(ok)tgReady();resolve(ok);};
     try{
       const s=document.createElement('script');
       s.src='https://telegram.org/js/telegram-web-app.js';
       s.async=true;
-      s.onload=()=>finish(true);
+      s.onload=()=>{tgReady();finish(true);};
       s.onerror=()=>{window.__tgFailed=true;finish(false);};
       document.head.appendChild(s);
     }catch(e){finish(false);}
@@ -4012,7 +4066,7 @@ async function init(){
   try{
     let gotUser=null,gotStart=null;
     if(typeof Telegram!=='undefined'&&Telegram.WebApp){
-      try{Telegram.WebApp.ready();Telegram.WebApp.expand();}catch(e){}
+      try{tgReady();}catch(e){}
       const idu=Telegram.WebApp.initDataUnsafe||{};
       if(idu.user&&idu.user.id)gotUser=idu.user;
       if(idu.start_param)gotStart=idu.start_param;
