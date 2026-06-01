@@ -7,10 +7,8 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>F1 Career Clicker</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
-// Глобальный перехват ошибок: вместо белого экрана показываем, что упало.
-// Помогает диагностировать сбои на конкретных устройствах (iOS Safari и т.п.).
+// РАННИЙ перехват ошибок — ДО загрузки внешних скриптов, чтобы поймать и их сбои.
 (function(){
   function showErr(msg){
     try{
@@ -18,35 +16,38 @@
       if(!box){
         box=document.createElement('div');
         box.id='fatal-err';
-        box.style.cssText='position:fixed;inset:0;z-index:9999;background:#140a0a;color:#ffb4b4;font:12px/1.5 monospace;padding:18px;overflow:auto;white-space:pre-wrap;-webkit-user-select:text;user-select:text';
-        var add=function(){document.body?document.body.appendChild(box):setTimeout(add,50);};
+        box.style.cssText='position:fixed;inset:0;z-index:99999;background:#140a0a;color:#ffb4b4;font:12px/1.5 monospace;padding:18px;overflow:auto;white-space:pre-wrap;-webkit-user-select:text;user-select:text';
+        var add=function(){if(document.body){document.body.appendChild(box);}else{document.addEventListener('DOMContentLoaded',function(){document.body&&document.body.appendChild(box);});}};
         add();
       }
       box.textContent='⚠️ Ошибка запуска игры\n\n'+msg+'\n\nСделай скриншот и отправь разработчику.';
     }catch(_){}
   }
+  window.__showErr=showErr;
   window.addEventListener('error',function(e){
     var m=(e&&e.message)||'unknown';
-    var src=(e&&e.filename)?(' @ '+e.filename.split('/').pop()+':'+e.lineno+':'+e.colno):'';
+    var src=(e&&e.filename)?(' @ '+String(e.filename).split('/').pop()+':'+e.lineno+':'+e.colno):'';
     showErr(m+src);
   });
   window.addEventListener('unhandledrejection',function(e){
     var r=e&&e.reason;showErr('Promise: '+((r&&r.message)||r||'unknown'));
   });
-  // Независимая страховка: снять экран загрузки через 18с, даже если основной скрипт не выполнился.
+  // Страховка: если за 18с не загрузилось — сообщаем (даже при сбое основного скрипта)
   setTimeout(function(){
     try{
       var l=document.getElementById('screen-loading');
       if(l&&l.style.display!=='none'){
         var g=document.getElementById('screen-game'),o=document.getElementById('screen-onboard');
-        // если игра так и не показалась и нет панели ошибки — сообщаем
         if((!g||g.classList.contains('hidden'))&&(!o||o.classList.contains('hidden'))&&!document.getElementById('fatal-err')){
-          showErr('Игра не загрузилась за 18 секунд. Возможна проблема с сетью или скриптом. Перезапусти приложение.');
+          showErr('Игра не загрузилась за 18 секунд (сеть или скрипт). Закрой и открой приложение заново.');
         }
       }
     }catch(_){}
   },18000);
 })();
+</script>
+<!-- Telegram WebApp API: НЕблокирующий. Если не загрузится — игра стартует без него (есть URL-фолбэк). -->
+<script src="https://telegram.org/js/telegram-web-app.js" onerror="window.__tgFailed=true;console.log('telegram script failed to load')"></script>
 </script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
