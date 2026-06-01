@@ -338,6 +338,7 @@ body.modal-open{overflow:hidden}
       <div class="tab" onclick="switchTab('tournaments')">🏎️ Турниры</div>
       <div class="tab" onclick="switchTab('season')">🏆 Сезон</div>
       <div class="tab" onclick="switchTab('race')">🏁 Заезд</div>
+      <div class="tab" onclick="switchTab('league')">🏅 Лига</div>
     </div>
     <div class="tabs subrow hidden" id="sub-career">
       <div class="tab" onclick="switchTab('contracts')">📋 Контр.<span class="tab-dot" id="contracts-dot"></span></div>
@@ -370,6 +371,7 @@ body.modal-open{overflow:hidden}
     <div class="panel hidden" id="panel-rd"><div class="panel-title">🏗️ Развитие команды</div><div id="rd-body"></div></div>
     <div class="panel hidden" id="panel-club"><div class="panel-title">👥 Клуб</div><div id="club-body"></div></div>
     <div class="panel hidden" id="panel-admin"><div class="panel-title" style="color:#ffb43c">🛡️ Админ · онлайн-статистика</div><div id="admin-body"></div></div>
+    <div class="panel hidden" id="panel-league"><div class="panel-title">🏅 Лига</div><div id="league-body"></div></div>
 
     <div class="disclaimer">Fan game · Not affiliated with Formula One Group</div>
   </div>
@@ -728,6 +730,7 @@ async function cloudLoad(userId){
     if(typeof p.best_streak==='number'&&S.daily)S.daily.streak=Math.max(S.daily.streak||0,0);
     if(p.best_streak)S.bestStreak=p.best_streak;
     if(typeof p.club_id==='number')S.clubId=p.club_id; else if(p.club_id===null)S.clubId=null;
+    if(typeof p.division==='number')S.division=p.division;
     return true;
   }
   return false;
@@ -745,6 +748,7 @@ async function cloudSave(){
     race_best:Math.floor((S.raceBest||0)*10)/10,
     playtime:Math.floor(S.playtime||0),
     ab_offline:abGroup('offline'),
+    division:(typeof S.division==='number'?S.division:0),
     updated_at:new Date().toISOString()
   };
   await sbFetch('/rest/v1/players','POST',payload);
@@ -806,6 +810,51 @@ async function fetchAbOffline(){
   return [];
 }
 
+// ── ЛИГИ ────────────────────────────────────────────────────────────────────
+const DIVISIONS=[
+  {emoji:'🥉',name:'Бронза', color:'#cd7f32'},
+  {emoji:'🥈',name:'Серебро',color:'#c0c0c0'},
+  {emoji:'🥇',name:'Золото', color:'#ffd700'},
+  {emoji:'💎',name:'Платина',color:'#5fd1ff'},
+  {emoji:'👑',name:'Алмаз',  color:'#b48cff'},
+];
+async function fetchLeagueBoard(){
+  if(!S.userId)return [];
+  try{const r=await sbFetch('/rest/v1/rpc/get_league_board','POST',{p_user_id:Number(S.userId)});if(Array.isArray(r))return r;}catch(e){}
+  return [];
+}
+// проверка и выдача накопленной награды лиги (вызывается при заходе)
+async function claimLeagueReward(){
+  if(!S.userId)return;
+  try{
+    const r=await sbFetch('/rest/v1/rpc/claim_league_reward','POST',{p_user_id:Number(S.userId)});
+    const row=Array.isArray(r)?r[0]:r;
+    if(!row)return;
+    const reward=Number(row.reward||0);
+    const txt=row.result_text;
+    if(reward>0||txt){
+      // применяем награду локально (на сервере уже начислена)
+      if(reward>0){S.coins+=reward;S.tce+=reward;}
+      showLeagueResult(txt,reward);
+      // обновим division из текста результата (move)
+      await cloudLoad(S.userId);
+      save();render();
+    }
+  }catch(e){}
+}
+function showLeagueResult(txt,reward){
+  // txt формата: div=2;rank=5;total=30;move=up
+  let div=0,rank=0,move='stay';
+  if(txt){txt.split(';').forEach(kv=>{const[k,v]=kv.split('=');if(k==='div')div=+v;if(k==='rank')rank=v;if(k==='move')move=v;});}
+  const d=DIVISIONS[div]||DIVISIONS[0];
+  let moveTxt='';
+  if(move==='up'){const nd=DIVISIONS[Math.min(4,div+1)];moveTxt=`\n\n⬆️ Повышение в ${nd.emoji} ${nd.name}!`;}
+  else if(move==='down'){const nd=DIVISIONS[Math.max(0,div-1)];moveTxt=`\n\n⬇️ Вылет в ${nd.emoji} ${nd.name}.`;}
+  else moveTxt=`\n\nТы остаёшься в дивизионе.`;
+  const rewTxt=reward>0?`Награда: +${fmt(reward)} монет.`:'Без награды на этой неделе.';
+  showModal('🏆','Итоги недели',`${d.emoji} ${d.name}, твоё место: ${rank}.\n${rewTxt}${moveTxt}`);
+}
+
 // Реферальный бонус: вызывается один раз для нового игрока, пришедшего по ссылке
 // Награда за реферала масштабируется: ~20 минут дохода на текущем уровне игрока,
 // с минимумом, растущим по карьерному уровню (чтобы на старте было осмысленно, а в late-game не обесценивалось).
@@ -863,7 +912,7 @@ let S={coins:0,xp:0,cl:0,tc:0,tw:0,tce:0,ul:{},ua:[],pn:'',tid:'redbull',offer:n
   daily:{last:0,streak:0},quests:[],shop:[],equipped:null,lastSeen:0,boosts:{},
   referredBy:null,refCount:0,bestStreak:0,refClaimed:false,season:null,seasonTitles:0,
   sound:true,vibro:true,legacyPoints:0,prestigeCount:0,tutDone:false,did:0,baseClick:0,baseCps:0,
-  playtime:0,trophies:[],raceBest:0,livery:null,weather:null,weatherUntil:0,
+  playtime:0,trophies:[],raceBest:0,livery:null,weather:null,weatherUntil:0,division:0,
   rd:{engine:0,aero:0,reliability:0},clubId:null,clubName:null};
 let selTeam='redbull';
 let selDriver=0;
@@ -2234,9 +2283,9 @@ function drawF1(ctx,W,H,c1,c2,num,dr,drv){
 }
 
 // ── UI ───────────────────────────────────────────────────────────────────────
-const ALL_TABS=['upgrades','tournaments','season','contracts','garage','achievements','leaderboard','race','rd','club','admin'];
+const ALL_TABS=['upgrades','tournaments','season','contracts','garage','achievements','leaderboard','race','rd','club','admin','league'];
 // раздел -> категория (для аккордеона навигации)
-const CAT_MAP={upgrades:'car',garage:'car',rd:'car',tournaments:'race',season:'race',race:'race',contracts:'career',achievements:'career',leaderboard:'social',club:'social'};
+const CAT_MAP={upgrades:'car',garage:'car',rd:'car',tournaments:'race',season:'race',race:'race',league:'race',contracts:'career',achievements:'career',leaderboard:'social',club:'social'};
 const CATS_LIST=['car','race','career','social'];
 let _openCat='car'; // какая категория сейчас раскрыта (по умолчанию — Болид)
 
@@ -2278,6 +2327,7 @@ function switchTab(name){
   if(name==='rd')renderRD();
   if(name==='club')renderClub();
   if(name==='admin')renderAdmin();
+  if(name==='league')renderLeague();
 }
 
 // ── АДМИН-РАЗДЕЛ: онлайн-статистика ─────────────────────────────────────────
@@ -2536,6 +2586,42 @@ async function refreshAdminStats(){
   }catch(e){}
 }
 
+
+// ── РАЗДЕЛ ЛИГА ─────────────────────────────────────────────────────────────
+async function renderLeague(){
+  const el=document.getElementById('league-body');if(!el)return;
+  const div=DIVISIONS[S.division||0]||DIVISIONS[0];
+  el.innerHTML=`
+    <div style="background:${div.color}1f;border:1px solid ${div.color}55;border-radius:12px;padding:12px;margin-bottom:10px;text-align:center">
+      <div style="font-size:30px;line-height:1">${div.emoji}</div>
+      <div style="font-size:16px;font-weight:700;color:${div.color};margin-top:2px">${div.name}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px">Соревнование по приросту монет за неделю</div>
+    </div>
+    <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:8px">Топ-20% дивизиона повышаются, низ-20% вылетают. Сброс — в понедельник.</div>
+    <div id="league-board"><div style="font-size:12px;color:rgba(255,255,255,0.4)">Загрузка таблицы...</div></div>
+  `;
+  const board=await fetchLeagueBoard();
+  const bEl=document.getElementById('league-board');
+  if(!bEl)return;
+  if(!board||board.length===0){
+    bEl.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,0.45)">Пока нет данных по дивизиону. Начни зарабатывать — и попадёшь в таблицу!</div>';
+    return;
+  }
+  const total=board.length;
+  const promoCut=Math.max(1,Math.floor(total*0.20));
+  bEl.innerHTML=board.map(r=>{
+    const me=r.is_me;
+    const zone = r.rank<=promoCut ? 'up' : (r.rank>(total-promoCut)&&(S.division||0)>0 ? 'down' : 'stay');
+    const bar = zone==='up'?'#5fd17a':(zone==='down'?'#ff6b6b':'transparent');
+    const medal = r.rank===1?'🥇':r.rank===2?'🥈':r.rank===3?'🥉':r.rank;
+    const nm=(r.name||'Гонщик').replace(/[<>&]/g,'');
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;margin-bottom:3px;background:${me?'rgba(255,255,255,0.1)':'rgba(255,255,255,0.03)'};border-left:3px solid ${bar}">
+      <span style="width:22px;text-align:center;font-size:12px;font-weight:700;color:${me?'#fff':'rgba(255,255,255,0.7)'}">${medal}</span>
+      <span style="flex:1;font-size:12px;color:${me?'#fff':'rgba(255,255,255,0.8)'};font-weight:${me?'700':'400'}">${nm}${me?' (ты)':''}</span>
+      <span style="font-size:12px;color:#ffd75a;font-weight:600">+${fmt(r.gain||0)}</span>
+    </div>`;
+  }).join('');
+}
 
 const RACE_DURATION=30; // секунд
 let _raceState=null;    // {clicks,timeLeft,running}
@@ -3785,6 +3871,7 @@ async function init(){
       document.getElementById('screen-game').classList.remove('hidden');
       hideLoading();
       try{claimOffline();}catch(e){}
+      setTimeout(()=>{try{claimLeagueReward();}catch(e){}},800);
       if(_pendingReferrer)setTimeout(()=>{try{tryClaimReferral();}catch(e){}},1000);
       if(S.offer){try{renderOfferBanner();}catch(e){}}
       render();
