@@ -47,8 +47,8 @@
   },18000);
 })();
 </script>
-<!-- Telegram WebApp API: НЕблокирующий. Если не загрузится — игра стартует без него (есть URL-фолбэк). -->
-<script src="https://telegram.org/js/telegram-web-app.js" onerror="window.__tgFailed=true;console.log('telegram script failed to load')"></script>
+<!-- Telegram WebApp API: ASYNC — не блокирует загрузку страницы. Игра ждёт его коротко через waitForTelegram, иначе берёт данные из URL. -->
+<script async src="https://telegram.org/js/telegram-web-app.js" onerror="window.__tgFailed=true;console.log('telegram script failed to load')"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{min-height:100vh;min-height:100dvh}
