@@ -175,6 +175,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 @keyframes smokeOut{0%{opacity:0.4;transform:translate(0,0) scale(0.45)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.5)}}
 .exhaust-spark{position:fixed;width:3px;height:3px;border-radius:50%;pointer-events:none;z-index:401;box-shadow:0 0 4px currentColor;animation:sparkOut .5s ease-out forwards}
 @keyframes sparkOut{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0.2)}}
+.seal-egg{position:fixed;left:50%;bottom:-120px;transform:translateX(-50%);z-index:600;pointer-events:none;animation:sealSwim 3.4s ease-in-out forwards}
+@keyframes sealSwim{0%{bottom:-120px;opacity:0}18%{opacity:1}25%{bottom:90px}50%{bottom:70px;transform:translateX(-50%) rotate(-4deg)}60%{transform:translateX(-50%) rotate(4deg)}75%{bottom:90px;opacity:1}100%{bottom:-120px;opacity:0}}
+.seal-bubble{position:fixed;left:50%;transform:translateX(-50%);z-index:601;pointer-events:none;background:rgba(20,28,44,0.92);color:#cfe8ff;font-size:12px;padding:6px 12px;border-radius:12px;border:1px solid rgba(120,180,255,0.3);animation:sealBub 3.4s ease-in-out forwards;white-space:nowrap}
+@keyframes sealBub{0%,15%{opacity:0}25%,75%{opacity:1}100%{opacity:0}}
 
 .disclaimer{font-size:9px;color:rgba(255,255,255,0.2);text-align:center;padding:4px 8px}
 
@@ -417,7 +421,7 @@ body.modal-open{overflow:hidden}
     <div class="panel hidden" id="panel-admin"><div class="panel-title" style="color:#ffb43c">🛡️ Админ · онлайн-статистика</div><div id="admin-body"></div></div>
     <div class="panel hidden" id="panel-league"><div class="panel-title">🏅 Лига</div><div id="league-body"></div></div>
 
-    <div class="disclaimer">Fan game · Not affiliated with Formula One Group</div>
+    <div class="disclaimer" onclick="sealTap()" style="cursor:default;user-select:none;-webkit-user-select:none">Fan game · Not affiliated with Formula One Group</div>
   </div>
 </div>
 
@@ -3217,6 +3221,55 @@ function showModal(em,ti,tx){
   document.getElementById('modal').classList.add('show');document.body.classList.add('modal-open');
 }
 function closeModal(){document.getElementById('modal').classList.remove('show');document.body.classList.remove('modal-open');}
+
+// ── ПАСХАЛКА: морской котик (тапни футер 7 раз) ──────────────────────────────
+let _sealTaps=0,_sealTapTs=0;
+function sealSVG(){
+  return `<svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="48" cy="60" rx="26" ry="20" fill="#6b7785"/>
+    <ellipse cx="48" cy="58" rx="20" ry="15" fill="#8a96a4"/>
+    <path d="M30 70 Q22 84 16 80 Q24 74 26 66 Z" fill="#5b6775"/>
+    <path d="M66 70 Q74 84 80 80 Q72 74 70 66 Z" fill="#5b6775"/>
+    <ellipse cx="48" cy="36" rx="15" ry="14" fill="#8a96a4"/>
+    <ellipse cx="48" cy="42" rx="9" ry="7" fill="#aab4c0"/>
+    <circle cx="42" cy="34" r="3" fill="#1a1a22"/>
+    <circle cx="54" cy="34" r="3" fill="#1a1a22"/>
+    <circle cx="43" cy="33" r="1" fill="#fff"/>
+    <circle cx="55" cy="33" r="1" fill="#fff"/>
+    <ellipse cx="48" cy="41" rx="2.5" ry="2" fill="#1a1a22"/>
+    <g stroke="#5b6775" stroke-width="0.8"><line x1="40" y1="42" x2="30" y2="40"/><line x1="40" y1="44" x2="31" y2="45"/><line x1="56" y1="42" x2="66" y2="40"/><line x1="56" y1="44" x2="65" y2="45"/></g>
+    <path d="M38 78 Q48 86 58 78" fill="#5b6775"/>
+  </svg>`;
+}
+function sealTap(){
+  const now=Date.now();
+  if(now-_sealTapTs>1500)_sealTaps=0; // сбрасываем, если тапали слишком медленно
+  _sealTapTs=now;_sealTaps++;
+  if(_sealTaps<7)return;
+  _sealTaps=0;
+  showSeal();
+}
+function showSeal(){
+  // визуал — котик выплывает
+  try{
+    const s=document.createElement('div');s.className='seal-egg';s.innerHTML=sealSVG();
+    document.body.appendChild(s);
+    const b=document.createElement('div');b.className='seal-bubble';b.style.bottom='185px';
+    const firstTime=!S.sealFound;
+    b.textContent=firstTime?'🦭 Орк-орк! Ты нашёл морского котика!':'🦭 Орк-орк!';
+    document.body.appendChild(b);
+    setTimeout(()=>{try{s.remove();b.remove();}catch(e){}},3500);
+  }catch(e){}
+  haptic('success');playSound('coin');
+  // бонус — только при ПЕРВОЙ находке, чтобы не фармили
+  if(!S.sealFound){
+    S.sealFound=true;
+    const bonus=Math.max(5000, Math.floor(getCPS()*120)); // ~2 минуты дохода, флор 5к
+    S.coins+=bonus;S.tce+=bonus;
+    setTimeout(()=>{toast(`🦭 +${fmt(bonus)} монет за находку!`);},700);
+    save();render();
+  }
+}
 
 // ── ПРОФИЛЬ ───────────────────────────────────────────────────────────────────
 const BOT_USERNAME='F1CareerBot';
