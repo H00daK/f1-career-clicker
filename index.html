@@ -1004,6 +1004,10 @@ function upgradeProgress(){
   const cur=UPGRADES.reduce((s,u)=>s+(S.ul[u.id]||0),0);
   return cur/total;
 }
+// Сколько уровней апгрейдов ещё можно купить (запас прокачки). 0 = всё на максимуме.
+function upgradeHeadroom(){
+  return UPGRADES.reduce((s,u)=>s+Math.max(0,u.ml-(S.ul[u.id]||0)),0);
+}
 
 // Турниры доступные на текущем уровне карьеры
 function availableTournaments(){
@@ -1711,14 +1715,31 @@ function questMetricValue(metric){
   if(metric==='upg')return UPGRADES.reduce((s,u)=>s+(S.ul[u.id]||0),0);
   return 0;
 }
+// Применим ли тип контракта к текущему прогрессу (чтобы не выдавать невыполнимое).
+function isQuestApplicable(poolItem){
+  if(poolItem.metric==='upg'){
+    // апгрейд-контракт имеет смысл только если есть куда качать
+    return upgradeHeadroom()>0;
+  }
+  return true;
+}
 function genQuest(poolItem){
-  // масштаб цели и награды от уровня карьеры
   const lvlMul=Math.pow(3,S.cl); // картинг x1 ... ф1 x81
-  const target=Math.ceil(poolItem.base*(poolItem.metric==='tw'||poolItem.metric==='upg'?(1+S.cl):lvlMul));
+  let target;
+  if(poolItem.metric==='upg'){
+    // цель = разумная порция от ОСТАВШЕГОСЯ запаса прокачки, не больше него
+    const head=upgradeHeadroom();
+    const want=poolItem.base*(1+S.cl); // базовое желание масштабируется с уровнем
+    target=Math.max(1, Math.min(want, Math.ceil(head*0.4))); // максимум 40% остатка
+  }else if(poolItem.metric==='tw'){
+    target=Math.ceil(poolItem.base*(1+S.cl));
+  }else{
+    // экономические метрики (клики/монеты) — масштаб экономики уровня
+    target=Math.ceil(poolItem.base*lvlMul);
+  }
   // Награда привязана к масштабу экономики уровня (lvlMul), одинаково ощутима для ВСЕХ типов квестов.
-  // Базовая награда уровня — доля, сравнимая с ценой апгрейдов; редкие квесты (победы/апгрейды) ценим выше за единицу.
   const base=12000*lvlMul; // базовый «бюджет» награды на уровень
-  const weight={tc:1.0, tce:1.1, tw:1.3, upg:1.2}[poolItem.metric]||1.0; // победы/апгрейды — труднее, платим больше
+  const weight={tc:1.0, tce:1.1, tw:1.3, upg:1.2}[poolItem.metric]||1.0;
   const coinR=Math.floor(base*weight)+500*(S.cl+1);
   const xpR=Math.floor(C().xp*0.04*(1+S.cl*0.2))+20;
   return {
@@ -1729,9 +1750,33 @@ function genQuest(poolItem){
   };
 }
 function initQuests(){
-  // 3 случайных контракта из пула
-  const pool=[...QUEST_POOL].sort(()=>Math.random()-0.5).slice(0,3);
+  // 3 случайных ПРИМЕНИМЫХ контракта из пула
+  const applicable=QUEST_POOL.filter(isQuestApplicable);
+  const pool=[...applicable].sort(()=>Math.random()-0.5).slice(0,3);
+  // если применимых меньше 3 — добиваем экономическими (всегда выполнимы)
+  while(pool.length<3){
+    const econ=QUEST_POOL.filter(p=>p.metric==='tc'||p.metric==='tce');
+    pool.push(econ[Math.floor(Math.random()*econ.length)]);
+  }
   S.quests=pool.map(genQuest);
+}
+// Разовая чистка: заменяем «застрявшие» контракты — невыполнимые при текущем прогрессе
+// (например, апгрейд-контракт, когда качать уже некуда), которые ещё не выполнены.
+function refreshStuckQuests(){
+  if(!Array.isArray(S.quests))return;
+  let changed=false;
+  S.quests.forEach((q,i)=>{
+    if(!q||q.claimed)return;
+    const stuck = q.metric==='upg' && upgradeHeadroom()<=0 && !questProgress(q).done;
+    if(stuck){
+      const used=S.quests.map(x=>x.id);
+      let cand=QUEST_POOL.filter(x=>!used.includes(x.id)&&isQuestApplicable(x));
+      if(cand.length===0)cand=QUEST_POOL.filter(x=>x.metric==='tc'||x.metric==='tce');
+      S.quests[i]=genQuest(cand[Math.floor(Math.random()*cand.length)]);
+      changed=true;
+    }
+  });
+  if(changed)save();
 }
 function questProgress(q){
   const cur=questMetricValue(q.metric)-q.start;
@@ -1761,10 +1806,12 @@ function claimQuest(id){
   const p=questProgress(q);if(!p.done||q.claimed)return;
   S.coins+=q.coinR;S.tce+=q.coinR;addXP(q.xpR);
   toast(`📋 Контракт выполнен: +${fmt(q.coinR)}💰 +${q.xpR} XP`);
-  // заменяем выполненный контракт новым из пула
+  // заменяем выполненный контракт новым: применимым и не дублирующим активные
   const used=S.quests.map(x=>x.id);
-  const fresh=QUEST_POOL.filter(x=>!used.includes(x.id));
-  const pick=fresh.length>0?fresh[Math.floor(Math.random()*fresh.length)]:QUEST_POOL[Math.floor(Math.random()*QUEST_POOL.length)];
+  let candidates=QUEST_POOL.filter(x=>!used.includes(x.id)&&isQuestApplicable(x));
+  if(candidates.length===0)candidates=QUEST_POOL.filter(x=>isQuestApplicable(x)&&x.id!==q.id);
+  if(candidates.length===0)candidates=QUEST_POOL.filter(x=>x.metric==='tc'||x.metric==='tce'); // фолбэк
+  const pick=candidates[Math.floor(Math.random()*candidates.length)];
   const idx=S.quests.findIndex(x=>x.id===id);
   S.quests[idx]=genQuest(pick);
   checkAch();save();render();
@@ -3933,6 +3980,7 @@ async function init(){
 
   // Загружаем локально сначала (быстро) — это никогда не должно падать
   try{load();}catch(e){}
+  try{refreshStuckQuests();}catch(e){}
   const hadLocalSave=!!S.pn; // был ли прогресс на этом устройстве
 
   // Грузим из облака. Если локального сейва НЕТ (новое устройство) — ждём облако дольше,
@@ -3943,6 +3991,7 @@ async function init(){
       const timeout=new Promise(res=>setTimeout(()=>res('timeout'),ms));
       await Promise.race([cloudLoad(S.userId).catch(()=>'error'),timeout]);
     }catch(e){}
+    try{refreshStuckQuests();}catch(e){}
   }
 
   // Скрываем экран загрузки и показываем нужный экран — только теперь, без мелькания регистрации
