@@ -120,6 +120,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tab{flex:1;padding:8px 4px;font-size:11px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);cursor:pointer;color:rgba(255,255,255,0.5);text-align:center;transition:all .15s}
 .tab.active{background:rgba(255,255,255,0.14);color:#fff;border-color:rgba(255,255,255,0.2)}
 .tab{position:relative}
+.nav-ic{display:inline-flex;vertical-align:middle;line-height:0}
+.nav-ic svg{vertical-align:middle}
 .tab-dot{position:absolute;top:5px;right:7px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#ff3b30;color:#fff;font-size:9px;font-weight:800;display:none;align-items:center;justify-content:center;box-shadow:0 0 0 2px #0e0e1a;line-height:1}
 .tab-dot.show{display:flex;animation:dotPop .25s ease}
 @keyframes dotPop{0%{transform:scale(0)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
@@ -366,32 +368,32 @@ body.modal-open{overflow:hidden}
     </div>
 
     <div class="tabs cat-row">
-      <div class="tab cat-btn active" data-cat="car" onclick="toggleCat('car')">🏎️ Болид</div>
-      <div class="tab cat-btn" data-cat="race" onclick="toggleCat('race')">🏆 Гонки</div>
-      <div class="tab cat-btn" data-cat="career" onclick="toggleCat('career')">📋 Карьера<span class="tab-dot" id="cat-career-dot"></span></div>
-      <div class="tab cat-btn" data-cat="social" onclick="toggleCat('social')">🌐 Сообщество</div>
+      <div class="tab cat-btn active" data-cat="car" onclick="toggleCat('car')"><span class="nav-ic" data-ic="cat-car"></span> Болид</div>
+      <div class="tab cat-btn" data-cat="race" onclick="toggleCat('race')"><span class="nav-ic" data-ic="cat-race"></span> Гонки</div>
+      <div class="tab cat-btn" data-cat="career" onclick="toggleCat('career')"><span class="nav-ic" data-ic="cat-career"></span> Карьера<span class="tab-dot" id="cat-career-dot"></span></div>
+      <div class="tab cat-btn" data-cat="social" onclick="toggleCat('social')"><span class="nav-ic" data-ic="cat-social"></span> Сообщество</div>
     </div>
     <div class="tabs subrow" id="sub-car">
-      <div class="tab active" onclick="switchTab('upgrades')">⚙️ Апгрейды</div>
-      <div class="tab" onclick="switchTab('garage')">🔧 Гараж</div>
-      <div class="tab" onclick="switchTab('rd')">🏗️ Команда</div>
+      <div class="tab active" onclick="switchTab('upgrades')"><span class="nav-ic" data-ic="tab-upg"></span> Апгрейды</div>
+      <div class="tab" onclick="switchTab('garage')"><span class="nav-ic" data-ic="tab-garage"></span> Гараж</div>
+      <div class="tab" onclick="switchTab('rd')"><span class="nav-ic" data-ic="tab-team"></span> Команда</div>
     </div>
     <div class="tabs subrow hidden" id="sub-race">
-      <div class="tab" onclick="switchTab('tournaments')">🏎️ Турниры</div>
-      <div class="tab" onclick="switchTab('season')">🏆 Сезон</div>
-      <div class="tab" onclick="switchTab('race')">🏁 Заезд</div>
-      <div class="tab" onclick="switchTab('league')">🏅 Лига</div>
+      <div class="tab" onclick="switchTab('tournaments')"><span class="nav-ic" data-ic="tab-tourn"></span> Турниры</div>
+      <div class="tab" onclick="switchTab('season')"><span class="nav-ic" data-ic="tab-season"></span> Сезон</div>
+      <div class="tab" onclick="switchTab('race')"><span class="nav-ic" data-ic="tab-flag"></span> Заезд</div>
+      <div class="tab" onclick="switchTab('league')"><span class="nav-ic" data-ic="tab-league"></span> Лига</div>
     </div>
     <div class="tabs subrow hidden" id="sub-career">
-      <div class="tab" onclick="switchTab('contracts')">📋 Контр.<span class="tab-dot" id="contracts-dot"></span></div>
-      <div class="tab" onclick="switchTab('achievements')">🎖️ Достижения</div>
+      <div class="tab" onclick="switchTab('contracts')"><span class="nav-ic" data-ic="tab-contracts"></span> Контр.<span class="tab-dot" id="contracts-dot"></span></div>
+      <div class="tab" onclick="switchTab('achievements')"><span class="nav-ic" data-ic="tab-ach"></span> Достижения</div>
     </div>
     <div class="tabs subrow hidden" id="sub-social">
-      <div class="tab" onclick="switchTab('leaderboard')">📊 Топ</div>
-      <div class="tab" onclick="switchTab('club')">👥 Клуб</div>
+      <div class="tab" onclick="switchTab('leaderboard')"><span class="nav-ic" data-ic="tab-top"></span> Топ</div>
+      <div class="tab" onclick="switchTab('club')"><span class="nav-ic" data-ic="tab-club"></span> Клуб</div>
     </div>
     <div class="tabs row2" id="admin-tab-row" style="display:none">
-      <div class="tab" onclick="switchTab('admin')" style="border-color:rgba(255,180,60,0.5)">🛡️ Админ</div>
+      <div class="tab" onclick="switchTab('admin')" style="border-color:rgba(255,180,60,0.5)"><span class="nav-ic" data-ic="tab-admin"></span> Админ</div>
     </div>
 
     <div class="panel" id="panel-upgrades"><div class="panel-title">Запчасти</div><div id="upg-list"></div></div>
@@ -499,6 +501,87 @@ function upgradeIcon(id){
   return wrap(icons[id]||`<circle cx="16" cy="16" r="10" fill="#888"/>`);
 }
 
+// ── ЦЕНТРАЛЬНЫЙ РЕЕСТР SVG-ИКОНОК ────────────────────────────────────────────
+// ICON('name', size) -> строка <svg>. Цветные узнаваемые иконки для всех разделов.
+function ICON(name,size=20){
+  const w=(inner,vb=32)=>`<svg viewBox="0 0 ${vb} ${vb}" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle">${inner}</svg>`;
+  const I={
+    // ── Навигация: категории ──
+    'cat-car':`<path d="M3 19 L7 19 L10 14 L22 14 L25 19 L29 19 L29 22 L3 22 Z" fill="#e23b2c"/><rect x="11" y="10" width="10" height="5" rx="1.5" fill="#2e86de"/><circle cx="9" cy="22" r="3.5" fill="#1c1c20"/><circle cx="23" cy="22" r="3.5" fill="#1c1c20"/><circle cx="9" cy="22" r="1.5" fill="#aaa"/><circle cx="23" cy="22" r="1.5" fill="#aaa"/>`,
+    'cat-race':`<path d="M9 27 L9 5 L25 5 L21 11 L25 17 L9 17" fill="#e0392b" stroke="#fff" stroke-width="0.5"/><rect x="7" y="5" width="2.5" height="22" rx="1" fill="#888"/>`,
+    'cat-career':`<rect x="6" y="8" width="20" height="20" rx="2" fill="#f5f0e6"/><rect x="6" y="8" width="20" height="5" rx="2" fill="#2e86de"/><rect x="10" y="5" width="12" height="6" rx="1.5" fill="#c9a84c"/><line x1="10" y1="18" x2="22" y2="18" stroke="#9aa0ab" stroke-width="1.6"/><line x1="10" y1="22" x2="22" y2="22" stroke="#9aa0ab" stroke-width="1.6"/>`,
+    'cat-social':`<circle cx="16" cy="16" r="12" fill="none" stroke="#2e86de" stroke-width="2.4"/><ellipse cx="16" cy="16" rx="5" ry="12" fill="none" stroke="#2e86de" stroke-width="1.6"/><line x1="4" y1="16" x2="28" y2="16" stroke="#2e86de" stroke-width="1.6"/><line x1="6" y1="10" x2="26" y2="10" stroke="#2e86de" stroke-width="1.2"/><line x1="6" y1="22" x2="26" y2="22" stroke="#2e86de" stroke-width="1.2"/>`,
+    // ── Подразделы ──
+    'tab-upg':`<g fill="#9b50bd"><rect x="14" y="3" width="4" height="26" rx="1.5"/><rect x="14" y="3" width="4" height="26" rx="1.5" transform="rotate(45 16 16)"/><rect x="14" y="3" width="4" height="26" rx="1.5" transform="rotate(90 16 16)"/><rect x="14" y="3" width="4" height="26" rx="1.5" transform="rotate(135 16 16)"/></g><circle cx="16" cy="16" r="8" fill="#8e44ad"/><circle cx="16" cy="16" r="3" fill="#3a1c4a"/>`,
+    'tab-garage':`<rect x="4" y="13" width="24" height="14" rx="2" fill="#d23b2c"/><rect x="8" y="6" width="6" height="7" rx="1" fill="#a82c20"/><rect x="18" y="6" width="6" height="7" rx="1" fill="#a82c20"/><circle cx="11" cy="6" r="2" fill="#c9ccd2"/><circle cx="21" cy="6" r="2" fill="#c9ccd2"/>`,
+    'tab-team':`<circle cx="11" cy="11" r="4" fill="#f5a623"/><circle cx="21" cy="11" r="4" fill="#2e86de"/><path d="M4 25 A7 7 0 0 1 18 25 Z" fill="#f5a623"/><path d="M14 25 A7 7 0 0 1 28 25 Z" fill="#2e86de"/>`,
+    'tab-tourn':`<path d="M9 27 L9 5 L25 5 L21 11 L25 17 L9 17" fill="#e0392b"/><rect x="7" y="5" width="2.5" height="22" rx="1" fill="#888"/>`,
+    'tab-season':`<path d="M11 4 H21 V14 A5 5 0 0 1 11 14 Z" fill="#f5c518"/><path d="M11 5 H6 V8 A4 4 0 0 0 11 11 M21 5 H26 V8 A4 4 0 0 1 21 11" fill="none" stroke="#c9a84c" stroke-width="1.6"/><rect x="14" y="18" width="4" height="5" fill="#c9a84c"/><rect x="9" y="23" width="14" height="4" rx="1" fill="#c9a84c"/>`,
+    'tab-flag':`<path d="M8 27 L8 5 L26 5 L26 18 L8 18" fill="none" stroke="#888" stroke-width="0"/><rect x="6" y="4" width="2.5" height="24" rx="1" fill="#888"/><g><rect x="9" y="5" width="4" height="4" fill="#000"/><rect x="17" y="5" width="4" height="4" fill="#000"/><rect x="13" y="9" width="4" height="4" fill="#000"/><rect x="21" y="9" width="4" height="4" fill="#000"/><rect x="9" y="13" width="4" height="4" fill="#000"/><rect x="17" y="13" width="4" height="4" fill="#000"/><rect x="9" y="5" width="18" height="12" fill="none" stroke="#bbb" stroke-width="0.5"/></g>`,
+    'tab-league':`<circle cx="16" cy="13" r="9" fill="#f5c518"/><circle cx="16" cy="13" r="9" fill="none" stroke="#c9a84c" stroke-width="1.5"/><path d="M16 8 L17.6 11.5 L21 11.8 L18.3 14 L19.2 17.5 L16 15.5 L12.8 17.5 L13.7 14 L11 11.8 L14.4 11.5 Z" fill="#fff" opacity="0.85"/><path d="M11 21 L9 28 L13 26 L16 28 L19 26 L23 28 L21 21 Z" fill="#e0392b"/>`,
+    'tab-contracts':`<rect x="7" y="4" width="18" height="24" rx="2" fill="#f5f0e6"/><line x1="11" y1="10" x2="21" y2="10" stroke="#888" stroke-width="1.6"/><line x1="11" y1="15" x2="21" y2="15" stroke="#888" stroke-width="1.6"/><line x1="11" y1="20" x2="17" y2="20" stroke="#888" stroke-width="1.6"/><circle cx="22" cy="23" r="5" fill="#27ae60"/><path d="M19.5 23 L21.3 25 L24.5 21" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+    'tab-ach':`<circle cx="16" cy="13" r="8" fill="#f5c518"/><circle cx="16" cy="13" r="8" fill="none" stroke="#c9a84c" stroke-width="1.5"/><circle cx="16" cy="13" r="4" fill="#ffe98a"/><path d="M11 19 L8 28 L13 25.5 L16 28 L19 25.5 L24 28 L21 19 Z" fill="#e0392b"/>`,
+    'tab-top':`<rect x="5" y="16" width="6" height="12" rx="1" fill="#cd7f32"/><rect x="13" y="9" width="6" height="19" rx="1" fill="#f5c518"/><rect x="21" y="13" width="6" height="15" rx="1" fill="#c0c0c0"/>`,
+    'tab-club':`<circle cx="11" cy="12" r="4.5" fill="#2e86de"/><circle cx="21" cy="12" r="4.5" fill="#27ae60"/><path d="M3 26 A8 8 0 0 1 19 26 Z" fill="#2e86de"/><path d="M13 26 A8 8 0 0 1 29 26 Z" fill="#27ae60"/>`,
+    'tab-admin':`<path d="M16 3 L27 7 V15 C27 22 22 27 16 29 C10 27 5 22 5 15 V7 Z" fill="#f5a623"/><path d="M16 3 L27 7 V15 C27 22 22 27 16 29 Z" fill="#c87f0a" opacity="0.4"/><path d="M11 15 L15 19 L22 11" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+    // ── Достижения ──
+    'ach-click':`<path d="M13 16 V7 a2 2 0 0 1 4 0 V15 l3 1 a3 3 0 0 1 2 3 v5 a3 3 0 0 1 -3 3 h-6 a3 3 0 0 1 -3 -3 l-2 -5 a2 2 0 0 1 3 -2 z" fill="#f5c518"/>`,
+    'ach-muscle':`<path d="M6 14 q6 -8 14 -6 l4 1 q4 1 3 6 l-1 6 q-1 5 -7 5 h-8 q-4 0 -4 -4 z" fill="#e8a87c"/><ellipse cx="14" cy="13" rx="5" ry="4" fill="#d4926a"/>`,
+    'ach-wrench':`<path d="M22 6 a5 5 0 0 0 -6 6 L7 21 a2.5 2.5 0 0 0 4 4 l9 -9 a5 5 0 0 0 6 -6 l-3 3 l-3 -1 l-1 -3 z" fill="#9aa0ab"/>`,
+    'ach-medal1':`<circle cx="16" cy="18" r="9" fill="#f5c518"/><circle cx="16" cy="18" r="5.5" fill="#ffe98a"/><rect x="11" y="3" width="4" height="9" fill="#2e86de"/><rect x="17" y="3" width="4" height="9" fill="#e0392b"/><text x="16" y="22" font-size="9" font-weight="700" fill="#c87f0a" text-anchor="middle" font-family="sans-serif">1</text>`,
+    'ach-trophy':`<path d="M11 4 H21 V14 A5 5 0 0 1 11 14 Z" fill="#f5c518"/><path d="M11 5 H6 V8 A4 4 0 0 0 11 11 M21 5 H26 V8 A4 4 0 0 1 21 11" fill="none" stroke="#c9a84c" stroke-width="1.8"/><rect x="14" y="18" width="4" height="5" fill="#c9a84c"/><rect x="9" y="23" width="14" height="4" rx="1" fill="#c9a84c"/>`,
+    'ach-car':`<path d="M3 19 L7 19 L10 14 L22 14 L25 19 L29 19 L29 22 L3 22 Z" fill="#e23b2c"/><rect x="11" y="10" width="10" height="5" rx="1.5" fill="#2e86de"/><circle cx="9" cy="22" r="3.5" fill="#1c1c20"/><circle cx="23" cy="22" r="3.5" fill="#1c1c20"/>`,
+    'ach-money':`<circle cx="16" cy="16" r="12" fill="#f5c518"/><circle cx="16" cy="16" r="12" fill="none" stroke="#c9a84c" stroke-width="1.5"/><text x="16" y="22" font-size="15" font-weight="700" fill="#c87f0a" text-anchor="middle" font-family="sans-serif">$</text>`,
+    'ach-star':`<path d="M16 3 L20 12 L30 13 L22 20 L25 30 L16 24 L7 30 L10 20 L2 13 L12 12 Z" fill="#f5c518"/>`,
+    'ach-calendar':`<rect x="5" y="7" width="22" height="21" rx="2" fill="#f5f0e6"/><rect x="5" y="7" width="22" height="6" rx="2" fill="#e0392b"/><rect x="9" y="4" width="3" height="6" rx="1" fill="#888"/><rect x="20" y="4" width="3" height="6" rx="1" fill="#888"/><circle cx="11" cy="18" r="1.8" fill="#888"/><circle cx="16" cy="18" r="1.8" fill="#888"/><circle cx="21" cy="18" r="1.8" fill="#27ae60"/><circle cx="11" cy="23" r="1.8" fill="#888"/><circle cx="16" cy="23" r="1.8" fill="#888"/>`,
+    'ach-fire':`<path d="M16 3 C18 9 23 11 23 18 a7 7 0 0 1 -14 0 C9 14 12 13 13 9 c2 2 1 5 3 5 c2 0 1 -6 0 -11 z" fill="#e0392b"/><path d="M16 14 C18 17 19 18 19 21 a3 3 0 0 1 -6 0 c0 -3 2 -3 3 -7 z" fill="#f5a623"/>`,
+    'ach-bag':`<path d="M9 11 V9 a5 5 0 0 1 10 0 v2 h4 l1 16 a2 2 0 0 1 -2 2 H6 a2 2 0 0 1 -2 -2 l1 -16 z" fill="#9b50bd"/><path d="M12 11 V9 a4 4 0 0 1 8 0 v2" fill="none" stroke="#5e2d75" stroke-width="1.8"/>`,
+    'ach-rocket':`<path d="M16 3 C21 7 23 13 23 18 L19 22 H13 L9 18 C9 13 11 7 16 3 Z" fill="#e8e8ef"/><circle cx="16" cy="13" r="2.5" fill="#2e86de"/><path d="M13 22 L11 28 L14 25 M19 22 L21 28 L18 25" fill="#e0392b"/><path d="M9 18 L5 20 L9 20 M23 18 L27 20 L23 20" fill="#c0392b"/>`,
+    'ach-recycle':`<path d="M16 5 L20 12 L17 12 L17 18 L13 18 L13 12 L11 12 Z" fill="#27ae60" transform="rotate(0 16 16)"/><path d="M16 5 L20 12 L17 12 L17 18 L13 18 L13 12 L11 12 Z" fill="#2ecc71" transform="rotate(120 16 16)"/><path d="M16 5 L20 12 L17 12 L17 18 L13 18 L13 12 L11 12 Z" fill="#27ae60" transform="rotate(240 16 16)"/>`,
+    'ach-legacy':`<path d="M16 3 L20 12 L30 13 L22 20 L25 30 L16 24 L7 30 L10 20 L2 13 L12 12 Z" fill="#f5c518"/><path d="M16 9 L18 14 L23 14.5 L19 18 L20.5 23 L16 20 L11.5 23 L13 18 L9 14.5 L14 14 Z" fill="#fff" opacity="0.5"/>`,
+    // ── Гараж: бусты-предметы ──
+    'item-helmet':`<path d="M5 19 a11 11 0 0 1 22 0 z" fill="#27ae60"/><path d="M9 19 a7 7 0 0 1 14 0 z" fill="#1a1a22"/><rect x="4" y="19" width="24" height="4" rx="2" fill="#1c8a4c"/>`,
+    'item-chip':`<rect x="9" y="9" width="14" height="14" rx="2" fill="#2e86de"/><rect x="12" y="12" width="8" height="8" rx="1" fill="#1b5a9e"/><g stroke="#888" stroke-width="1.5"><line x1="9" y1="13" x2="5" y2="13"/><line x1="9" y1="19" x2="5" y2="19"/><line x1="23" y1="13" x2="27" y2="13"/><line x1="23" y1="19" x2="27" y2="19"/><line x1="13" y1="9" x2="13" y2="5"/><line x1="19" y1="9" x2="19" y2="5"/><line x1="13" y1="23" x2="13" y2="27"/><line x1="19" y1="23" x2="19" y2="27"/></g>`,
+    'item-gloves':`<path d="M10 14 V8 a2 2 0 0 1 4 0 v5 l1 0 V7 a2 2 0 0 1 4 0 v6 l1 0 V9 a2 2 0 0 1 4 0 v10 a6 6 0 0 1 -6 6 h-3 a5 5 0 0 1 -5 -4 l-2 -4 a2 2 0 0 1 3 -2 z" fill="#f5c518"/>`,
+    'item-robot':`<rect x="8" y="10" width="16" height="14" rx="3" fill="#9aa0ab"/><circle cx="13" cy="16" r="2.2" fill="#2e86de"/><circle cx="19" cy="16" r="2.2" fill="#2e86de"/><rect x="13" y="20" width="6" height="2" rx="1" fill="#5b6270"/><line x1="16" y1="10" x2="16" y2="6" stroke="#888" stroke-width="1.5"/><circle cx="16" cy="5" r="1.8" fill="#e0392b"/>`,
+    // ── Гараж: косметика ──
+    'cos-flames':`<path d="M16 4 C19 10 24 12 24 19 a8 8 0 0 1 -16 0 C8 14 11 13 12 9 c2 2 1 6 3 6 c2 0 2 -7 1 -11 z" fill="#e0392b"/><path d="M16 15 C18 18 19 19 19 22 a3 3 0 0 1 -6 0 c0 -3 2 -3 3 -7 z" fill="#f5a623"/>`,
+    'cos-star':`<path d="M16 3 L20 12 L30 13 L22 20 L25 30 L16 24 L7 30 L10 20 L2 13 L12 12 Z" fill="#f5c518"/>`,
+    'cos-crown':`<path d="M5 24 L7 11 L13 17 L16 8 L19 17 L25 11 L27 24 Z" fill="#f5c518"/><rect x="5" y="24" width="22" height="4" rx="1" fill="#c9a84c"/><circle cx="7" cy="11" r="2" fill="#e0392b"/><circle cx="16" cy="8" r="2" fill="#e0392b"/><circle cx="25" cy="11" r="2" fill="#e0392b"/>`,
+    'cos-diamond':`<path d="M8 6 H24 L29 13 L16 28 L3 13 Z" fill="#5fd1ff"/><path d="M8 6 L11 13 L16 28 L3 13 Z" fill="#8ee0ff"/><path d="M24 6 L21 13 L16 28 L29 13 Z" fill="#3bb8ec"/><path d="M3 13 H29 M11 13 L16 6 L21 13" stroke="#fff" stroke-width="0.6" fill="none" opacity="0.6"/>`,
+    'cos-lightning':`<path d="M18 3 L8 17 H15 L13 29 L24 13 H16 Z" fill="#f5c518"/>`,
+    'cos-skull':`<path d="M16 4 a11 11 0 0 1 11 11 v4 a4 4 0 0 1 -3 4 l-1 4 h-14 l-1 -4 a4 4 0 0 1 -3 -4 v-4 a11 11 0 0 1 11 -11 z" fill="#e8e8ef"/><circle cx="11" cy="16" r="3" fill="#1a1a22"/><circle cx="21" cy="16" r="3" fill="#1a1a22"/><path d="M16 20 l-2 4 h4 z" fill="#1a1a22"/>`,
+    'cos-rocket':`<path d="M16 3 C21 7 23 13 23 18 L19 22 H13 L9 18 C9 13 11 7 16 3 Z" fill="#e8e8ef"/><circle cx="16" cy="13" r="2.5" fill="#2e86de"/><path d="M13 22 L11 28 L14 25 M19 22 L21 28 L18 25" fill="#e0392b"/>`,
+    'cos-rainbow':`<path d="M4 24 a12 12 0 0 1 24 0 h-3 a9 9 0 0 0 -18 0 z" fill="#e0392b"/><path d="M7 24 a9 9 0 0 1 18 0 h-3 a6 6 0 0 0 -12 0 z" fill="#f5c518"/><path d="M10 24 a6 6 0 0 1 12 0 h-3 a3 3 0 0 0 -6 0 z" fill="#27ae60"/>`,
+    // ── Гараж: ливреи ──
+    'liv-stripe':`<rect x="4" y="10" width="24" height="12" rx="2" fill="#3a4252"/><rect x="4" y="13" width="24" height="2.5" fill="#e0392b"/><rect x="4" y="17" width="24" height="2.5" fill="#f5c518"/>`,
+    'liv-carbon':`<rect x="4" y="8" width="24" height="16" rx="2" fill="#1c1c20"/><g fill="#3a3a42"><rect x="6" y="10" width="4" height="4"/><rect x="14" y="10" width="4" height="4"/><rect x="22" y="10" width="4" height="4"/><rect x="10" y="14" width="4" height="4"/><rect x="18" y="14" width="4" height="4"/><rect x="6" y="18" width="4" height="4"/><rect x="14" y="18" width="4" height="4"/><rect x="22" y="18" width="4" height="4"/></g>`,
+    'liv-gold':`<rect x="4" y="10" width="24" height="12" rx="2" fill="#f5c518"/><rect x="4" y="10" width="24" height="5" rx="2" fill="#ffe98a"/>`,
+    // ── Бусты-расходники ──
+    'boost-turbo':`<path d="M16 3 C21 7 23 13 23 18 L19 22 H13 L9 18 C9 13 11 7 16 3 Z" fill="#2e86de"/><circle cx="16" cy="13" r="2.5" fill="#fff"/><path d="M13 22 L11 28 L14 25 M19 22 L21 28 L18 25 M16 22 L16 29" fill="#e0392b" stroke="#e0392b" stroke-width="1"/>`,
+    'boost-nitro':`<path d="M18 3 L8 17 H15 L13 29 L24 13 H16 Z" fill="#e0392b"/><path d="M18 3 L8 17 H15 z" fill="#f5a623" opacity="0.7"/>`,
+    'boost-drs':`<rect x="5" y="8" width="22" height="16" rx="2" fill="#2e86de"/><rect x="5" y="8" width="22" height="8" rx="2" fill="#5aa6ed"/><line x1="5" y1="16" x2="27" y2="16" stroke="#fff" stroke-width="1.5"/><path d="M13 13 L19 13 L16 10 Z" fill="#fff"/>`,
+    'boost-overdrive':`<path d="M18 3 L8 17 H15 L13 29 L24 13 H16 Z" fill="#f5c518"/>`,
+    'boost-luck':`<path d="M16 26 C16 26 6 19 6 12 a5 5 0 0 1 10 -1 a5 5 0 0 1 10 1 c0 7 -10 14 -10 14 z" fill="#27ae60"/><path d="M12 11 a4 4 0 0 1 4 0" stroke="#7fe3a8" stroke-width="1.4" fill="none"/>`,
+    // ── Лига: дивизионы ──
+    'div-bronze':`<circle cx="16" cy="16" r="12" fill="#cd7f32"/><circle cx="16" cy="16" r="8" fill="#e0975a"/><text x="16" y="21" font-size="11" font-weight="700" fill="#8a5320" text-anchor="middle" font-family="sans-serif">3</text>`,
+    'div-silver':`<circle cx="16" cy="16" r="12" fill="#c0c0c0"/><circle cx="16" cy="16" r="8" fill="#dcdcdc"/><text x="16" y="21" font-size="11" font-weight="700" fill="#888" text-anchor="middle" font-family="sans-serif">2</text>`,
+    'div-gold':`<circle cx="16" cy="16" r="12" fill="#f5c518"/><circle cx="16" cy="16" r="8" fill="#ffe98a"/><text x="16" y="21" font-size="11" font-weight="700" fill="#c87f0a" text-anchor="middle" font-family="sans-serif">1</text>`,
+    'div-platinum':`<path d="M8 6 H24 L29 13 L16 28 L3 13 Z" fill="#5fd1ff"/><path d="M8 6 L11 13 L16 28 L3 13 Z" fill="#8ee0ff"/><path d="M24 6 L21 13 L16 28 L29 13 Z" fill="#3bb8ec"/>`,
+    'div-diamond':`<path d="M5 24 L7 11 L13 17 L16 8 L19 17 L25 11 L27 24 Z" fill="#b48cff"/><rect x="5" y="24" width="22" height="4" rx="1" fill="#8a5fd0"/><circle cx="16" cy="8" r="2" fill="#fff"/>`,
+    // ── Погода ──
+    'wx-clear':`<circle cx="16" cy="16" r="7" fill="#f5c518"/><g stroke="#f5c518" stroke-width="2.2" stroke-linecap="round"><line x1="16" y1="3" x2="16" y2="7"/><line x1="16" y1="25" x2="16" y2="29"/><line x1="3" y1="16" x2="7" y2="16"/><line x1="25" y1="16" x2="29" y2="16"/><line x1="7" y1="7" x2="9.5" y2="9.5"/><line x1="22.5" y1="22.5" x2="25" y2="25"/><line x1="25" y1="7" x2="22.5" y2="9.5"/><line x1="9.5" y1="22.5" x2="7" y2="25"/></g>`,
+    'wx-rain':`<path d="M9 16 a6 6 0 0 1 1 -12 a7 7 0 0 1 13 3 a5 5 0 0 1 -1 9 z" fill="#9aa0ab"/><g stroke="#2e86de" stroke-width="2" stroke-linecap="round"><line x1="11" y1="22" x2="9" y2="27"/><line x1="17" y1="22" x2="15" y2="27"/><line x1="23" y1="22" x2="21" y2="27"/></g>`,
+    'wx-fog':`<path d="M9 14 a6 6 0 0 1 1 -11 a7 7 0 0 1 13 3 a5 5 0 0 1 -1 9 z" fill="#b8bcc4"/><g stroke="#9aa0ab" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="21" x2="26" y2="21"/><line x1="9" y1="25" x2="23" y2="25"/></g>`,
+    'wx-wind':`<g stroke="#7fb8e8" stroke-width="2.4" stroke-linecap="round" fill="none"><path d="M4 11 H19 a3 3 0 1 0 -3 -3"/><path d="M4 17 H24 a3 3 0 1 1 -3 3"/><path d="M4 23 H15 a2.5 2.5 0 1 0 -2.5 -2.5"/></g>`,
+    // ── R&D (команда) ──
+    'rd-engine':`<rect x="4" y="13" width="24" height="14" rx="2" fill="#d23b2c"/><rect x="8" y="6" width="6" height="7" rx="1" fill="#a82c20"/><rect x="18" y="6" width="6" height="7" rx="1" fill="#a82c20"/>`,
+    'rd-aero':`<path d="M4 9 L28 9 L28 12 L4 13 Z" fill="#2e86de"/><rect x="4" y="17" width="24" height="3.5" rx="1.5" fill="#2670c0"/><rect x="7" y="9" width="3.5" height="14" rx="1" fill="#1b5a9e"/><rect x="21.5" y="9" width="3.5" height="14" rx="1" fill="#1b5a9e"/>`,
+    'rd-shield':`<path d="M16 3 L27 7 V15 C27 22 22 27 16 29 C10 27 5 22 5 15 V7 Z" fill="#27ae60"/><path d="M16 3 L27 7 V15 C27 22 22 27 16 29 Z" fill="#1c8a4c" opacity="0.5"/>`,
+  };
+  return w(I[name]||`<circle cx="16" cy="16" r="9" fill="#888"/>`);
+}
+
 // Турниры по уровням карьеры — у каждого уровня свой набор с уникальными названиями
 const TOURNAMENTS_BY_LEVEL=[
   // 0 — Картинг
@@ -587,21 +670,21 @@ const SEASON_REWARD=[
 function seasonRivals(){return SEASON_RIVALS[S.cl]||SEASON_RIVALS[0];}
 
 const ACHIEVEMENTS=[
-  {id:'c1',  name:'Первый клик',  desc:'Нажми на машину',     emoji:'👆',r:100,    w:0.2, chk:s=>s.tc>=1},
-  {id:'c100',name:'100 кликов',   desc:'Не останавливайся',   emoji:'💪',r:500,    w:1,   chk:s=>s.tc>=100},
-  {id:'u1',  name:'Механик',      desc:'Купи первый апгрейд', emoji:'🔧',r:300,    w:1,   chk:s=>Object.values(s.ul).some(v=>v>0)},
-  {id:'w1',  name:'Первая победа',desc:'Выиграй турнир',       emoji:'🥇',r:1000,   w:3,   chk:s=>s.tw>=1},
-  {id:'w10', name:'10 побед',     desc:'Настоящий гонщик',     emoji:'🏆',r:5000,   w:10,  chk:s=>s.tw>=10},
-  {id:'f1',  name:'Формула 1!',   desc:'Достигни вершины',     emoji:'🏎️',r:100000, w:20,  chk:s=>s.cl>=4},
-  {id:'10k', name:'Богач трассы', desc:'Накопи 10 000 монет',  emoji:'💰',r:2000,   w:3,   chk:s=>s.tce>=10000},
-  {id:'all', name:'Полный болид', desc:'Все апгрейды куплены', emoji:'🌟',r:10000,  w:15,  chk:s=>UPGRADES.every(u=>(s.ul[u.id]||0)>0)},
-  {id:'streak3',name:'Постоянство', desc:'Стрик входа 3 дня',     emoji:'📅',r:2000,  w:8,   chk:s=>s.daily&&s.daily.streak>=3},
-  {id:'streak7',name:'Железная воля',desc:'Стрик входа 7 дней',    emoji:'🔥',r:8000,  w:15,  chk:s=>s.daily&&s.daily.streak>=7},
-  {id:'shop1', name:'Тюнинг',       desc:'Купи предмет в гараже',  emoji:'🛍️',r:1500, w:3,   chk:s=>s.shop&&s.shop.length>=1},
-  {id:'boost1',name:'Форсаж',       desc:'Активируй буст',         emoji:'🚀',r:1500, w:3,   chk:s=>s.boosts&&Object.keys(s.boosts).length>=1},
-  {id:'champ1',name:'Чемпион',      desc:'Выиграй чемпионат сезона',emoji:'🏆',r:15000,w:18,  chk:s=>(s.seasonTitles||0)>=1},
-  {id:'prestige1',name:'Легенда',    desc:'Начни новую карьеру',     emoji:'♻️',r:50000, w:25,  chk:s=>(s.prestigeCount||0)>=1},
-  {id:'legacy10',name:'Наследие',    desc:'Накопи 10 Очков наследия', emoji:'⭐',r:200000,w:30,  chk:s=>(s.legacyPoints||0)>=10},
+  {id:'c1',  name:'Первый клик',  desc:'Нажми на машину',     emoji:'👆',icon:'ach-click',r:100,    w:0.2, chk:s=>s.tc>=1},
+  {id:'c100',name:'100 кликов',   desc:'Не останавливайся',   emoji:'💪',icon:'ach-muscle',r:500,    w:1,   chk:s=>s.tc>=100},
+  {id:'u1',  name:'Механик',      desc:'Купи первый апгрейд', emoji:'🔧',icon:'ach-wrench',r:300,    w:1,   chk:s=>Object.values(s.ul).some(v=>v>0)},
+  {id:'w1',  name:'Первая победа',desc:'Выиграй турнир',       emoji:'🥇',icon:'ach-medal1',r:1000,   w:3,   chk:s=>s.tw>=1},
+  {id:'w10', name:'10 побед',     desc:'Настоящий гонщик',     emoji:'🏆',icon:'ach-trophy',r:5000,   w:10,  chk:s=>s.tw>=10},
+  {id:'f1',  name:'Формула 1!',   desc:'Достигни вершины',     emoji:'🏎️',icon:'ach-car',r:100000, w:20,  chk:s=>s.cl>=4},
+  {id:'10k', name:'Богач трассы', desc:'Накопи 10 000 монет',  emoji:'💰',icon:'ach-money',r:2000,   w:3,   chk:s=>s.tce>=10000},
+  {id:'all', name:'Полный болид', desc:'Все апгрейды куплены', emoji:'🌟',icon:'ach-star',r:10000,  w:15,  chk:s=>UPGRADES.every(u=>(s.ul[u.id]||0)>0)},
+  {id:'streak3',name:'Постоянство', desc:'Стрик входа 3 дня',     emoji:'📅',icon:'ach-calendar',r:2000,  w:8,   chk:s=>s.daily&&s.daily.streak>=3},
+  {id:'streak7',name:'Железная воля',desc:'Стрик входа 7 дней',    emoji:'🔥',icon:'ach-fire',r:8000,  w:15,  chk:s=>s.daily&&s.daily.streak>=7},
+  {id:'shop1', name:'Тюнинг',       desc:'Купи предмет в гараже',  emoji:'🛍️',icon:'ach-bag',r:1500, w:3,   chk:s=>s.shop&&s.shop.length>=1},
+  {id:'boost1',name:'Форсаж',       desc:'Активируй буст',         emoji:'🚀',icon:'ach-rocket',r:1500, w:3,   chk:s=>s.boosts&&Object.keys(s.boosts).length>=1},
+  {id:'champ1',name:'Чемпион',      desc:'Выиграй чемпионат сезона',emoji:'🏆',icon:'ach-trophy',r:15000,w:18,  chk:s=>(s.seasonTitles||0)>=1},
+  {id:'prestige1',name:'Легенда',    desc:'Начни новую карьеру',     emoji:'♻️',icon:'ach-recycle',r:50000, w:25,  chk:s=>(s.prestigeCount||0)>=1},
+  {id:'legacy10',name:'Наследие',    desc:'Накопи 10 Очков наследия', emoji:'⭐',icon:'ach-legacy',r:200000,w:30,  chk:s=>(s.legacyPoints||0)>=10},
 ];
 // Динамическая награда достижения: доход за w минут, но не меньше фикс-минимума r.
 function achReward(a){
@@ -616,43 +699,43 @@ function achReward(a){
 // Бусты переживают повышение уровня (хранятся в S.shop)
 const SHOP_ITEMS=[
   // Буст-предметы
-  {id:'lucky_helmet', name:'Счастливый шлем', emoji:'⛑️', price:5000,    type:'click', val:0.10, desc:'+10% монет за клик'},
-  {id:'turbo_chip',   name:'Турбо-чип',       emoji:'🔌', price:25000,   type:'cps',   val:0.10, desc:'+10% пассивный доход'},
-  {id:'gold_gloves',  name:'Золотые перчатки', emoji:'🧤', price:120000,  type:'click', val:0.20, desc:'+20% монет за клик'},
-  {id:'ai_engineer',  name:'ИИ-инженер',       emoji:'🤖', price:600000,  type:'cps',   val:0.25, desc:'+25% пассивный доход'},
+  {id:'lucky_helmet', name:'Счастливый шлем', emoji:'⛑️',icon:'item-helmet', price:5000,    type:'click', val:0.10, desc:'+10% монет за клик'},
+  {id:'turbo_chip',   name:'Турбо-чип',       emoji:'🔌',icon:'item-chip', price:25000,   type:'cps',   val:0.10, desc:'+10% пассивный доход'},
+  {id:'gold_gloves',  name:'Золотые перчатки', emoji:'🧤',icon:'item-gloves', price:120000,  type:'click', val:0.20, desc:'+20% монет за клик'},
+  {id:'ai_engineer',  name:'ИИ-инженер',       emoji:'🤖',icon:'item-robot', price:600000,  type:'cps',   val:0.25, desc:'+25% пассивный доход'},
   // Косметика-бейджи (талисман у болида)
-  {id:'flames',       name:'Наклейки-пламя',   emoji:'🔥', price:3000,    type:'cosmetic', desc:'Стиль. Просто красиво'},
-  {id:'star_deco',    name:'Звёздный декор',   emoji:'✨', price:40000,   type:'cosmetic', desc:'Сверкающий болид'},
-  {id:'crown',        name:'Корона чемпиона',  emoji:'👑', price:300000,  type:'cosmetic', desc:'Для настоящих королей трассы'},
-  {id:'diamond',      name:'Алмазная ливрея',  emoji:'💎', price:2000000, type:'cosmetic', desc:'Роскошь высшего класса'},
-  {id:'lightning',    name:'Молния',           emoji:'⚡', price:80000,   type:'cosmetic', desc:'Электрический стиль'},
-  {id:'skull',        name:'Череп',            emoji:'💀', price:150000,  type:'cosmetic', desc:'Грозный вид'},
-  {id:'rocket',       name:'Ракета',           emoji:'🚀', price:500000,  type:'cosmetic', desc:'К звёздам!'},
-  {id:'rainbow',      name:'Радуга',           emoji:'🌈', price:1200000, type:'cosmetic', desc:'Яркий и редкий'},
+  {id:'flames',       name:'Наклейки-пламя',   emoji:'🔥',icon:'cos-flames', price:3000,    type:'cosmetic', desc:'Стиль. Просто красиво'},
+  {id:'star_deco',    name:'Звёздный декор',   emoji:'✨',icon:'cos-star', price:40000,   type:'cosmetic', desc:'Сверкающий болид'},
+  {id:'crown',        name:'Корона чемпиона',  emoji:'👑',icon:'cos-crown', price:300000,  type:'cosmetic', desc:'Для настоящих королей трассы'},
+  {id:'diamond',      name:'Алмазная ливрея',  emoji:'💎',icon:'cos-diamond', price:2000000, type:'cosmetic', desc:'Роскошь высшего класса'},
+  {id:'lightning',    name:'Молния',           emoji:'⚡',icon:'cos-lightning', price:80000,   type:'cosmetic', desc:'Электрический стиль'},
+  {id:'skull',        name:'Череп',            emoji:'💀',icon:'cos-skull', price:150000,  type:'cosmetic', desc:'Грозный вид'},
+  {id:'rocket',       name:'Ракета',           emoji:'🚀',icon:'cos-rocket', price:500000,  type:'cosmetic', desc:'К звёздам!'},
+  {id:'rainbow',      name:'Радуга',           emoji:'🌈',icon:'cos-rainbow', price:1200000, type:'cosmetic', desc:'Яркий и редкий'},
   // Ливреи — меняют ВНЕШНИЙ ВИД болида (рисуются на корпусе)
-  {id:'livery_stripe',name:'Гоночные полосы',  emoji:'🏁', price:60000,   type:'livery', livery:'stripe', desc:'Две полосы вдоль корпуса'},
-  {id:'livery_carbon',name:'Карбон',           emoji:'⬛', price:250000,  type:'livery', livery:'carbon', desc:'Карбоновое покрытие'},
-  {id:'livery_gold',  name:'Золотая ливрея',   emoji:'🥇', price:3000000, type:'livery', livery:'gold',   desc:'Чистое золото на корпусе'},
+  {id:'livery_stripe',name:'Гоночные полосы',  emoji:'🏁',icon:'liv-stripe', price:60000,   type:'livery', livery:'stripe', desc:'Две полосы вдоль корпуса'},
+  {id:'livery_carbon',name:'Карбон',           emoji:'⬛',icon:'liv-carbon', price:250000,  type:'livery', livery:'carbon', desc:'Карбоновое покрытие'},
+  {id:'livery_gold',  name:'Золотая ливрея',   emoji:'🥇',icon:'liv-gold', price:3000000, type:'livery', livery:'gold',   desc:'Чистое золото на корпусе'},
 ];
 
 // ── БУСТЫ-РАСХОДНИКИ ─────────────────────────────────────────────────────────
 // effect: 'click' (xN к клику), 'cps' (xN к пассиву), 'all' (xN к обоим), 'luck' (+шанс турниров)
 // dur — длительность в секундах. Цена масштабируется от текущего уровня в boostPrice().
 const BOOSTS=[
-  {id:'turbo',   name:'Турбо x2',     emoji:'🚀', effect:'click', mult:2,    dur:30,  baseP:2000,  desc:'x2 монет за клик · 30 сек'},
-  {id:'nitro',   name:'Нитро x3',     emoji:'💥', effect:'click', mult:3,    dur:20,  baseP:6000,  desc:'x3 монет за клик · 20 сек'},
-  {id:'drs',     name:'DRS открыт',   emoji:'🪟', effect:'cps',   mult:2,    dur:60,  baseP:5000,  desc:'x2 пассивный доход · 60 сек'},
-  {id:'overdrive',name:'Овердрайв x2', emoji:'⚡', effect:'all',   mult:2,    dur:45,  baseP:12000, desc:'x2 клик и пассив · 45 сек'},
-  {id:'luck',    name:'Дождь удачи',  emoji:'🍀', effect:'luck',  mult:0.15, dur:120, baseP:8000,  desc:'+15% шанс турниров · 2 мин'},
+  {id:'turbo',   name:'Турбо x2',     emoji:'🚀',icon:'boost-turbo', effect:'click', mult:2,    dur:30,  baseP:2000,  desc:'x2 монет за клик · 30 сек'},
+  {id:'nitro',   name:'Нитро x3',     emoji:'💥',icon:'boost-nitro', effect:'click', mult:3,    dur:20,  baseP:6000,  desc:'x3 монет за клик · 20 сек'},
+  {id:'drs',     name:'DRS открыт',   emoji:'🪟',icon:'boost-drs', effect:'cps',   mult:2,    dur:60,  baseP:5000,  desc:'x2 пассивный доход · 60 сек'},
+  {id:'overdrive',name:'Овердрайв x2', emoji:'⚡',icon:'boost-overdrive', effect:'all',   mult:2,    dur:45,  baseP:12000, desc:'x2 клик и пассив · 45 сек'},
+  {id:'luck',    name:'Дождь удачи',  emoji:'🍀',icon:'boost-luck', effect:'luck',  mult:0.15, dur:120, baseP:8000,  desc:'+15% шанс турниров · 2 мин'},
 ];
 
 // ── СПОНСОРСКИЕ КОНТРАКТЫ (квесты) ───────────────────────────────────────────
 // metric: счётчик-источник; вознаграждение зависит от уровня карьеры (см. genQuest)
 const QUEST_POOL=[
-  {id:'clicker',  metric:'tc',  emoji:'👆', name:'Отработай круги',   verb:'Сделай', unit:'кликов',  base:150},
-  {id:'racer',    metric:'tw',  emoji:'🏁', name:'Победный контракт',  verb:'Выиграй',unit:'турниров',base:2},
-  {id:'earner',   metric:'tce', emoji:'💰', name:'Финплан спонсора',   verb:'Заработай',unit:'монет', base:8000},
-  {id:'tuner',    metric:'upg', emoji:'🔧', name:'Доводка болида',     verb:'Прокачай',unit:'ур. апгрейдов',base:6},
+  {id:'clicker',  metric:'tc',  emoji:'👆',icon:'ach-click', name:'Отработай круги',   verb:'Сделай', unit:'кликов',  base:150},
+  {id:'racer',    metric:'tw',  emoji:'🏁',icon:'tab-flag', name:'Победный контракт',  verb:'Выиграй',unit:'турниров',base:2},
+  {id:'earner',   metric:'tce', emoji:'💰',icon:'ach-money', name:'Финплан спонсора',   verb:'Заработай',unit:'монет', base:8000},
+  {id:'tuner',    metric:'upg', emoji:'🔧',icon:'ach-wrench', name:'Доводка болида',     verb:'Прокачай',unit:'ур. апгрейдов',base:6},
 ];
 
 // ── УТИЛИТЫ ──────────────────────────────────────────────────────────────────
@@ -973,11 +1056,11 @@ async function fetchAbOffline(){
 
 // ── ЛИГИ ────────────────────────────────────────────────────────────────────
 const DIVISIONS=[
-  {emoji:'🥉',name:'Бронза', color:'#cd7f32'},
-  {emoji:'🥈',name:'Серебро',color:'#c0c0c0'},
-  {emoji:'🥇',name:'Золото', color:'#ffd700'},
-  {emoji:'💎',name:'Платина',color:'#5fd1ff'},
-  {emoji:'👑',name:'Алмаз',  color:'#b48cff'},
+  {emoji:'🥉',icon:'div-bronze',name:'Бронза', color:'#cd7f32'},
+  {emoji:'🥈',icon:'div-silver',name:'Серебро',color:'#c0c0c0'},
+  {emoji:'🥇',icon:'div-gold',name:'Золото', color:'#ffd700'},
+  {emoji:'💎',icon:'div-platinum',name:'Платина',color:'#5fd1ff'},
+  {emoji:'👑',icon:'div-diamond',name:'Алмаз',  color:'#b48cff'},
 ];
 async function fetchLeagueBoard(){
   if(!S.userId)return [];
@@ -1373,10 +1456,10 @@ function bindCarButton(){
 // ── ПОГОДА НА ТРАССЕ ─────────────────────────────────────────────────────────
 // Меняется со временем; влияет на риск и награды турниров/сезона.
 const WEATHER={
-  clear: {emoji:'☀️', name:'Ясно',  desc:'Идеальные условия',           chance:0,     reward:1.0,  click:1.0, income:1.00, jpChance:0,    jpMult:1},
-  rain:  {emoji:'🌧️', name:'Дождь', desc:'Скользко: риск выше, но и куш больше', chance:-0.10, reward:1.4,  click:1.0, income:0.82, jpChance:0.12, jpMult:6},
-  fog:   {emoji:'🌫️', name:'Туман', desc:'Плохая видимость, выше риск', chance:-0.07, reward:1.2,  click:1.0, income:0.92, jpChance:0.08, jpMult:4},
-  wind:  {emoji:'💨', name:'Ветер', desc:'Порывы мешают, но бодрят',     chance:-0.03, reward:1.1,  click:1.05,income:1.00, jpChance:0.05, jpMult:3},
+  clear: {emoji:'☀️',icon:'wx-clear', name:'Ясно',  desc:'Идеальные условия',           chance:0,     reward:1.0,  click:1.0, income:1.00, jpChance:0,    jpMult:1},
+  rain:  {emoji:'🌧️',icon:'wx-rain', name:'Дождь', desc:'Скользко: риск выше, но и куш больше', chance:-0.10, reward:1.4,  click:1.0, income:0.82, jpChance:0.12, jpMult:6},
+  fog:   {emoji:'🌫️',icon:'wx-fog', name:'Туман', desc:'Плохая видимость, выше риск', chance:-0.07, reward:1.2,  click:1.0, income:0.92, jpChance:0.08, jpMult:4},
+  wind:  {emoji:'💨',icon:'wx-wind', name:'Ветер', desc:'Порывы мешают, но бодрят',     chance:-0.03, reward:1.1,  click:1.05,income:1.00, jpChance:0.05, jpMult:3},
 };
 const WEATHER_KEYS=['clear','clear','clear','rain','fog','wind']; // ясно чаще
 // Текущая погода зависит от 15-минутных интервалов реального времени (одинаково для логики)
@@ -1406,9 +1489,9 @@ function showWeatherInfo(){
 // ── РАЗВИТИЕ КОМАНДЫ (R&D) ───────────────────────────────────────────────────
 // Постоянные вложения в команду. Цена растёт с уровнем, эффекты накапливаются.
 const RD_DEPTS=[
-  {id:'engine',     name:'Мотор',       emoji:'🔧', max:10, base:50000,  per:0.04, desc:'+4% к доходу за уровень'},
-  {id:'aero',       name:'Аэродинамика',emoji:'💨', max:10, base:80000,  per:0.02, desc:'+2% шанс турниров за уровень'},
-  {id:'reliability',name:'Надёжность',  emoji:'🛡️', max:10, base:120000, per:0.03, desc:'+3% к призам при проигрыше'},
+  {id:'engine',     name:'Мотор',       emoji:'🔧',icon:'rd-engine', max:10, base:50000,  per:0.04, desc:'+4% к доходу за уровень'},
+  {id:'aero',       name:'Аэродинамика',emoji:'💨',icon:'rd-aero', max:10, base:80000,  per:0.02, desc:'+2% шанс турниров за уровень'},
+  {id:'reliability',name:'Надёжность',  emoji:'🛡️',icon:'rd-shield', max:10, base:120000, per:0.03, desc:'+3% к призам при проигрыше'},
 ];
 function rdPrice(dept){const lvl=(S.rd&&S.rd[dept.id])||0;return Math.floor(dept.base*Math.pow(1.8,lvl)*lvlMult());}
 function rdEngineMult(){return 1+((S.rd&&S.rd.engine)||0)*0.04;}     // множитель дохода
@@ -1632,7 +1715,7 @@ function renderRD(){
     const pct=Math.floor(lvl/d.max*100);
     return `<div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px;margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-        <span style="font-size:18px">${d.emoji}</span>
+        <span style="font-size:18px">${d.icon?ICON(d.icon,22):d.emoji}</span>
         <div style="flex:1">
           <div style="font-size:12px;font-weight:700">${d.name} <span style="font-size:9px;opacity:.5">ур.${lvl}/${d.max}</span></div>
           <div style="font-size:9px;color:rgba(255,255,255,0.5)">${d.desc}</div>
@@ -2023,7 +2106,7 @@ function renderActiveBoosts(){
   const active=BOOSTS.filter(b=>boostActive(b.id));
   if(active.length===0){bar.style.display='none';bar.innerHTML='';return;}
   bar.style.display='flex';
-  bar.innerHTML=active.map(b=>`<div class="boost-chip"><span class="bc-emoji">${b.emoji}</span>${b.name.split(' ')[0]} <span class="bc-time">${boostRemaining(b.id)}с</span></div>`).join('');
+  bar.innerHTML=active.map(b=>`<div class="boost-chip"><span class="bc-emoji">${b.icon?ICON(b.icon,16):b.emoji}</span>${b.name.split(' ')[0]} <span class="bc-time">${boostRemaining(b.id)}с</span></div>`).join('');
 }
 
 // ── РИСОВАНИЕ БОЛИДОВ ─────────────────────────────────────────────────────────
@@ -2862,7 +2945,7 @@ async function renderLeague(){
   const div=DIVISIONS[S.division||0]||DIVISIONS[0];
   el.innerHTML=`
     <div style="background:${div.color}1f;border:1px solid ${div.color}55;border-radius:12px;padding:12px;margin-bottom:10px;text-align:center">
-      <div style="font-size:30px;line-height:1">${div.emoji}</div>
+      <div style="line-height:1;display:flex;justify-content:center">${div.icon?ICON(div.icon,40):`<span style="font-size:30px">${div.emoji}</span>`}</div>
       <div style="font-size:16px;font-weight:700;color:${div.color};margin-top:2px">${div.name}</div>
       <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px">Соревнование по приросту монет за неделю</div>
     </div>
@@ -3635,10 +3718,21 @@ function renderOfferBanner(){
     </div>`;
 }
 
+// Заполняет иконки навигации (категории и подразделы) один раз.
+function fillNavIcons(){
+  try{
+    document.querySelectorAll('.nav-ic[data-ic]').forEach(el=>{
+      if(el._filled)return;
+      el.innerHTML=ICON(el.getAttribute('data-ic'),16);
+      el._filled=true;
+    });
+  }catch(e){}
+}
 function render(){
   try{
   const c=C(),t=T();
   try{bindCarButton();}catch(e){}
+  try{fillNavIcons();}catch(e){}
   // показываем вкладку «Админ» только администраторам
   try{const ar=document.getElementById('admin-tab-row');if(ar)ar.style.display=isAdmin()?'':'none';}catch(e){}
   // canvas — в отдельном try
@@ -3654,7 +3748,7 @@ function render(){
   // badge
   const badge=document.getElementById('cbadge');
   badge.textContent=c.name;badge.style.background=t.c1+'33';badge.style.color=t.c2;
-  try{const wb=document.getElementById('weather-badge');if(wb){const w=weatherData();wb.textContent=`${w.emoji} ${w.name}`;}}catch(e){}
+  try{const wb=document.getElementById('weather-badge');if(wb){const w=weatherData();wb.innerHTML=`${w.icon?ICON(w.icon,14):w.emoji} <span style="vertical-align:middle">${w.name}</span>`;}}catch(e){}
   document.getElementById('cname').textContent=`${S.pn} · ${t.n}`;
   document.getElementById('csub').textContent=c.xp===Infinity?'🏆 Вершина достигнута!':`До ${CAREERS[Math.min(S.cl+1,4)].name}: ${Math.floor(S.xp)}/${c.xp} XP`;
   document.getElementById('sv-coins').textContent=fmtCoins(S.coins);
@@ -3825,7 +3919,7 @@ function renderLists(){
   ACHIEVEMENTS.forEach(a=>{
     const done=S.ua.includes(a.id);
     al.innerHTML+=`<div class="ach-item ${done?'':'locked'}">
-      <div class="ach-icon">${a.emoji}</div>
+      <div class="ach-icon">${a.icon?ICON(a.icon,24):a.emoji}</div>
       <div style="flex:1"><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc} · 🎁 +${fmt(achReward(a))}💰</div></div>
       ${done?'<span style="font-size:13px;margin-left:auto">✅</span>':''}
     </div>`;
@@ -3842,7 +3936,7 @@ function renderLists(){
         const pct=Math.min(100,Math.floor(p.cur/q.target*100));
         ql.innerHTML+=`<div class="quest-item">
           <div class="q-top">
-            <div class="q-icon">${q.emoji}</div>
+            <div class="q-icon">${q.icon?ICON(q.icon,22):q.emoji}</div>
             <div class="q-name">${q.name}</div>
             <div class="q-reward">+${fmt(q.coinR)}💰 +${q.xpR}XP</div>
           </div>
@@ -3873,7 +3967,7 @@ function renderLists(){
       else if(isCosm||isLivery)btn=`<button class="shop-btn ${equipped?'equipped':''}" onclick="buyShopItem('${it.id}')">${equipped?'✓ Надето':'Надеть'}</button>`;
       else btn=`<button class="shop-btn equipped" disabled>✓ Активно</button>`;
       return `<div class="shop-card ${owned?'owned':''}">
-        <div class="shop-emoji">${it.emoji}</div>
+        <div class="shop-emoji">${it.icon?ICON(it.icon,24):it.emoji}</div>
         <div class="shop-name">${it.name}</div>
         <div class="shop-bonus">${it.desc}</div>
         ${btn}
@@ -3887,7 +3981,7 @@ function renderLists(){
       if(active)btn=`<button class="shop-btn equipped" disabled>⏱ ${boostRemaining(b.id)}с</button>`;
       else btn=`<button class="shop-btn ${can?'afford':''}" onclick="buyBoost('${b.id}')" ${can?'':'disabled'}>${fmt(price)}💰</button>`;
       return `<div class="shop-card ${active?'owned':''}">
-        <div class="shop-emoji">${b.emoji}</div>
+        <div class="shop-emoji">${b.icon?ICON(b.icon,24):b.emoji}</div>
         <div class="shop-name">${b.name}</div>
         <div class="shop-bonus">${b.desc}</div>
         ${btn}
