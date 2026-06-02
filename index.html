@@ -463,10 +463,10 @@ const TEAMS=[
 ];
 
 const CAREERS=[
-  {id:'karting',name:'Картинг',   xp:11000,   cm:1,  ct:0},
-  {id:'f4',     name:'Формула 4', xp:16500,   cm:3,  ct:1},
-  {id:'f3',     name:'Формула 3', xp:23000,   cm:7,  ct:2},
-  {id:'f2',     name:'Формула 2', xp:29000,   cm:16, ct:3},
+  {id:'karting',name:'Картинг',   xp:18000,   cm:1,  ct:0},
+  {id:'f4',     name:'Формула 4', xp:42000,   cm:3,  ct:1},
+  {id:'f3',     name:'Формула 3', xp:85000,   cm:7,  ct:2},
+  {id:'f2',     name:'Формула 2', xp:160000,  cm:16, ct:3},
   {id:'f1',     name:'Формула 1', xp:Infinity,cm:38, ct:4},
 ];
 
@@ -736,10 +736,13 @@ const BOOSTS=[
 // ── СПОНСОРСКИЕ КОНТРАКТЫ (квесты) ───────────────────────────────────────────
 // metric: счётчик-источник; вознаграждение зависит от уровня карьеры (см. genQuest)
 const QUEST_POOL=[
-  {id:'clicker',  metric:'tc',  emoji:'👆',icon:'ach-click', name:'Отработай круги',   verb:'Сделай', unit:'кликов',  base:150},
-  {id:'racer',    metric:'tw',  emoji:'🏁',icon:'tab-flag', name:'Победный контракт',  verb:'Выиграй',unit:'турниров',base:2},
-  {id:'earner',   metric:'tce', emoji:'💰',icon:'ach-money', name:'Финплан спонсора',   verb:'Заработай',unit:'монет', base:8000},
-  {id:'tuner',    metric:'upg', emoji:'🔧',icon:'ach-wrench', name:'Доводка болида',     verb:'Прокачай',unit:'ур. апгрейдов',base:6},
+  {id:'clicker',  metric:'tc',  emoji:'👆',icon:'ach-click', name:'Отработай круги',   verb:'Сделай', unit:'кликов',  base:150,  diff:1},
+  {id:'racer',    metric:'tw',  emoji:'🏁',icon:'tab-flag', name:'Победный контракт',  verb:'Выиграй',unit:'турниров',base:2,    diff:1},
+  {id:'earner',   metric:'tce', emoji:'💰',icon:'ach-money', name:'Финплан спонсора',   verb:'Заработай',unit:'монет', base:8000, diff:1},
+  {id:'tuner',    metric:'upg', emoji:'🔧',icon:'ach-wrench', name:'Доводка болида',     verb:'Прокачай',unit:'ур. апгрейдов',base:6, diff:1},
+  {id:'marathon', metric:'tc',  emoji:'🔥',icon:'ach-fire', name:'Марафон спонсора',   verb:'Сделай', unit:'кликов',  base:480,  diff:1.5},
+  {id:'investor', metric:'tce', emoji:'⭐',icon:'ach-legacy', name:'Крупный инвестор',  verb:'Заработай',unit:'монет', base:26000,diff:1.6},
+  {id:'champion', metric:'tw',  emoji:'🏆',icon:'ach-trophy', name:'Серия побед',       verb:'Выиграй',unit:'турниров',base:4,    diff:1.4},
 ];
 
 // ── УТИЛИТЫ ──────────────────────────────────────────────────────────────────
@@ -1212,7 +1215,18 @@ function load(){
   if(S.season&&S.season.lvl!==S.cl)S.season=null; // сезон чужого уровня — сброс
   // Санитайз ключевых чисел: если в сейве оказался null/NaN/Infinity — чиним, иначе ломается отображение и JSON.
   ['coins','xp','tce','cl','tc','tw'].forEach(k=>{if(typeof S[k]!=='number'||!isFinite(S[k]))S[k]=0;});
-  if(S.quests.length===0)initQuests();
+  if(!S.quests||S.quests.length===0)initQuests();
+  else if(S.quests.length<5){
+    // добиваем до 5, не дублируя активные типы
+    const used=S.quests.map(x=>x.id);
+    let cands=QUEST_POOL.filter(x=>!used.includes(x.id)&&isQuestApplicable(x));
+    while(S.quests.length<5){
+      if(cands.length===0)cands=QUEST_POOL.filter(x=>x.metric==='tc'||x.metric==='tce');
+      const pick=cands.splice(Math.floor(Math.random()*cands.length),1)[0]||cands[0];
+      if(!pick)break;
+      S.quests.push(genQuest(pick));
+    }
+  }
 }
 let _lastCloudSave=0;
 let _cloudSaveTimer=null;
@@ -1976,27 +1990,29 @@ function isQuestApplicable(poolItem){
 }
 function genQuest(poolItem){
   const lvlMul=Math.pow(3,S.cl); // картинг x1 ... ф1 x81
+  const diff=poolItem.diff||1;   // множитель сложности конкретного контракта
   let target;
   if(poolItem.metric==='upg'){
     // цель = разумная порция от ОСТАВШЕГОСЯ запаса прокачки, не больше него
     const head=upgradeHeadroom();
     const want=poolItem.base*(1+S.cl); // базовое желание масштабируется с уровнем
-    target=Math.max(1, Math.min(want, Math.ceil(head*0.4))); // максимум 40% остатка
+    target=Math.max(1, Math.min(want, Math.ceil(head*0.55))); // максимум 55% остатка (было 40% — сложнее)
   }else if(poolItem.metric==='tw'){
-    target=Math.ceil(poolItem.base*(1+S.cl));
+    target=Math.ceil(poolItem.base*(1+S.cl)*diff);
   }else{
-    // экономические метрики (клики/монеты) — масштаб экономики уровня
-    target=Math.ceil(poolItem.base*lvlMul);
+    // экономические метрики (клики/монеты) — масштаб экономики уровня, ×1.6 сложнее + diff
+    target=Math.ceil(poolItem.base*lvlMul*1.6*diff);
   }
   // Награда привязана к РЕАЛЬНОМУ доходу игрока (как ежедневный бонус), а не к фикс-лесенке уровня.
-  // База = доход за N секунд: max(пассив, флор от клика). Тяжёлые контракты (победы/апгрейды) ценнее.
+  // База = доход за N секунд: max(пассив, флор от клика). Тяжёлые контракты ценнее, но без перекоса.
   const cps=getCPS();
-  const secByMetric={tc:240, tce:300, tw:480, upg:360}[poolItem.metric]||240; // сколько секунд дохода стоит контракт
+  const secByMetric={tc:240, tce:300, tw:480, upg:360}[poolItem.metric]||240;
   const incomeBase=Math.max(cps*secByMetric, clickVal()*secByMetric*0.2, 200*(S.cl+1));
-  const coinR=Math.floor(incomeBase);
+  // награда растёт с diff, но мягче, чем сложность (sqrt), чтобы тяжёлые контракты не были «фермой»
+  const coinR=Math.floor(incomeBase*Math.sqrt(diff));
   // XP-порог уровня; на последнем уровне он Infinity → берём конечную базу, иначе xpR станет null после JSON.
   const xpBase=isFinite(C().xp)?C().xp:35000;
-  const xpR=Math.floor(xpBase*0.04*(1+S.cl*0.2))+20;
+  const xpR=Math.floor(xpBase*0.04*(1+S.cl*0.2)*Math.sqrt(diff))+20;
   return {
     id:poolItem.id, emoji:poolItem.emoji, name:poolItem.name,
     verb:poolItem.verb, unit:poolItem.unit, metric:poolItem.metric,
@@ -2005,11 +2021,11 @@ function genQuest(poolItem){
   };
 }
 function initQuests(){
-  // 3 случайных ПРИМЕНИМЫХ контракта из пула
+  // 5 случайных ПРИМЕНИМЫХ контракта из пула
   const applicable=QUEST_POOL.filter(isQuestApplicable);
-  const pool=[...applicable].sort(()=>Math.random()-0.5).slice(0,3);
-  // если применимых меньше 3 — добиваем экономическими (всегда выполнимы)
-  while(pool.length<3){
+  const pool=[...applicable].sort(()=>Math.random()-0.5).slice(0,5);
+  // если применимых меньше 5 — добиваем экономическими (всегда выполнимы)
+  while(pool.length<5){
     const econ=QUEST_POOL.filter(p=>p.metric==='tc'||p.metric==='tce');
     pool.push(econ[Math.floor(Math.random()*econ.length)]);
   }
