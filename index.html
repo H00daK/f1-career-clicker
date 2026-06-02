@@ -324,7 +324,7 @@ body.modal-open{overflow:hidden}
         <div id="tut-emoji" style="font-size:44px;margin-bottom:10px"></div>
         <div id="tut-title" style="font-size:18px;font-weight:700;margin-bottom:6px"></div>
         <div id="tut-text" style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.6;margin-bottom:16px"></div>
-        <div id="tut-dots" style="display:flex;gap:5px;justify-content:center;margin-bottom:14px"></div>
+        <div id="tut-dots" style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:14px"></div>
         <div style="display:flex;gap:8px">
           <button onclick="tutSkip()" style="flex:1;padding:10px;border-radius:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer">Пропустить</button>
           <button id="tut-next" onclick="tutNext()" style="flex:2;padding:10px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer">Далее →</button>
@@ -3581,8 +3581,12 @@ const TUT_STEPS=[
   {e:'👆',t:'Кликай по болиду',x:'Каждый тап по болиду приносит монеты и опыт (XP). Это основа всего — жми почаще!'},
   {e:'🔧',t:'Прокачивай болид',x:'На монеты покупай апгрейды во вкладке «Апгрейды». Они дают монеты за клик и пассивный доход (м/сек).'},
   {e:'🏁',t:'Турниры и Сезон',x:'Участвуй в турнирах за монеты и XP, а в «Сезоне» борись за титул чемпиона. Шанс победы зависит от прокачки болида!'},
+  {e:'🌦️',t:'Следи за погодой',x:'Погода меняется и влияет на турниры: в дождь и туман риск проиграть выше, зато награды больше. Выбирай момент!'},
+  {e:'🏗️',t:'Команда и R&D',x:'Во вкладке «Команда» вкладывай монеты в отделы (мотор, аэродинамика, надёжность). Это даёт постоянные бонусы к доходу и шансам.'},
+  {e:'🏅',t:'Лига',x:'Каждую неделю соревнуйся с другими игроками по приросту монет. Поднимайся из Бронзы в Алмаз и забирай награды дивизиона.'},
+  {e:'🛍️',t:'Гараж: бусты и стиль',x:'В «Гараже» покупай бусты для ускорения, а ещё косметику и ливреи — они меняют внешний вид болида. Сделай его своим!'},
   {e:'⬆️',t:'Переход на новый уровень',x:'Чтобы перейти в Формулу 4, набери XP, прокачай болид на 70% и выиграй все турниры уровня. Условия видны под кликером.'},
-  {e:'🎁',t:'Заходи каждый день',x:'Ежедневный бонус, контракты, гараж с бустами и оффлайн-доход помогут расти быстрее. Удачи на трассе!'},
+  {e:'🎁',t:'Заходи каждый день',x:'Ежедневный бонус, контракты и оффлайн-доход помогут расти быстрее. Удачи на трассе!'},
 ];
 let _tutStep=0;
 function startTutorial(){
