@@ -1347,7 +1347,8 @@ function winChance(t){
   b+=Math.min(S.tw,20)*0.003;  // максимум +6% за 20 побед
   b+=luckBoostAdd();           // бонус от активного «Дождя удачи»
   const tm=T();
-  if(tm.id==='haas'||tm.id==='cadillac')b+=0.06;
+  if(tm.id==='haas')b+=0.05;      // заявлено +5% шанс победы
+  if(tm.id==='cadillac')b+=0.08;  // заявлено +8% шанс победы
   return Math.max(0.05,Math.min(b,0.92));
 }
 function addXP(a){
@@ -1457,8 +1458,7 @@ function acceptOffer(){
 // Начисление одного тапа (без save/render — они отложены через flush).
 function applyClick(x,y){
   const v=clickVal();
-  let coins=v;
-  if(T().id==='williams')coins=Math.floor(coins*0.8);
+  let coins=v; // командные модификаторы (в т.ч. Williams) уже учтены в clickVal()
   // Погода: активный клик-доход снижается, но возможен «скользкий» джекпот.
   const w=weatherData();
   coins=Math.max(1,Math.floor(coins*(w.income||1)));
@@ -1847,7 +1847,8 @@ function startSeason(){
 function playerRaceStrength(){
   const t=T();
   let s=0.25+upgradeProgress()*0.6;     // 0.25..0.85 от прокачки
-  if(t.id==='haas'||t.id==='cadillac')s+=0.05;
+  if(t.id==='haas')s+=0.05;
+  if(t.id==='cadillac')s+=0.08;
   if(t.id==='redbull')s+=0.03;
   s+=Math.min(S.tw,30)*0.002;           // опыт, до +0.06
   s+=luckBoostAdd();                    // «Дождь удачи» помогает и тут
@@ -4521,4 +4522,3 @@ setTimeout(()=>{
 </script>
 </body>
 </html>
- 
