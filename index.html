@@ -961,6 +961,7 @@ async function cloudSave(){
     playtime:Math.floor(S.playtime||0),
     ab_offline:abGroup('offline'),
     division:(typeof S.division==='number'?S.division:0),
+    notify_enabled:(S.notifyEnabled!==false),
     updated_at:new Date().toISOString()
   };
   // PATCH существующей записи; если её нет — POST. Отслеживаем успех для индикатора синка.
