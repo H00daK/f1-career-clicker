@@ -950,6 +950,9 @@ let _syncState='unknown'; // 'ok' | 'fail' | 'unknown'
 let _lastSyncOk=0;
 async function cloudSave(){
   if(!S.userId)return;
+  // НЕ сохраняем в облако, пока игрок не завершил регистрацию (нет имени).
+  // Иначе в базу (и в Топ) попадают «пустые» игроки, застрявшие на вводе имени.
+  if(!S.pn||!String(S.pn).trim())return;
   const payload={
     id:S.userId,name:S.pn,team_id:S.tid,
     coins:Math.floor(S.coins),xp:Math.floor(S.xp),
@@ -1137,10 +1140,10 @@ async function tryClaimReferral(){
 let lbMetric='wins';
 // конфиг метрик: поле сортировки PostgREST, заголовок, как достать значение, подпись
 const LB_METRICS={
-  wins: {order:'total_wins.desc,career_level.desc', val:r=>r.total_wins||0,                  lbl:'побед',    fmt:v=>v},
-  level:{order:'career_level.desc,xp.desc',          val:r=>r.career_level||0,                 lbl:'уровень',  fmt:v=>['Картинг','Ф4','Ф3','Ф2','Ф1'][v]||'Картинг'},
-  rich: {order:'coins_earned.desc',                  val:r=>r.coins_earned||0,                 lbl:'заработано',fmt:v=>fmt(v)+'💰'},
-  refs: {order:'referrals_count.desc',               val:r=>r.referrals_count||0,              lbl:'друзей',   fmt:v=>v},
+  wins: {order:'total_wins.desc,career_level.desc', val:r=>r.total_wins||0,                  lbl:'побед',    fmt:v=>v,        filter:'total_wins=gt.0'},
+  level:{order:'career_level.desc,xp.desc',          val:r=>r.career_level||0,                 lbl:'уровень',  fmt:v=>['Картинг','Ф4','Ф3','Ф2','Ф1'][v]||'Картинг', filter:''},
+  rich: {order:'coins_earned.desc',                  val:r=>r.coins_earned||0,                 lbl:'заработано',fmt:v=>fmt(v)+'💰', filter:'coins_earned=gt.0'},
+  refs: {order:'referrals_count.desc',               val:r=>r.referrals_count||0,              lbl:'друзей',   fmt:v=>v,        filter:'referrals_count=gt.0'},
 };
 function setLbMetric(m){
   lbMetric=m;
@@ -1154,7 +1157,8 @@ async function loadLeaderboard(){
   const mc=LB_METRICS[lbMetric]||LB_METRICS.wins;
   // сортируем прямо на таблице players через PostgREST order=
   const sel='id,name,team_id,career_level,total_wins,coins_earned,referrals_count,best_streak,xp';
-  const data=await sbFetch(`/rest/v1/players?select=${sel}&order=${mc.order}&limit=20`);
+  const flt=mc.filter?`&${mc.filter}`:''; // отсекаем нули по нужному показателю
+  const data=await sbFetch(`/rest/v1/players?select=${sel}&order=${mc.order}${flt}&limit=15`);
   return data||[];
 }
 
@@ -1433,6 +1437,8 @@ function doPrestige(){
 }
 function checkOffer(){
   const t=T();if(!t.academy||S.offer)return;
+  // не выдаём повторно, если оффер для ТЕКУЩЕГО уровня уже был принят
+  if(S.offerDoneLvl===S.cl)return;
   if(S.xp/C().xp>=0.5&&S.cl<4)S.offer={tn:t.n,an:t.aname,toLvl:S.cl+1};
 }
 function acceptOffer(){
@@ -1440,6 +1446,7 @@ function acceptOffer(){
   addXP(C().xp*0.3);
   toast(`🎓 ${S.offer.an} дала +30% XP!`);
   S.offer=null;
+  S.offerDoneLvl=S.cl; // запоминаем, что на этом уровне оффер уже принят
   document.getElementById('offer-container').innerHTML='';
   // если XP уже хватает, но болид не прокачан — подсказать игроку
   if(S.xp>=C().xp&&upgradeProgress()<0.70&&S.cl<4){
@@ -1812,9 +1819,13 @@ function enterTournament(id){
     playSound('win');haptic('success');
     showModal('🏆',`Победа в "${t.name}"!`,`${w.emoji} ${w.name} · +${t.xpr} XP, +${fmt(reward)} монет!`);
   } else {
-    const c=Math.floor(reward*(0.15+rdReliabilityBonus()));S.coins+=c;S.tce+=c;addXP(Math.floor(t.xpr*0.3));
+    // Утешение = ЧАСТИЧНЫЙ ВОЗВРАТ ВЗНОСА (а не доля от приза), и всегда МЕНЬШЕ взноса,
+    // иначе проигрывать выгоднее, чем не играть. Базово 20% взноса, надёжность добавляет,
+    // но суммарно не больше 60% взноса — проигрыш всегда в минус.
+    const refundRate=Math.min(0.60, 0.20+rdReliabilityBonus());
+    const c=Math.floor(fee*refundRate);S.coins+=c;S.tce+=c;addXP(Math.floor(t.xpr*0.3));
     playSound('lose');haptic('error');
-    showModal('😤','Не повезло...',`+${fmt(c)} монет утешения. Прокачай болид и попробуй снова!`);
+    showModal('😤','Не повезло...',`Вернулось ${fmt(c)} монет из взноса. Прокачай болид и попробуй снова!`);
   }
   checkOffer();checkAch();save();render();
 }
@@ -3288,13 +3299,21 @@ function sealTap(){
   showSeal();
 }
 function showSeal(){
+  // считаем, какой это по счёту показ котика (для чередования текста)
+  S.sealCount=(S.sealCount||0)+1;
+  const n=S.sealCount;
+  // 1-й: нашёл котика; чётные: Орк-орк; нечётные начиная с 3-го: дата с сердечком
+  let msg;
+  if(n===1) msg='🦭 Орк-орк! Ты нашёл морского котика!';
+  else if(n%2===0) msg='🦭 Орк-орк!';
+  else msg='10.12.2023❤️';
   // визуал — котик выплывает
   try{
     const s=document.createElement('div');s.className='seal-egg';s.innerHTML=sealSVG();
     document.body.appendChild(s);
     const b=document.createElement('div');b.className='seal-bubble';b.style.bottom='185px';
-    const firstTime=!S.sealFound;
-    b.textContent=firstTime?'🦭 Орк-орк! Ты нашёл морского котика!':'🦭 Орк-орк!';
+    b.style.whiteSpace='normal';
+    b.innerHTML=`<div style="text-align:center;font-weight:600">${msg}</div>`;
     document.body.appendChild(b);
     setTimeout(()=>{try{s.remove();b.remove();}catch(e){}},3500);
   }catch(e){}
@@ -3305,8 +3324,8 @@ function showSeal(){
     const bonus=Math.max(5000, Math.floor(getCPS()*120)); // ~2 минуты дохода, флор 5к
     S.coins+=bonus;S.tce+=bonus;
     setTimeout(()=>{toast(`🦭 +${fmt(bonus)} монет за находку!`);},700);
-    save();render();
   }
+  save();render();
 }
 
 // ── ПРОФИЛЬ ───────────────────────────────────────────────────────────────────
