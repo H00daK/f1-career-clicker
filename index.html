@@ -3343,17 +3343,17 @@ function renderTrophyHall(){
   for(let lvl=0;lvl<5;lvl++){
     const cnt=byLvl[lvl]||0;
     const won=cnt>0;
-    cells+=`<div style="flex:1;min-width:54px;text-align:center;padding:8px 4px;border-radius:10px;
+    cells+=`<div style="flex:1;min-width:0;text-align:center;padding:7px 2px;border-radius:9px;
       background:${won?'linear-gradient(160deg,rgba(255,200,60,0.18),rgba(180,130,20,0.1))':'rgba(255,255,255,0.03)'};
       border:1px solid ${won?'rgba(255,200,60,0.4)':'rgba(255,255,255,0.06)'};opacity:${won?'1':'0.5'}">
-      <div style="font-size:22px;filter:${won?'none':'grayscale(1)'}">${won?levelEmoji[lvl]:'🔒'}</div>
-      <div style="font-size:8.5px;color:rgba(255,255,255,0.6);margin-top:2px">${levelNames[lvl]}</div>
+      <div style="font-size:20px;filter:${won?'none':'grayscale(1)'}">${won?levelEmoji[lvl]:'🔒'}</div>
+      <div style="font-size:8px;color:rgba(255,255,255,0.6);margin-top:2px;line-height:1.1;word-break:break-word">${levelNames[lvl]}</div>
       ${cnt>1?`<div style="font-size:9px;font-weight:700;color:#ffd24a">×${cnt}</div>`:''}
     </div>`;
   }
   return `<div style="margin-top:14px;padding:12px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.07)">
     <div style="font-size:12px;font-weight:700;margin-bottom:8px">🏆 Трофейный зал ${tr.length?`· ${tr.length} ${tr.length===1?'кубок':'кубков'}`:''}</div>
-    <div style="display:flex;gap:5px">${cells}</div>
+    <div style="display:flex;gap:4px">${cells}</div>
     ${tr.length===0?'<div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:8px;text-align:center">Выиграй чемпионат сезона, чтобы получить первый кубок</div>':''}
   </div>`;
 }
