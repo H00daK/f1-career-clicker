@@ -1455,8 +1455,53 @@ function acceptOffer(){
   }
   save();render();
 }
+// ── Защита от автокликеров ───────────────────────────────────────────────────
+// Не панацея (клиентскую проверку опытный читер обойдёт), но отсекает типовые
+// автокликеры: слишком высокую частоту и машинно-ровные интервалы между кликами.
+// Живой игрок (в т.ч. быстрый мультитап) не страдает — окно и допуски подобраны мягко.
+let _clickTimes=[];        // временные метки последних кликов
+let _clickIntervals=[];    // интервалы между кликами (для проверки «ровности»)
+let _botStrikes=0;         // счётчик подозрительных серий
+function isLikelyBot(now){
+  // 1) Частота: считаем «всплески» кликов, а не сырые тапы — чтобы мультитач
+  //    (несколько пальцев в один момент) не штрафовался. Тапы в пределах 12мс
+  //    считаем одним всплеском (это один «момент» мультитача).
+  const prev=_clickTimes[_clickTimes.length-1];
+  if(prev==null||now-prev>12)_clickTimes.push(now);
+  while(_clickTimes.length&&now-_clickTimes[0]>1000)_clickTimes.shift();
+  // > 35 ОТДЕЛЬНЫХ всплесков в секунду — недостижимо для человека даже мультитачем
+  if(_clickTimes.length>35)return true;
+
+  // 2) Регулярность интервалов: автокликер кликает с почти одинаковыми паузами.
+  if(prev!=null){
+    const dt=now-prev;
+    if(dt>12&&dt<400){ // только «быстрые» одиночные клики; мультитач-пачки (<12мс) и медленные — мимо
+      _clickIntervals.push(dt);
+      if(_clickIntervals.length>15)_clickIntervals.shift();
+      if(_clickIntervals.length>=12){
+        const avg=_clickIntervals.reduce((a,b)=>a+b,0)/_clickIntervals.length;
+        const variance=_clickIntervals.reduce((a,b)=>a+(b-avg)*(b-avg),0)/_clickIntervals.length;
+        const std=Math.sqrt(variance);
+        // быстрые (avg<140мс) и машинно-ровные (std<8мс) интервалы — это бот
+        if(avg<140&&std<8)return true;
+      }
+    }else if(dt>=400){
+      _clickIntervals=[]; // была пауза — серия прервана
+    }
+  }
+  return false;
+}
+
 // Начисление одного тапа (без save/render — они отложены через flush).
 function applyClick(x,y){
+  const now=Date.now();
+  if(isLikelyBot(now)){
+    _botStrikes++;
+    // тихо игнорируем клик (не начисляем). Без бана — чтобы не зацепить живого игрока.
+    // Изредка мягко подсказываем, что авто-клики не работают.
+    if(_botStrikes%40===0){try{toast('🤖 Авто-клики не засчитываются');}catch(e){}}
+    return;
+  }
   const v=clickVal();
   let coins=v; // командные модификаторы (в т.ч. Williams) уже учтены в clickVal()
   // Погода: активный клик-доход снижается, но возможен «скользкий» джекпот.
