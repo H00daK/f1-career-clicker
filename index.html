@@ -1389,11 +1389,14 @@ function promote(){
   S.ul={};
   S.baseClick=Math.floor(rawClick*0.30);
   S.baseCps=Math.floor(rawCps*0.30*10)/10; // одна десятая точность
+  // Обнуляем баланс монет: новый болид = новый старт. Накопленный «навык» сохраняется
+  // через фору по доходу (baseClick/baseCps), но скупить апгрейды сразу уже нельзя.
+  S.coins=0;
 
   const c=C(),t=T();
   const msg=c.id==='f1'
-    ?`${S.pn}, команда ${t.n} подписала контракт! Болид новый, но твой опыт остался: старт +${S.baseClick}/клик, +${S.baseCps}/сек.`
-    :`${S.pn}, новый болид! Апгрейды сброшены, но труд не пропал — старт +${S.baseClick}/клик, +${S.baseCps}/сек. Прокачивай дальше!`;
+    ?`${S.pn}, команда ${t.n} подписала контракт! Болид новый, баланс обнулён, но твой опыт остался: старт +${S.baseClick}/клик, +${S.baseCps}/сек.`
+    :`${S.pn}, новый болид! Апгрейды сброшены и баланс обнулён, но труд не пропал — старт +${S.baseClick}/клик, +${S.baseCps}/сек. Прокачивай дальше!`;
   if(c.id==='f1')showModal('🏆','Добро пожаловать в Формулу 1!',msg);
   else showModal('🎉',`Повышение: ${c.name}!`,msg);
   checkAch();
@@ -2063,28 +2066,32 @@ function isQuestApplicable(poolItem){
   return true;
 }
 function genQuest(poolItem){
-  const lvlMul=Math.pow(3,S.cl); // картинг x1 ... ф1 x81
   const diff=poolItem.diff||1;   // множитель сложности конкретного контракта
+  const cps=getEffectiveCPS?getEffectiveCPS():getCPS();
+  const cv=clickVal();
   let target;
   if(poolItem.metric==='upg'){
     // цель = разумная порция от ОСТАВШЕГОСЯ запаса прокачки, не больше него
     const head=upgradeHeadroom();
-    const want=poolItem.base*(1+S.cl); // базовое желание масштабируется с уровнем
-    target=Math.max(1, Math.min(want, Math.ceil(head*0.55))); // максимум 55% остатка (было 40% — сложнее)
+    const want=poolItem.base*(1+S.cl);
+    target=Math.max(1, Math.min(want, Math.ceil(head*0.55)));
   }else if(poolItem.metric==='tw'){
     target=Math.ceil(poolItem.base*(1+S.cl)*diff);
-  }else{
-    // экономические метрики (клики/монеты) — масштаб экономики уровня, ×1.6 сложнее + diff
-    target=Math.ceil(poolItem.base*lvlMul*1.6*diff);
+  }else if(poolItem.metric==='tce'){
+    // «Заработай монет» — цель привязана к РЕАЛЬНОМУ доходу: сколько игрок зарабатывает
+    // примерно за 4-7 минут с учётом пассива И активного клика. Так контракт не проскочить
+    // за пару секунд, даже если доход вырос на новых уровнях.
+    const perSec=cps + cv*2; // пассив + ~2 клика/сек как ориентир активной игры
+    const secs=300*diff;     // целевое время ~5 минут (тяжёлые контракты — дольше)
+    target=Math.ceil(Math.max(perSec*secs, 200*Math.pow(3,S.cl)));
+  }else{ // tc — клики
+    // «Сделай кликов» — цель в кликах масштабируется с уровнем, но в разумных пределах.
+    target=Math.ceil(poolItem.base*Math.pow(2.2,S.cl)*1.6*diff);
   }
-  // Награда привязана к РЕАЛЬНОМУ доходу игрока (как ежедневный бонус), а не к фикс-лесенке уровня.
-  // База = доход за N секунд: max(пассив, флор от клика). Тяжёлые контракты ценнее, но без перекоса.
-  const cps=getCPS();
+  // Награда привязана к РЕАЛЬНОМУ доходу игрока. База = доход за N секунд.
   const secByMetric={tc:240, tce:300, tw:480, upg:360}[poolItem.metric]||240;
-  const incomeBase=Math.max(cps*secByMetric, clickVal()*secByMetric*0.2, 200*(S.cl+1));
-  // награда растёт с diff, но мягче, чем сложность (sqrt), чтобы тяжёлые контракты не были «фермой»
+  const incomeBase=Math.max(cps*secByMetric, cv*secByMetric*0.2, 200*(S.cl+1));
   const coinR=Math.floor(incomeBase*Math.sqrt(diff));
-  // XP-порог уровня; на последнем уровне он Infinity → берём конечную базу, иначе xpR станет null после JSON.
   const xpBase=isFinite(C().xp)?C().xp:35000;
   const xpR=Math.floor(xpBase*0.04*(1+S.cl*0.2)*Math.sqrt(diff))+20;
   return {
