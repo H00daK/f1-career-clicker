@@ -1465,6 +1465,9 @@ function acceptOffer(){
 let _clickTimes=[];        // временные метки последних кликов
 let _clickIntervals=[];    // интервалы между кликами (для проверки «ровности»)
 let _botStrikes=0;         // счётчик подозрительных серий
+let _clickFreezeUntil=0;   // до какого момента клики заморожены (мс)
+let _strikeStreak=0;       // сколько срабатываний подряд (для эскалации блока)
+let _lastStrikeTs=0;       // когда было последнее срабатывание
 function isLikelyBot(now){
   // 1) Частота: считаем «всплески» кликов, а не сырые тапы — чтобы мультитач
   //    (несколько пальцев в один момент) не штрафовался. Тапы в пределах 12мс
@@ -1498,11 +1501,21 @@ function isLikelyBot(now){
 // Начисление одного тапа (без save/render — они отложены через flush).
 function applyClick(x,y){
   const now=Date.now();
+  // Если активна заморозка от детекта автокликера — игнорируем все клики до конца блока.
+  if(now<_clickFreezeUntil)return;
   if(isLikelyBot(now)){
     _botStrikes++;
-    // тихо игнорируем клик (не начисляем). Без бана — чтобы не зацепить живого игрока.
-    // Изредка мягко подсказываем, что авто-клики не работают.
-    if(_botStrikes%40===0){try{toast('🤖 Авто-клики не засчитываются');}catch(e){}}
+    // Замораживаем клики. Базово 3 сек; при повторных срабатываниях подряд блок растёт
+    // (до 10 сек) — упорный автокликер получает всё более длинные паузы. Случайный
+    // одиночный страйк живого игрока даёт лишь короткую паузу.
+    const recent=(now-(_lastStrikeTs||0)<8000); // срабатывания подряд (в пределах 8с)
+    _strikeStreak=recent?(_strikeStreak||0)+1:1;
+    _lastStrikeTs=now;
+    const secs=Math.min(10,3+(_strikeStreak-1)*2); // 3,5,7,9,10...
+    _clickFreezeUntil=now+secs*1000;
+    _clickTimes=[];_clickIntervals=[];
+    try{toast(`🤖 Обнаружены авто-клики. Пауза ${secs} сек`);}catch(e){}
+    try{haptic('error');}catch(e){}
     return;
   }
   const v=clickVal();
