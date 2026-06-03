@@ -1220,6 +1220,14 @@ function load(){
   if(S.season&&S.season.lvl!==S.cl)S.season=null; // сезон чужого уровня — сброс
   // Санитайз ключевых чисел: если в сейве оказался null/NaN/Infinity — чиним, иначе ломается отображение и JSON.
   ['coins','xp','tce','cl','tc','tw'].forEach(k=>{if(typeof S[k]!=='number'||!isFinite(S[k]))S[k]=0;});
+  // Версия формулы контрактов. Если у игрока контракты сгенерированы по старой
+  // (заниженной) формуле — пересоздаём их по актуальной, чтобы лёгкие контракты
+  // заменились на сбалансированные без ожидания вайпа.
+  const QUEST_VERSION=2;
+  if(S.questVer!==QUEST_VERSION){
+    S.quests=[];
+    S.questVer=QUEST_VERSION;
+  }
   if(!S.quests||S.quests.length===0)initQuests();
   else if(S.quests.length<5){
     // добиваем до 5, не дублируя активные типы
